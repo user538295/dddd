@@ -1,0 +1,13 @@
+.env
+.env.local
+node_modules/
+dist/
+.tanstack/
+.vite/
+coverage/
+playwright-report/
+test-results/
+data/*.db
+data/*.db-*
+config/team-mapping.json
+

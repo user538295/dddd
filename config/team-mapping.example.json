@@ -1,0 +1,47 @@
+{
+  "includeRepoPatterns": [
+    "*"
+  ],
+  "excludeRepoPatterns": [
+    "*-archive",
+    "archive-*",
+    "experiment-*",
+    "sandbox-*"
+  ],
+  "defaultTeam": "Unassigned",
+  "teams": [
+    {
+      "name": "Frontend",
+      "repoPatterns": [
+        "web-*",
+        "*-frontend",
+        "*-ui"
+      ]
+    },
+    {
+      "name": "Backend",
+      "repoPatterns": [
+        "api-*",
+        "service-*",
+        "*-backend"
+      ]
+    },
+    {
+      "name": "Platform",
+      "repoPatterns": [
+        "platform-*",
+        "infra-*",
+        "devops-*"
+      ]
+    },
+    {
+      "name": "Data",
+      "repoPatterns": [
+        "data-*",
+        "analytics-*",
+        "etl-*"
+      ]
+    }
+  ]
+}
+
