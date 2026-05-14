@@ -1,11 +1,21 @@
 # Local Onboarding
 
 Status: Draft
-Last updated: 2026-05-13
+Last updated: 2026-05-14
 
 ## Purpose
 
 This guide prepares the local configuration needed to run the PR Cycle Time MVP against real repositories.
+
+## Web application (UI)
+
+The dashboard runs as a **TanStack Start** app on **Vite** (dev server default **http://localhost:3000**).
+
+1. Install [Node.js](https://nodejs.org/) 20 or newer and clone this repository.
+2. From the repository root: `npm install`, then `npm run dev`.
+3. For day-to-day engineering commands (tests, lint, build), see **[Developer guide](../Development/README.md)**.
+
+The current Phase 01 scaffold may start **without** `.env` for UI-only work. **PostgreSQL** and `.env` (see below) are required once database migrations, the collector, and server functions are in use.
 
 ## PostgreSQL (required)
 
