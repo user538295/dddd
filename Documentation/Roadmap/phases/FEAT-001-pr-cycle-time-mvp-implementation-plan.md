@@ -474,7 +474,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Checkpoint: `npm run test -- tests/app/app-shell.test.tsx`
 
 #### Task 1.2 — Test setup hardening
-- [ ] **File**: `playwright.config.ts`
+- [x] **File**: `playwright.config.ts`
 - **Depends on**: Task 1.1
 - **Description**:
   - Configure Playwright for local e2e tests.
