@@ -24,10 +24,12 @@ Phase 01 stores dashboard and sync data in **PostgreSQL** on your machine (or in
 ### Quick path: Docker Compose (recommended)
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or another engine with Compose v2).
-2. From the repository root: `npm run db:up` — starts Postgres **16** on host port **54332**, creates database `dddd_dev`, and waits until the server is healthy.
-3. Copy `.env.example` to `.env` if you do not have one yet. The default `DATABASE_URL` in `.env.example` matches the Compose service (`postgresql://dddd:dddd_local_dev@127.0.0.1:54332/dddd_dev`). **Use a different password if you expose this port beyond localhost.**
-4. Run migrations: `npm run db:migrate`
-5. Stop the database when finished: `npm run db:down` (removes the container; data stays in the named volume `dddd_pgdata` until you `docker volume rm` it).
+2. From the repository root: **`./scripts/dev-up.sh`** (runs `npm install`, creates `.env` from `.env.example` if missing, starts Postgres, runs migrations) — or manually: `npm run db:up`, copy `.env.example` → `.env`, then `npm run db:migrate`.
+3. Start the app: `npm run dev`.
+
+The default `DATABASE_URL` in `.env.example` matches Compose (`postgresql://dddd:dddd_local_dev@127.0.0.1:54332/dddd_dev`). **Change the Compose password** in `docker-compose.yml` and `.env` if anything beyond localhost can reach host port **54332**.
+
+4. Stop Postgres when finished: **`./scripts/dev-down.sh`** (or `npm run stack:down`). The container stops; data stays in the Docker volume until you remove it (see script output for the volume name).
 
 Vitest loads `.env` from the repo root when `DATABASE_URL` is not already set in the shell, so `npm run test` can run database integration tests after the steps above.
 
@@ -50,13 +52,14 @@ Vitest loads `.env` from the repo root when `DATABASE_URL` is not already set in
 
 ## Automated tests and CI
 
-Vitest integration tests and Playwright e2e expect a **running PostgreSQL** instance. Easiest local option: `npm run db:up`, then ensure `.env` contains `DATABASE_URL` (Vitest merges `.env` when the variable is unset in the shell). Alternatives: **testcontainers**, a disposable `*_test` database, or CI services that provide Postgres. Do not point tests at production databases.
+Vitest integration tests and Playwright e2e expect a **running PostgreSQL** instance. Easiest local option: `./scripts/dev-up.sh` (or `npm run stack:up`), then `npm run test`. Alternatives: **testcontainers**, a disposable `*_test` database, or CI services that provide Postgres. Do not point tests at production databases.
 
 ## Files
 
 - `.env.example` is the tracked template with default values.
 - `.env` is the local editable file and is gitignored.
-- `docker-compose.yml` defines the optional local Postgres service used by `npm run db:up`.
+- `docker-compose.yml` defines the optional local Postgres service used by `npm run db:up` and **`./scripts/dev-up.sh`**.
+- **`scripts/dev-up.sh`** / **`scripts/dev-down.sh`** — bring the local DB stack up or down (see [PostgreSQL](#postgresql-required)).
 - `config/team-mapping.example.json` is the tracked repository/team selection template.
 - `config/team-mapping.json` is the local editable config and is gitignored.
 - `data/` may hold optional local exports or scratch files; the **database server** holds Postgres data, not files under `data/` by default.

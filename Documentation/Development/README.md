@@ -31,7 +31,7 @@ cd dddd
 npm install
 ```
 
-For a local database with **Docker**: `npm run db:up`, copy `.env.example` → `.env`, then `npm run db:migrate`. For Homebrew or other Postgres setups, see [Local onboarding](../Setup/local-onboarding.md).
+For a local database with **Docker**: `./scripts/dev-up.sh` (same as `npm run stack:up`), then `npm run dev`. For Homebrew or other Postgres setups, see [Local onboarding](../Setup/local-onboarding.md).
 
 Copy `config/team-mapping.example.json` → `config/team-mapping.json` when you work on discovery or sync features that need team mapping.
 
@@ -48,6 +48,8 @@ The current app shell does not require `.env` to start the dev server; database 
 | `npm run test:e2e` | Run Playwright tests (`--pass-with-no-tests` until e2e specs exist). |
 | `npm run lint` | ESLint with **zero warnings** allowed. |
 | `npm run typecheck` | TypeScript check without emit. |
+| `npm run stack:up` | Same as `./scripts/dev-up.sh` — install deps, `.env`, Postgres, migrations. |
+| `npm run stack:down` | Same as `./scripts/dev-down.sh` — stop Compose Postgres. |
 | `npm run db:up` | Start local Postgres via Docker Compose (`--wait` until healthy). |
 | `npm run db:down` | Stop the Compose Postgres service (named volume keeps data). |
 | `npm run db:migrate` | Apply SQL migrations from `drizzle/` (requires `DATABASE_URL`). |
