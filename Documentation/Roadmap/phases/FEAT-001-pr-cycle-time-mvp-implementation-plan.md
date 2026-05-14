@@ -760,7 +760,7 @@ The task breakdown below is the authoritative test list. This section highlights
 > **Releasable**: after this phase, the app can compute all data required by the MVP dashboard.
 
 #### Task 5.1 — PR Cycle Time primitive
-- [ ] **File**: `src/metrics/pr-cycle-time.ts`
+- [x] **File**: `src/metrics/pr-cycle-time.ts`
 - **Depends on**: Task 4.3
 - **Description**:
   - Add `calculatePrCycleTime(pr: PullRequestRecord): PrCycleTimeResult | null`.
