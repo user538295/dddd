@@ -1,0 +1,286 @@
+export type GitHubPullRequest = {
+  githubNodeId: string
+  number: number
+  title: string
+  state: 'open' | 'closed'
+  isDraft: boolean
+  openedAt: Date
+  updatedAt: Date
+  mergedAt: Date | null
+  url: string
+}
+
+export type GitHubClientListPullRequestsInput = {
+  owner: string
+  repo: string
+  state: 'all'
+  initialSyncFrom?: Date
+  stopAfterUpdatedAt?: Date
+}
+
+export type GitHubSyncErrorCode = 'rate_limited' | 'unauthorized' | 'forbidden' | 'unknown'
+
+export class GitHubSyncError extends Error {
+  override name = 'GitHubSyncError'
+
+  readonly code: GitHubSyncErrorCode
+
+  readonly retryAfterSeconds?: number
+
+  constructor(options: { code: GitHubSyncErrorCode; message: string; retryAfterSeconds?: number }) {
+    super(options.message)
+    this.code = options.code
+    this.retryAfterSeconds = options.retryAfterSeconds
+  }
+}
+
+type GitHubClientOptions = {
+  token?: string
+  baseUrl: string
+  fetchImpl?: typeof fetch
+}
+
+const PER_PAGE = 100
+
+function trimTrailingSlash(url: string): string {
+  return url.replace(/\/+$/, '')
+}
+
+function isSameApiOrigin(apiBaseUrl: string, nextUrl: string): boolean {
+  try {
+    const base = new URL(trimTrailingSlash(apiBaseUrl))
+    const next = new URL(nextUrl, base.href)
+    return base.origin === next.origin
+  } catch {
+    return false
+  }
+}
+
+function parseRetryAfterSeconds(res: Response): number | undefined {
+  const raw = res.headers.get('retry-after')
+  if (raw === null || raw.trim() === '') return undefined
+  const n = Number.parseInt(raw, 10)
+  if (!Number.isFinite(n) || n < 0) return undefined
+  return n
+}
+
+function parseLinkNext(linkHeader: string | null): string | null {
+  if (linkHeader === null || linkHeader.trim() === '') return null
+  const m = /<([^>]+)>\s*;\s*rel="next"/i.exec(linkHeader)
+  return m?.[1] ?? null
+}
+
+function normalizePullRequest(raw: Record<string, unknown>): GitHubPullRequest {
+  const nodeId = raw.node_id
+  const number = raw.number
+  const title = raw.title
+  const state = raw.state
+  const draft = raw.draft
+  const createdAt = raw.created_at
+  const updatedAt = raw.updated_at
+  const mergedAt = raw.merged_at
+  const htmlUrl = raw.html_url
+
+  if (typeof nodeId !== 'string' || nodeId.length === 0) {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request missing node_id' })
+  }
+  if (typeof number !== 'number' || !Number.isFinite(number)) {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request missing number' })
+  }
+  if (typeof title !== 'string') {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request missing title' })
+  }
+  if (state !== 'open' && state !== 'closed') {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request has invalid state' })
+  }
+  if (typeof createdAt !== 'string' || typeof updatedAt !== 'string') {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request missing timestamps' })
+  }
+  if (typeof htmlUrl !== 'string' || htmlUrl.length === 0) {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request missing html_url' })
+  }
+
+  const openedAt = new Date(createdAt)
+  const updated = new Date(updatedAt)
+  if (Number.isNaN(openedAt.getTime()) || Number.isNaN(updated.getTime())) {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request has invalid timestamps' })
+  }
+
+  let merged: Date | null = null
+  if (mergedAt !== null && mergedAt !== undefined) {
+    if (typeof mergedAt !== 'string') {
+      throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request has invalid merged_at' })
+    }
+    const m = new Date(mergedAt)
+    if (Number.isNaN(m.getTime())) {
+      throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request has invalid merged_at' })
+    }
+    merged = m
+  }
+
+  return {
+    githubNodeId: nodeId,
+    number,
+    title,
+    state,
+    isDraft: draft === true,
+    openedAt,
+    updatedAt: updated,
+    mergedAt: merged,
+    url: htmlUrl,
+  }
+}
+
+async function readJsonBody(res: Response): Promise<unknown> {
+  const text = await res.text()
+  if (text.trim() === '') return null
+  try {
+    return JSON.parse(text) as unknown
+  } catch {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub response is not valid JSON' })
+  }
+}
+
+function isRateLimitedResponse(res: Response, body: unknown): boolean {
+  if (res.status === 429) return true
+  if (res.status !== 403) return false
+  const remaining = res.headers.get('x-ratelimit-remaining')
+  if (remaining === '0') return true
+  if (typeof body === 'object' && body !== null && 'message' in body) {
+    const msg = (body as { message?: unknown }).message
+    if (typeof msg === 'string' && /rate limit/i.test(msg)) return true
+  }
+  return false
+}
+
+function buildListPullsUrl(baseUrl: string, owner: string, repo: string, page: number): string {
+  const root = trimTrailingSlash(baseUrl)
+  const u = new URL(`${root}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls`)
+  u.searchParams.set('state', 'all')
+  u.searchParams.set('sort', 'updated')
+  u.searchParams.set('direction', 'desc')
+  u.searchParams.set('per_page', String(PER_PAGE))
+  u.searchParams.set('page', String(page))
+  return u.toString()
+}
+
+export class GitHubClient {
+  private readonly token?: string
+
+  private readonly baseUrl: string
+
+  private readonly fetchImpl: typeof fetch
+
+  constructor(options: GitHubClientOptions) {
+    this.token = options.token
+    this.baseUrl = trimTrailingSlash(options.baseUrl)
+    this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis)
+  }
+
+  async listPullRequests(input: GitHubClientListPullRequestsInput): Promise<GitHubPullRequest[]> {
+    const { owner, repo } = input
+
+    const bound =
+      input.stopAfterUpdatedAt !== undefined ? input.stopAfterUpdatedAt : input.initialSyncFrom
+    const boundMs = bound?.getTime()
+
+    const results: GitHubPullRequest[] = []
+    let page = 1
+    let nextUrl: string | null = null
+
+    for (;;) {
+      const url = nextUrl ?? buildListPullsUrl(this.baseUrl, owner, repo, page)
+      const headers = new Headers({
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'dddd-pr-cycle-time-collector',
+      })
+      if (this.token !== undefined && this.token !== '') {
+        headers.set('Authorization', `token ${this.token}`)
+      }
+
+      const res = await this.fetchImpl(url, { headers })
+
+      if (!res.ok) {
+        const body = await readJsonBody(res)
+        const retryAfterSeconds = parseRetryAfterSeconds(res)
+
+        if (res.status === 401) {
+          throw new GitHubSyncError({
+            code: 'unauthorized',
+            message: 'GitHub rejected the request (401 Unauthorized)',
+            retryAfterSeconds,
+          })
+        }
+
+        if (isRateLimitedResponse(res, body)) {
+          throw new GitHubSyncError({
+            code: 'rate_limited',
+            message: 'GitHub rate limit exceeded',
+            retryAfterSeconds,
+          })
+        }
+
+        if (res.status === 403) {
+          throw new GitHubSyncError({
+            code: 'forbidden',
+            message: 'GitHub rejected the request (403 Forbidden)',
+            retryAfterSeconds,
+          })
+        }
+
+        const msg =
+          typeof body === 'object' && body !== null && 'message' in body && typeof (body as { message: unknown }).message === 'string'
+            ? (body as { message: string }).message
+            : `GitHub request failed with status ${res.status}`
+        throw new GitHubSyncError({ code: 'unknown', message: msg, retryAfterSeconds })
+      }
+
+      const body = await readJsonBody(res)
+      if (!Array.isArray(body)) {
+        throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pulls response is not an array' })
+      }
+
+      const normalizedPage: GitHubPullRequest[] = []
+      for (const item of body) {
+        if (typeof item !== 'object' || item === null) continue
+        normalizedPage.push(normalizePullRequest(item as Record<string, unknown>))
+      }
+
+      for (const pr of normalizedPage) {
+        if (boundMs === undefined || pr.updatedAt.getTime() >= boundMs) {
+          results.push(pr)
+        }
+      }
+
+      const parsedNext = parseLinkNext(res.headers.get('Link'))
+      if (parsedNext !== null && !isSameApiOrigin(this.baseUrl, parsedNext)) {
+        throw new GitHubSyncError({
+          code: 'unknown',
+          message: 'GitHub Link header next URL does not match the configured API host',
+        })
+      }
+      if (parsedNext !== null) {
+        nextUrl = parsedNext
+        page += 1
+      } else if (normalizedPage.length < PER_PAGE) {
+        break
+      } else {
+        nextUrl = null
+        page += 1
+      }
+
+      if (boundMs !== undefined && normalizedPage.length > 0) {
+        const allOlder = normalizedPage.every((p) => p.updatedAt.getTime() < boundMs)
+        if (allOlder) {
+          break
+        }
+      }
+
+      if (normalizedPage.length === 0) {
+        break
+      }
+    }
+
+    return results
+  }
+}

@@ -669,7 +669,7 @@ The task breakdown below is the authoritative test list. This section highlights
 > **Releasable**: after this phase, the local database contains PR opened and merged timestamps.
 
 #### Task 4.1 — GitHub API client
-- [ ] **File**: `src/collector/github-client.ts`
+- [x] **File**: `src/collector/github-client.ts`
 - **Depends on**: Task 3.4
 - **Description**:
   - Add `GitHubClient` class.
