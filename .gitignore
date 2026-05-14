@@ -2,13 +2,17 @@
 .env.local
 node_modules/
 dist/
+.output
 .tanstack/
 .vite/
+.cache
 coverage/
 playwright-report/
 test-results/
+playwright/.cache/
+*.log
+.DS_Store
 # Optional legacy SQLite artifacts if present; Phase 01 uses PostgreSQL only.
 data/*.db
 data/*.db-*
 config/team-mapping.json
-

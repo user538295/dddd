@@ -453,7 +453,7 @@ The task breakdown below is the authoritative test list. This section highlights
 > **Releasable**: after this phase, the project can run tests and display a blank local app shell.
 
 #### Task 1.1 — TanStack Start app scaffold
-- [ ] **File**: `package.json`, `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`, `tests/setup.ts`, `src/routes/index.tsx`
+- [x] **File**: `package.json`, `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`, `tests/setup.ts`, `src/routes/index.tsx`
 - **Depends on**: nothing
 - **Description**:
   - Initialize a TanStack Start React TypeScript app.
