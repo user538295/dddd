@@ -19,7 +19,7 @@ The current product direction is documented under `Documentation/`:
 
 ## Working Rules
 
-- Be direct, precise, and concise.
+- Be direct, extremely precise, and very concise.
 - Keep the MVP small and incremental.
 - Show only metrics whose data is collected, stored, and computed.
 - Do not add placeholder UI for future metrics.
