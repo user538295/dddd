@@ -775,7 +775,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Checkpoint: `npm run test -- tests/metrics/pr-cycle-time.test.ts`
 
 #### Task 5.2 — Median and weekly trend calculations
-- [ ] **File**: `src/metrics/pr-cycle-time-summary.ts`
+- [x] **File**: `src/metrics/pr-cycle-time-summary.ts`
 - **Depends on**: Task 5.1
 - **Description**:
   - Add `median(values: number[]): number | null`.
