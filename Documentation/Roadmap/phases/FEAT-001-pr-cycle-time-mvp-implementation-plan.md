@@ -128,7 +128,7 @@ When this plan is complete, the user can run the app locally, refresh PR metadat
 - GitHub sync concurrency: default `2`, configured by `GITHUB_SYNC_CONCURRENCY`.
 - Team and repository selection config: checked-in example file at `config/team-mapping.example.json`; runtime default path is `./config/team-mapping.json`.
 - Repo discovery rule: scan immediate child directories of `/Users/manczg/Documents/work/development` that contain `.git`; no recursive nested repo discovery in Phase 01.
-- Repo sync inclusion rule: include discovered repositories that match `includeRepoPatterns` and do not match `excludeRepoPatterns` in team mapping config. If `includeRepoPatterns` is omitted, include all discovered repositories by default. Repositories excluded by config are stored with scan status but are not synced or included in metrics.
+- Repo sync inclusion rule: include discovered repositories whose parsed `origin` GitHub **owner** matches `GITHUB_SYNC_OWNER` (default `gde-mit`, case-insensitive), then match `includeRepoPatterns` and do not match `excludeRepoPatterns` in team mapping config. If `includeRepoPatterns` is omitted, include all discovered repositories that pass the org filter by default. Repositories with a parseable remote whose owner does not match, or repositories excluded by team mapping config, are stored with `scanStatus: excluded` and are not synced or included in metrics.
 - Initial PR sync cutoff: fresh databases fetch PRs updated on or after `DASHBOARD_INITIAL_SYNC_FROM`; default is January 1 of the current calendar year in the local runtime timezone.
 - Date range: default `Last 8 weeks`; current range is `[now - 8 weeks, now]`; previous range is the immediately preceding 8 weeks.
 - Time-dependent metric functions accept an explicit `now` or `clock` input in tests and server functions so range boundaries are deterministic.
@@ -180,7 +180,7 @@ When this plan is complete, the user can run the app locally, refresh PR metadat
   - Normalizes supported GitHub remote URL forms.
 
 - `src/collector/repository-store.ts`
-  - `upsertRepositories(db: AppDb, rootPath: string, repositories: RepositoryCandidate[], mapping: TeamMappingConfig): Promise<RepositorySyncSummary>`
+  - `upsertRepositories(db: AppDb, rootPath: string, repositories: RepositoryCandidate[], mapping: TeamMappingConfig, githubSyncOwner: string): Promise<RepositorySyncSummary>`
   - Persists discovered repositories and scan status.
 
 - `src/collector/github-client.ts`
@@ -227,6 +227,7 @@ When this plan is complete, the user can run the app locally, refresh PR metadat
 - `DASHBOARD_DEFAULT_RANGE_WEEKS`: number, default `8`.
 - `DASHBOARD_INITIAL_SYNC_FROM`: ISO date string, optional; default is current-year January 1 in local timezone.
 - `GITHUB_SYNC_CONCURRENCY`: positive integer, default `2`.
+- `GITHUB_SYNC_OWNER`: string, default `gde-mit`; parsed `origin` owner must match for PR sync and metrics.
 
 ### Core Types
 
@@ -240,6 +241,7 @@ export type AppEnv = {
   defaultRangeWeeks: number
   initialSyncFrom: Date
   githubSyncConcurrency: number
+  githubSyncOwner: string
 }
 
 export type AppDb = unknown
@@ -493,10 +495,12 @@ The task breakdown below is the authoritative test list. This section highlights
     - `DASHBOARD_DEFAULT_RANGE_WEEKS=8`
     - `DASHBOARD_INITIAL_SYNC_FROM=<current-year>-01-01`
     - `GITHUB_SYNC_CONCURRENCY=2`
+    - `GITHUB_SYNC_OWNER=gde-mit`
   - `GITHUB_TOKEN` is optional.
   - Throw `ConfigError` when `DASHBOARD_DEFAULT_RANGE_WEEKS` is not a positive integer.
   - Throw `ConfigError` when `DASHBOARD_INITIAL_SYNC_FROM` is not a valid ISO date.
   - Throw `ConfigError` when `GITHUB_SYNC_CONCURRENCY` is not a positive integer.
+  - Throw `ConfigError` when `GITHUB_SYNC_OWNER` is empty or whitespace-only after trim.
   - `getEnv` returns validated configuration only; `getDashboardDateRanges` derives current and previous ranges with explicit boundary semantics from a provided `now`.
 - **Releasable**: after this task, every module can read validated runtime config.
 - **Tests (TDD)** — `tests/config/env.test.ts`:
@@ -506,6 +510,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Unit: `env_defaults_initial_sync_from_to_current_year_start` — default starts at current-year January 1.
   - Unit: `env_rejects_invalid_initial_sync_from` — rejects malformed dates.
   - Unit: `env_rejects_invalid_github_sync_concurrency` — rejects zero, negative, and non-number values.
+  - Unit: `env_rejects_empty_github_sync_owner` — rejects empty `GITHUB_SYNC_OWNER`.
   - Checkpoint: `npm run test -- tests/config/env.test.ts`
 
 #### Task 2.2 — Database schema
@@ -599,7 +604,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Pattern matching supports exact name and `*` wildcard suffix/prefix.
   - `shouldSyncRepo` returns true when `includeRepoPatterns` is omitted or matched, and false when `excludeRepoPatterns` matches.
   - If no mapping matches, return `defaultTeam` or `Unassigned`.
-  - Example config includes `Frontend`, `Backend`, `Platform`, `Data`, and `Unassigned`.
+  - Checked-in `config/team-mapping.example.json` stays a generic placeholder (`Frontend`, `Backend`, `Platform`, `Data`, `Unassigned`). Real team names and `repoPatterns` live in local `config/team-mapping.json` (gitignored).
 - **Releasable**: after this task, discovered repositories can be assigned to teams.
 - **Tests (TDD)** — `tests/config/team-mapping.test.ts`:
   - Unit: `team_mapping_loads_valid_config` — loads valid JSON.
@@ -616,14 +621,14 @@ The task breakdown below is the authoritative test list. This section highlights
 - [ ] **File**: `src/collector/repository-store.ts`
 - **Depends on**: Task 3.3
 - **Description**:
-  - Add `upsertRepositories(db: AppDb, rootPath: string, repositories: RepositoryCandidate[], mapping: TeamMappingConfig): Promise<RepositorySyncSummary>`.
+  - Add `upsertRepositories(db: AppDb, rootPath: string, repositories: RepositoryCandidate[], mapping: TeamMappingConfig, githubSyncOwner: string): Promise<RepositorySyncSummary>`.
   - Upsert by repository path.
   - Store `rootPath` on every repository row.
   - Compute `remoteIdentity` from parsed `owner/repo`.
   - Store scan status:
-    - `ready` when owner/repo are available.
+    - `ready` when owner/repo are available, the owner matches `GITHUB_SYNC_OWNER` (case-insensitive), and team mapping does not exclude the repo.
     - `metadata_incomplete` when remote cannot be parsed.
-    - `excluded` when repository selection config excludes the repo from sync and metrics.
+    - `excluded` when repository selection config excludes the repo from sync and metrics, **or** when owner/repo are available but the parsed owner does not match `GITHUB_SYNC_OWNER`.
   - Update `lastScannedAt` on every scan.
   - Mark previously stored repositories under the provided `rootPath` as `scanStatus: "missing"` and `active: false` when they are absent from the latest scan.
   - Never mark repositories from a different `rootPath` missing.
@@ -637,6 +642,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Integration: `repository_store_prefers_canonical_github_repo_name_for_team_mapping` — remote repo name beats mismatched local folder name when available.
   - Integration: `repository_store_marks_metadata_incomplete` — stores incomplete status.
   - Integration: `repository_store_marks_excluded_repos` — excluded repos are not active metric inputs.
+  - Integration: `repository_store_marks_wrong_github_owner_excluded` — parseable `origin` whose owner is not `GITHUB_SYNC_OWNER` is `excluded` and not synced.
   - Integration: `repository_store_marks_missing_repos_inactive` — stale repos are excluded from active dashboard inputs.
   - Integration: `repository_store_only_marks_missing_within_scan_root` — roots are isolated.
   - Integration: `repository_store_reactivates_rediscovered_repo` — rediscovered repos become active again.
@@ -709,8 +715,8 @@ The task breakdown below is the authoritative test list. This section highlights
     1. Load env.
     2. Load team mapping.
     3. Discover repositories.
-    4. Upsert repositories.
-    5. Sync PR metadata for included repositories with owner/repo using at most `GITHUB_SYNC_CONCURRENCY` concurrent repository syncs. Use `lastPrSyncedAt` as the incremental overlap cursor when available; otherwise use `DASHBOARD_INITIAL_SYNC_FROM` as the fresh-database cutoff.
+    4. Upsert repositories (pass `githubSyncOwner` from env so wrong-org clones are `excluded`).
+    5. Sync PR metadata for repositories in `ready` status with owner/repo using at most `GITHUB_SYNC_CONCURRENCY` concurrent repository syncs. Use `lastPrSyncedAt` as the incremental overlap cursor when available; otherwise use `DASHBOARD_INITIAL_SYNC_FROM` as the fresh-database cutoff.
     6. Record `syncRuns`, `syncErrors`, and sync warnings, including invalid lifecycle rows returned by PR persistence and repository remote-identity changes.
     7. Update `lastPrSyncedAt` only after successful repository PR sync, using the maximum persisted `githubUpdatedAt`.
   - Add CLI entry script used by `npm run collector:refresh`.
@@ -721,6 +727,7 @@ The task breakdown below is the authoritative test list. This section highlights
 - **Tests (TDD)** — `tests/collector/refresh.test.ts`:
   - Integration: `refresh_discovers_and_syncs_repositories` — end-to-end with temp repos and mocked GitHub.
   - Integration: `refresh_skips_excluded_repositories` — excluded repos are not synced.
+  - Integration: `refresh_skips_wrong_github_owner_repositories` — repos whose `origin` owner does not match `GITHUB_SYNC_OWNER` are not synced.
   - Integration: `refresh_uses_initial_sync_from_for_fresh_database` — first sync starts at configured cutoff.
   - Integration: `refresh_respects_github_sync_concurrency` — repository PR sync concurrency is capped.
   - Integration: `refresh_continues_after_repo_error` — records one repo error and continues.

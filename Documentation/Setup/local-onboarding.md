@@ -23,6 +23,7 @@ DATABASE_URL=file:./data/local.db
 TEAM_MAPPING_PATH=./config/team-mapping.json
 GITHUB_API_BASE_URL=https://api.github.com
 GITHUB_TOKEN=
+GITHUB_SYNC_OWNER=gde-mit
 DASHBOARD_DEFAULT_RANGE_WEEKS=8
 DASHBOARD_INITIAL_SYNC_FROM=2026-01-01
 GITHUB_SYNC_CONCURRENCY=2
@@ -32,11 +33,17 @@ GITHUB_SYNC_CONCURRENCY=2
 
 The collector discovers immediate child directories of `DASHBOARD_REPO_ROOT` that contain `.git`.
 
-After discovery, `config/team-mapping.json` decides which discovered repositories are synced:
+### GitHub org filter
+
+`GITHUB_SYNC_OWNER` (default `gde-mit`) is compared to the GitHub **owner** parsed from `git remote get-url origin`. Repositories whose remote owner does not match are **skipped** for PR sync and dashboard metrics (same outcome as excluded-by-config: stored on scan but not active for metrics). Unparseable remotes stay `metadata_incomplete` as today.
+
+### Team mapping file
+
+After discovery and org filter, `config/team-mapping.json` decides which remaining repositories are synced:
 
 - `includeRepoPatterns` limits the synced set. If omitted, every discovered repository is included.
 - `excludeRepoPatterns` removes repositories from sync and metrics.
-- `teams[].repoPatterns` maps repositories to teams.
+- `teams[].repoPatterns` maps repositories to teams (first matching team wins; put narrower patterns before broad ones such as `bd-*`).
 - `defaultTeam` is used when no team pattern matches.
 
 Example:
@@ -47,8 +54,9 @@ Example:
   "excludeRepoPatterns": ["*-archive", "experiment-*"],
   "defaultTeam": "Unassigned",
   "teams": [
-    { "name": "Frontend", "repoPatterns": ["web-*", "*-ui"] },
-    { "name": "Backend", "repoPatterns": ["api-*", "service-*"] }
+    { "name": "Chat", "repoPatterns": ["nexiusai-hermes", "sd-agentic-chatbot"] },
+    { "name": "DPA / Lecke", "repoPatterns": ["sd-dpa", "nexiusai-dpa-*"] },
+    { "name": "Platform", "repoPatterns": ["aws-*", "sd-pe-*"] }
   ]
 }
 ```
@@ -66,6 +74,6 @@ Example:
 
 - A fresh database syncs PRs updated on or after `DASHBOARD_INITIAL_SYNC_FROM`.
 - Later refreshes use the stored GitHub update cursor for incremental sync.
-- Excluded repositories are stored as excluded but are not synced or included in metrics.
+- Repositories excluded by patterns, or skipped because `origin` is not under `GITHUB_SYNC_OWNER`, are stored with excluded semantics and are not synced or included in metrics.
 - The dashboard range stays independent from sync range. The default dashboard range is the last 8 weeks.
 
