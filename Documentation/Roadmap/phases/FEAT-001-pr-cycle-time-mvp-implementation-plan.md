@@ -528,7 +528,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Unit: `env_rejects_invalid_database_url` — rejects non-`postgresql://` / non-`postgres://` URIs when strict validation is enabled.
 
 #### Task 2.2 — Database schema
-- [ ] **File**: `src/db/schema.ts`
+- [x] **File**: `src/db/schema.ts`
 - **Depends on**: Task 2.1
 - **Description**:
   - Define Drizzle **PostgreSQL** tables:
