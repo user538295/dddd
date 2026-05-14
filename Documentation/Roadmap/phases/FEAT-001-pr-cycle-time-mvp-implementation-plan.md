@@ -492,7 +492,7 @@ The task breakdown below is the authoritative test list. This section highlights
 > **Releasable**: after this phase, the app can create and access a local **PostgreSQL** database via Drizzle. **Testing note:** integration tests in later phases assume a disposable Postgres reachable via `DATABASE_URL` (see **Automated tests and CI** in `Documentation/Setup/local-onboarding.md`).
 
 #### Task 2.1 — Environment config loader
-- [ ] **File**: `src/config/env.ts`
+- [x] **File**: `src/config/env.ts`
 - **Depends on**: Task 1.2
 - **Description**:
   - Add `AppEnv` type.
