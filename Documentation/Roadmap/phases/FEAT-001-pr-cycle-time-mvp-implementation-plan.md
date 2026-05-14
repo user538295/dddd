@@ -633,7 +633,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Checkpoint: `npm run test -- tests/config/team-mapping.test.ts`
 
 #### Task 3.4 — Repository persistence
-- [ ] **File**: `src/collector/repository-store.ts`
+- [x] **File**: `src/collector/repository-store.ts`
 - **Depends on**: Task 3.3
 - **Description**:
   - Add `upsertRepositories(db: AppDb, rootPath: string, repositories: RepositoryCandidate[], mapping: TeamMappingConfig, githubSyncOwner: string): Promise<RepositorySyncSummary>`.
