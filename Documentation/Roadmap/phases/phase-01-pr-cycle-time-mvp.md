@@ -39,7 +39,7 @@ Required data:
 ## Implementation Notes
 
 - Use a separate Node collector for filesystem, Git, and GitHub metadata work.
-- Store normalized data locally in SQLite-compatible tables.
+- Store normalized data locally in **PostgreSQL** (Drizzle schema and migrations).
 - Keep the dashboard driven by computed metrics, not static UI slots.
 - Do not add Jira metrics in this phase.
 

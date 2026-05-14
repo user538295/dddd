@@ -38,7 +38,7 @@ The dashboard is used during weekly engineering review to answer:
 - First metric: PR Cycle Time, measured from PR opened to PR merged.
 - Repository discovery from cloned Git repositories.
 - Minimal GitHub metadata sync for PR lifecycle data.
-- Local SQLite-compatible storage.
+- Local **PostgreSQL** storage (same machine as the dashboard; Drizzle ORM).
 - Current MVP UI reference: [PR Cycle Time first increment](../Assets/mockups/03-pr-cycle-time-first-increment.png).
 - Incremental UI rule: show only available computed metrics.
 
@@ -57,6 +57,7 @@ The dashboard is used during weekly engineering review to answer:
 - Start with PR Cycle Time because it is valuable, simple, and does not require Jira workflow cleanup.
 - Use local cloned repos for Git history because there are many repositories and they already exist locally.
 - Use minimal GitHub API access only for PR metadata that cannot be recovered from Git history.
+- Use **PostgreSQL** on the same machine for durable metric storage (Drizzle ORM); SQLite is not a Phase 01 target.
 - Keep the future cloud path open, but do not optimize the first release around cloud deployment.
 
 ## Edge Cases & Constraints

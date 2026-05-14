@@ -47,6 +47,6 @@ Design history:
 
 ## Current Priority
 
-Start with Phase 01. The first release should include repo discovery, PR metadata sync, local storage, and the PR Cycle Time dashboard only.
+Start with Phase 01. The first release should include repo discovery, PR metadata sync, **local PostgreSQL** storage, and the PR Cycle Time dashboard only.
 
 Track implementation status in [Trackable roadmap checklist](trackable-roadmap.md). The detailed next-step file is [Phase 01: PR Cycle Time MVP](phases/phase-01-pr-cycle-time-mvp.md).

@@ -17,6 +17,8 @@ The first release shows one metric only: PR Cycle Time.
 
 ## Local Setup
 
+PostgreSQL runs locally (or in Docker) for application data; see onboarding for `DATABASE_URL`.
+
 - [Local onboarding](Setup/local-onboarding.md)
 - [GitHub token setup](Setup/github-token.md)
 

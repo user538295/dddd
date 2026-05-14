@@ -28,7 +28,7 @@ When this plan is complete, the user can run the app locally, refresh PR metadat
 ### In Scope
 
 - TanStack Start React app scaffold.
-- Local SQLite-compatible database using Drizzle schema and migrations.
+- Local **PostgreSQL** database (runs on the same machine as the app) using Drizzle schema and migrations.
 - Local repository discovery from `/Users/manczg/Documents/work/development`.
 - Repository-to-team mapping config.
 - Minimal GitHub PR metadata sync for PR opened and merged timestamps.
@@ -53,6 +53,7 @@ When this plan is complete, the user can run the app locally, refresh PR metadat
 - [ ] The app can be started locally.
 - [ ] The database schema can be created from migrations.
 - [ ] The collector discovers Git repositories under `/Users/manczg/Documents/work/development`.
+- [ ] Only repositories whose `origin` GitHub owner matches `GITHUB_SYNC_OWNER` are synced and included in metrics.
 - [ ] Repository scan status is stored locally.
 - [ ] Repository-to-team mapping is read from config.
 - [ ] GitHub PR metadata sync stores PR opened and merged timestamps.
@@ -74,20 +75,21 @@ When this plan is complete, the user can run the app locally, refresh PR metadat
 | Acceptance criterion | Task(s) | Primary test(s) / verification |
 | --- | --- | --- |
 | The app can be started locally. | 1.1, 7.1, 7.3 | `renders_app_title`, `dashboard_e2e_local_dev_server_starts`, `dashboard_e2e_local_refresh_flow`, `npm run build` |
-| The database schema can be created from migrations. | 2.2, 2.3 | `db_migrations_create_schema`, migration duplicate constraint tests |
+| The database schema can be created from migrations. | 2.2, 2.3 | `db_migrations_create_schema`, `schema_timestamps_use_timestamptz`, migration duplicate constraint tests |
 | The collector discovers Git repositories under `/Users/manczg/Documents/work/development`. | 3.1, 3.2 | `repo_discovery_finds_git_repositories`, `repo_discovery_ignores_non_repositories` |
+| Only repositories whose `origin` owner matches `GITHUB_SYNC_OWNER` are synced and included in metrics. | 2.1, 3.4, 4.3 | `env_github_sync_owner_is_case_insensitive_default`, `repository_store_marks_wrong_github_owner_excluded`, `repository_store_respects_org_include_and_exclude_together`, `refresh_skips_wrong_github_owner_repositories` |
 | Repository scan status is stored locally. | 3.4 | `repository_store_marks_metadata_incomplete`, `repository_store_marks_missing_repos_inactive`, `repository_store_only_marks_missing_within_scan_root` |
 | Repository-to-team mapping is read from config. | 3.3, 3.4 | `team_mapping_loads_valid_config`, `repository_store_assigns_team` |
 | GitHub PR metadata sync stores PR opened and merged timestamps. | 4.1, 4.2, 4.3 | `github_client_lists_prs`, `github_client_handles_pagination`, `pr_sync_stores_pr_metadata` |
 | PR Cycle Time is computed per merged PR. | 5.1 | `cycle_time_calculates_hours`, `cycle_time_skips_unmerged_prs` |
 | Median PR Cycle Time is computed for the selected range. | 5.2, 5.3 | `median_cycle_time_handles_odd_count`, `dashboard_returns_single_metric_contract` |
 | Previous-period comparison is computed when enough data exists. | 5.2, 5.3 | `dashboard_computes_previous_period_trend`, `dashboard_baseline_pending_with_insufficient_previous_prs`, `dashboard_isolates_previous_period_boundaries` |
-| PR Cycle Time exceptions are computed deterministically. | 5.3 | `exceptions_detect_worsening_team`, `exceptions_detect_long_open_prs`, `exceptions_include_baseline_pending` |
+| PR Cycle Time exceptions are computed deterministically. | 5.3 | `exceptions_detect_worsening_team`, `exceptions_team_worsened_not_emitted_when_baseline_pending`, `exceptions_detect_long_open_prs`, `exceptions_include_baseline_pending`, `exceptions_sort_order_is_deterministic` |
 | Dashboard renders exactly one metric card. | 6.2, 7.1 | `dashboard_renders_single_metric`, `dashboard_does_not_show_future_metrics` |
 | Dashboard shows PR Cycle Time exceptions only. | 6.2 | `dashboard_renders_pr_cycle_time_exceptions_only` |
 | Dashboard shows 8-week PR Cycle Time trend. | 5.2, 6.2 | `weekly_trend_includes_empty_weeks`, `dashboard_renders_8_week_trend_with_empty_weeks` |
-| Dashboard shows team breakdown for PR Cycle Time only. | 5.3, 6.2 | `dashboard_renders_team_breakdown`, `dashboard_renders_unassigned_team` |
-| Dashboard shows data freshness and sync errors. | 4.3, 5.3, 6.2 | `refresh_records_sync_run_status`, `dashboard_shows_data_freshness`, `dashboard_shows_persisted_sync_failed_state` |
+| Dashboard shows team breakdown for PR Cycle Time only. | 5.3, 6.2 | `dashboard_renders_team_breakdown`, `dashboard_renders_unassigned_team`, `dashboard_team_breakdown_reports_longest_open_pr_hours` |
+| Dashboard shows data freshness and sync errors. | 4.3, 5.3, 6.2 | `refresh_records_sync_run_status`, `refresh_status_success_when_zero_ready_repos`, `dashboard_shows_data_freshness`, `dashboard_freshness_reports_repos_scanned_count`, `dashboard_shows_persisted_sync_failed_state` |
 | Empty states are explicit: no merged PRs, baseline pending, no repos, sync failed. | 5.3, 6.2, 6.3 | `dashboard_empty_state_no_merged_prs`, `dashboard_shows_baseline_pending`, `dashboard_empty_state_no_repos`, `dashboard_shows_persisted_sync_failed_state`, `route_shows_refresh_error` |
 | No future metric placeholders are visible. | 6.2, 7.1 | `dashboard_does_not_show_future_metrics`, `dashboard_e2e_local_refresh_flow` |
 | Trackable roadmap checklist links to this implementation plan. | 7.3 | `docs_trackable_roadmap_links_plan` |
@@ -110,7 +112,7 @@ When this plan is complete, the user can run the app locally, refresh PR metadat
 - Manual refresh is enough for v1; scheduled background sync is deferred.
 - Team mapping starts as local config to avoid needing org/team API integration.
 - Cloud deployment is intentionally deferred because local filesystem access is central to v1.
-- SQLite-compatible schema is used locally; later D1/Supabase portability must be reviewed before cloud migration.
+- PostgreSQL is the Phase 01 datastore; moving to managed Postgres (RDS, Supabase, Neon, etc.) is a configuration and ops change, not a metric rewrite—review connection pooling and migrations before production.
 - Draft PRs are included in PR Cycle Time for Phase 01 because the metric is elapsed time from PR opened to PR merged; draft-specific analysis can be added later.
 - Bots are included in Phase 01 unless excluded by repository selection config; individual author analytics are out of scope.
 - `12 PRs missing Jira key` style freshness is implemented as PR title hygiene only; it must not call Jira in Phase 01.
@@ -122,13 +124,14 @@ When this plan is complete, the user can run the app locally, refresh PR metadat
 - Framework: TanStack Start, React, TypeScript.
 - Package manager: npm.
 - Test runner: Vitest for unit/component/integration tests, Playwright for e2e tests.
-- Database library: Drizzle ORM with a SQLite-compatible local database.
+- Database library: Drizzle ORM targeting **PostgreSQL** (local instance).
 - GitHub sync: GitHub REST API, not GraphQL and not `gh` CLI.
 - GitHub auth: `GITHUB_TOKEN` environment variable first; unauthenticated mode may work for public repos but must surface rate/auth errors.
 - GitHub sync concurrency: default `2`, configured by `GITHUB_SYNC_CONCURRENCY`.
 - Team and repository selection config: checked-in example file at `config/team-mapping.example.json`; runtime default path is `./config/team-mapping.json`.
 - Repo discovery rule: scan immediate child directories of `/Users/manczg/Documents/work/development` that contain `.git`; no recursive nested repo discovery in Phase 01.
-- Repo sync inclusion rule: include discovered repositories whose parsed `origin` GitHub **owner** matches `GITHUB_SYNC_OWNER` (default `gde-mit`, case-insensitive), then match `includeRepoPatterns` and do not match `excludeRepoPatterns` in team mapping config. If `includeRepoPatterns` is omitted, include all discovered repositories that pass the org filter by default. Repositories with a parseable remote whose owner does not match, or repositories excluded by team mapping config, are stored with `scanStatus: excluded` and are not synced or included in metrics.
+- Repo sync inclusion rule: include discovered repositories whose parsed `origin` GitHub **owner** matches `GITHUB_SYNC_OWNER` (default `gde-mit`, case-insensitive), then match `includeRepoPatterns` and do not match `excludeRepoPatterns` in team mapping config. If `includeRepoPatterns` is omitted, include all discovered repositories that pass the org filter by default. **Precedence:** if the **repository name used for pattern matching** (`candidate.repo ?? candidate.name`, see Task 3.3) matches both an include and an exclude pattern, **exclude wins** (treat as not included for sync). Repositories with a parseable remote whose owner does not match, or repositories excluded by team mapping config, are stored with `scanStatus: excluded` and are not synced or included in metrics. Repositories with `scanStatus: metadata_incomplete` are not synced and do not contribute PRs to metrics (they may still appear in discovery counts).
+- **PostgreSQL concurrency:** the database server handles concurrent writers; repository PR syncs may upsert in parallel up to `GITHUB_SYNC_CONCURRENCY` as long as each sync uses its own transaction boundaries and errors are isolated per repository. Tune concurrency primarily for **GitHub API rate limits**, not for local DB locking.
 - Initial PR sync cutoff: fresh databases fetch PRs updated on or after `DASHBOARD_INITIAL_SYNC_FROM`; default is January 1 of the current calendar year in the local runtime timezone.
 - Date range: default `Last 8 weeks`; current range is `[now - 8 weeks, now]`; previous range is the immediately preceding 8 weeks.
 - Time-dependent metric functions accept an explicit `now` or `clock` input in tests and server functions so range boundaries are deterministic.
@@ -138,17 +141,18 @@ When this plan is complete, the user can run the app locally, refresh PR metadat
 - Weekly trend contains exactly 8 consecutive 7-day buckets for the default range. Bucket `weekStart` is the local-date ISO string for the bucket start; empty buckets return `medianHours: null`.
 - Repositories missing from the latest scan are marked inactive and excluded from dashboard metric calculations until rediscovered.
 - Exception thresholds:
-  - `team_worsened`: current team median is at least 25% worse than previous period.
-  - `long_open_prs`: team has open PRs older than the current-period team median; suppress this exception when the team current median is `null`.
+  - `team_worsened`: current team median is at least 25% worse than previous period **and** that team’s previous-period baseline is **available** (same conditions as trend: at least 3 merged PRs in the previous period and previous median `> 0`). Do not emit when baseline is pending.
+  - `long_open_prs`: among **active** repositories mapped to the team, there exists an **open** PR (`state === 'open'`) with age `now - openedAt` strictly greater than the team’s **current-period** merged-PR median hours; suppress when the team’s current median is `null`. (PRs opened before the current range are still evaluated—very old open work can legitimately trigger this.)
   - `baseline_pending`: team has current-range merged PRs but fewer than 3 merged PRs in the previous period.
   - Previous-period trend is available only when previous-period merged PR count is at least 3 and previous median is greater than 0; otherwise `trendPercent` is `null` and baseline is pending.
+- Exception **severity** (for UI sort order): `team_worsened` → `warning`; `long_open_prs` → `warning`; `baseline_pending` → `info`. When limiting to 3 exceptions, sort **descending** by severity (`warning` before `info`). Within the same severity, sort **descending** by absolute `trendPercent`, **treating null `trendPercent` as less than any numeric value** (so `long_open_prs`/`baseline_pending` without a trend sort after `team_worsened`). When `trendPercent` ties, sort **alphabetically** by `team` name for stable ordering.
 
 ---
 
 ## Architecture
 
 - App framework: TanStack Start with React and TypeScript.
-- Database: Drizzle ORM with SQLite-compatible schema and migrations.
+- Database: Drizzle ORM with PostgreSQL schema and migrations.
 - Collector: shared Node/TypeScript library with a CLI wrapper. The web runtime may call the library locally; the CLI exists for manual refresh and tests.
 - UI data access: server functions read computed dashboard data from the local database.
 - Source repo root: `/Users/manczg/Documents/work/development`.
@@ -220,14 +224,14 @@ When this plan is complete, the user can run the app locally, refresh PR metadat
 ### Config
 
 - `DASHBOARD_REPO_ROOT`: string, default `/Users/manczg/Documents/work/development`.
-- `DATABASE_URL`: string, default `file:./data/local.db`.
+- `DATABASE_URL`: string, PostgreSQL connection URI (see `.env.example` for shape). **No real credentials in the repo**—each developer copies `.env.example` to `.env` and substitutes values.
 - `TEAM_MAPPING_PATH`: string, default `./config/team-mapping.json`.
 - `GITHUB_TOKEN`: string, optional for authenticated GitHub API calls.
 - `GITHUB_API_BASE_URL`: string, default `https://api.github.com`.
 - `DASHBOARD_DEFAULT_RANGE_WEEKS`: number, default `8`.
 - `DASHBOARD_INITIAL_SYNC_FROM`: ISO date string, optional; default is current-year January 1 in local timezone.
 - `GITHUB_SYNC_CONCURRENCY`: positive integer, default `2`.
-- `GITHUB_SYNC_OWNER`: string, default `gde-mit`; parsed `origin` owner must match for PR sync and metrics.
+- `GITHUB_SYNC_OWNER`: string, default `gde-mit`. This is the GitHub **owner slug** from `GET /repos/{owner}/{repo}` (an organization or a user account), compared case-insensitively to the parsed `origin` owner. The name ends in `_OWNER` because GitHub’s field is `owner`, not because it must be a user.
 
 ### Core Types
 
@@ -277,6 +281,7 @@ export type GitHubPullRequest = {
 }
 
 export type PullRequestRecord = {
+  id: string
   repositoryId: string
   githubNodeId: string
   number: number
@@ -299,6 +304,7 @@ export type PullRequestSyncSummary = {
 }
 
 export type PrCycleTimeResult = {
+  /** Same value as `PullRequestRecord.id`. */
   pullRequestId: string
   cycleTimeHours: number
 }
@@ -375,17 +381,16 @@ export type RefreshSummary = {
 
 1. User clicks `Refresh`.
 2. Server function calls the shared local collector library.
-3. Collector discovers repositories.
-4. Collector parses GitHub owner/repo from remotes.
-5. Collector syncs PR metadata.
-6. Collector stores repository, PR, sync, and error data in SQLite.
-7. Dashboard server function reads computed PR Cycle Time data.
-8. React UI renders only the available PR Cycle Time metric.
+3. Collector discovers immediate child git repositories and reads each `origin` URL (owner/repo parsing happens here as part of discovery output).
+4. Collector upserts repository rows (applies `GITHUB_SYNC_OWNER`, team mapping include/exclude, assigns `scanStatus` / team).
+5. Collector syncs PR metadata **only** for repositories in `ready` status, writing PR rows and sync metadata to **PostgreSQL**.
+6. Dashboard server function reads computed PR Cycle Time data.
+7. React UI renders only the available PR Cycle Time metric.
 
 ### Documentation References
 
 - TanStack Start server functions: https://tanstack.com/start/latest/docs/framework/react/guide/server-functions
-- Drizzle SQLite setup: https://orm.drizzle.team/docs/get-started-sqlite
+- Drizzle PostgreSQL setup: https://orm.drizzle.team/docs/get-started-postgresql
 - Drizzle migrations: https://orm.drizzle.team/docs/migrations
 - GitHub pull requests API: https://docs.github.com/en/rest/pulls/pulls
 
@@ -395,14 +400,19 @@ export type RefreshSummary = {
 
 The task breakdown below is the authoritative test list. This section highlights the main coverage areas.
 
-- **env_defaults_are_loaded** (unit): verifies default local paths and range values.
+- **env_defaults_are_loaded** (unit): verifies default local paths and range values; `DATABASE_URL` must be supplied by test harness.
+- **env_rejects_missing_database_url** (unit): rejects absent `DATABASE_URL` for real `getEnv` calls.
+- **env_rejects_invalid_database_url** (unit): rejects malformed database URIs.
 - **env_rejects_invalid_range** (unit): rejects non-positive range weeks.
 - **team_mapping_loads_valid_config** (unit): maps repo patterns to team names.
 - **team_mapping_rejects_invalid_config** (unit): rejects missing teams or invalid patterns.
 - **repo_discovery_finds_git_repositories** (unit): discovers only directories containing `.git`.
 - **repo_discovery_parses_github_remote** (unit): extracts owner and repo from SSH and HTTPS GitHub remotes.
+- **repository_store_respects_org_include_and_exclude_together** (integration): org allow-list interacts correctly with include/exclude patterns.
+- **env_github_sync_owner_is_case_insensitive_default** (unit): owner comparison is case-insensitive.
 - **repo_discovery_records_unparseable_remote** (unit): keeps repo with null owner/repo and marks metadata incomplete.
-- **db_migrations_create_schema** (integration): applies migrations to a temporary SQLite database.
+- **db_migrations_create_schema** (integration): applies migrations to a **disposable PostgreSQL database** (e.g. Docker ephemeral instance, testcontainers, or a dedicated `*_test` database wiped between runs).
+- **schema_timestamps_use_timestamptz** (unit): PR/repository instants use `timestamptz`.
 - **repository_upsert_is_idempotent** (integration): repeat scans update existing repos rather than duplicating.
 - **github_client_lists_prs** (unit): fetches PR lifecycle data from mocked GitHub responses.
 - **github_client_handles_rate_limit** (unit): returns structured sync error on rate limit.
@@ -413,6 +423,7 @@ The task breakdown below is the authoritative test list. This section highlights
 - **dashboard_baseline_pending_without_previous_data** (unit): trend is absent when baseline is unavailable.
 - **dashboard_computes_previous_period_trend** (unit): trend percentage is correct.
 - **exceptions_detect_worsening_team** (unit): worsening team exception is emitted.
+- **exceptions_sort_order_is_deterministic** (unit): exception ordering matches locked tie-break rules.
 - **dashboard_server_function_returns_serializable_data** (integration): dashboard data can cross server-function boundary.
 - **refresh_server_function_runs_collector** (integration): refresh updates sync status.
 - **dashboard_renders_single_metric** (component): UI shows only PR Cycle Time card.
@@ -478,7 +489,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Checkpoint: `npm run test -- tests/setup/smoke.test.ts`
 
 ### Phase 2 — Configuration and database foundation
-> **Releasable**: after this phase, the app can create and access a local SQLite-compatible database.
+> **Releasable**: after this phase, the app can create and access a local **PostgreSQL** database via Drizzle. **Testing note:** integration tests in later phases assume a disposable Postgres reachable via `DATABASE_URL` (see **Automated tests and CI** in `Documentation/Setup/local-onboarding.md`).
 
 #### Task 2.1 — Environment config loader
 - [ ] **File**: `src/config/env.ts`
@@ -487,9 +498,9 @@ The task breakdown below is the authoritative test list. This section highlights
   - Add `AppEnv` type.
   - Add `getEnv(source?: NodeJS.ProcessEnv): AppEnv`.
   - Add `getDashboardDateRanges(now: Date, weeks: number): DashboardDateRanges`.
-  - Defaults:
+  - Defaults (paths and tuning; **database credentials always come from `.env`**, never hard-coded):
     - `DASHBOARD_REPO_ROOT=/Users/manczg/Documents/work/development`
-    - `DATABASE_URL=file:./data/local.db`
+    - `DATABASE_URL` **must be supplied** via environment for real runs and integration tests (shape: `postgresql://USER:PASSWORD@HOST:PORT/DBNAME`; copy from `.env.example` and replace placeholders).
     - `TEAM_MAPPING_PATH=./config/team-mapping.json`
     - `GITHUB_API_BASE_URL=https://api.github.com`
     - `DASHBOARD_DEFAULT_RANGE_WEEKS=8`
@@ -501,28 +512,31 @@ The task breakdown below is the authoritative test list. This section highlights
   - Throw `ConfigError` when `DASHBOARD_INITIAL_SYNC_FROM` is not a valid ISO date.
   - Throw `ConfigError` when `GITHUB_SYNC_CONCURRENCY` is not a positive integer.
   - Throw `ConfigError` when `GITHUB_SYNC_OWNER` is empty or whitespace-only after trim.
-  - `getEnv` returns validated configuration only; `getDashboardDateRanges` derives current and previous ranges with explicit boundary semantics from a provided `now`.
+  - Throw `ConfigError` when `DATABASE_URL` is missing, not a `postgresql://` or `postgres://` URI, or otherwise unparsable for the chosen driver.
+  - `getEnv` returns validated configuration only; `getDashboardDateRanges` derives current and previous ranges from a provided `now`.
+  - **Range boundaries:** `current.from` is `now - weeks * 7 days` truncated to **start of local calendar day**; `current.to` is `now` truncated to **end of local calendar day** (inclusive instants after truncation). `previous.from`/`previous.to` are the same-length window immediately before `current`, with **`previous.to` equal to the end of the local calendar day immediately before `current.from`**. PR filtering for the previous window still uses **`mergedAt < current.from`** (and `mergedAt >= previous.from`) as in the locked defaults; do **not** substitute `mergedAt <= previous.to` unless you prove equivalence to that half-open boundary.
 - **Releasable**: after this task, every module can read validated runtime config.
 - **Tests (TDD)** — `tests/config/env.test.ts`:
-  - Unit: `env_defaults_are_loaded` — verifies all defaults.
+  - Unit: `env_defaults_are_loaded` — verifies non-secret defaults; **`DATABASE_URL` must be injected in test env** (not asserted as a committed default).
   - Unit: `env_reads_overrides` — verifies custom env values.
   - Unit: `env_rejects_invalid_range` — rejects `0`, negative, and non-number values.
   - Unit: `env_defaults_initial_sync_from_to_current_year_start` — default starts at current-year January 1.
   - Unit: `env_rejects_invalid_initial_sync_from` — rejects malformed dates.
   - Unit: `env_rejects_invalid_github_sync_concurrency` — rejects zero, negative, and non-number values.
   - Unit: `env_rejects_empty_github_sync_owner` — rejects empty `GITHUB_SYNC_OWNER`.
-  - Checkpoint: `npm run test -- tests/config/env.test.ts`
+  - Unit: `env_rejects_missing_database_url` — rejects absent `DATABASE_URL` for non-test `getEnv`.
+  - Unit: `env_rejects_invalid_database_url` — rejects non-`postgresql://` / non-`postgres://` URIs when strict validation is enabled.
 
 #### Task 2.2 — Database schema
 - [ ] **File**: `src/db/schema.ts`
 - **Depends on**: Task 2.1
 - **Description**:
-  - Define Drizzle SQLite tables:
+  - Define Drizzle **PostgreSQL** tables:
     - `repositories`: `id`, `name`, `path`, `rootPath`, `remoteUrl`, `owner`, `repo`, `remoteIdentity`, `team`, `scanStatus`, `active`, `lastScannedAt`, `lastPrSyncedAt`, `createdAt`, `updatedAt`.
     - `pullRequests`: `id`, `repositoryId`, `githubNodeId`, `number`, `title`, `state`, `isDraft`, `openedAt`, `githubUpdatedAt`, `mergedAt`, `url`, `missingJiraKey`, `createdAt`, `updatedAt`.
-    - `syncRuns`: `id`, `kind`, `status`, `startedAt`, `finishedAt`, `message`, `errorCount`.
+    - `syncRuns`: `id`, `kind`, `status`, `startedAt`, `finishedAt`, `message`, `errorCount`. Use `kind = 'collector_refresh'` for rows created by `refreshLocalData` (one row per refresh invocation unless subdivided later).
     - `syncErrors`: `id`, `syncRunId`, `repositoryId`, `source`, `message`, `createdAt`.
-  - Use text timestamps in ISO 8601 format for portability.
+  - Use `timestamptz` (or Drizzle’s `timestamp` mapped to `timestamptz`) for all stored instants so timezone rules stay consistent with GitHub UTC timestamps.
   - `repositories.scanStatus` supports `ready`, `metadata_incomplete`, `excluded`, and `missing`.
   - `repositories.active` is false when a previously stored repository is missing from the latest scan.
   - `repositories.rootPath` scopes missing-repository detection to the configured scan root.
@@ -533,8 +547,7 @@ The task breakdown below is the authoritative test list. This section highlights
 - **Tests (TDD)** — `tests/db/schema.test.ts`:
   - Unit: `schema_exports_required_tables` — verifies all table objects exist.
   - Unit: `schema_defines_unique_repository_path` — verifies repository path uniqueness metadata.
-  - Unit: `schema_defines_unique_pr_per_repository_number` — verifies PR uniqueness metadata.
-  - Checkpoint: `npm run test -- tests/db/schema.test.ts`
+  - Unit: `schema_timestamps_use_timestamptz` — migration-generated columns for PR and repository instants use `timestamptz` (not plain `timestamp` without time zone).
 
 #### Task 2.3 — Database client and migrations
 - [ ] **File**: `src/db/client.ts`, `drizzle.config.ts`, `drizzle/0000_initial.sql`
@@ -542,12 +555,12 @@ The task breakdown below is the authoritative test list. This section highlights
 - **Description**:
   - Add `createDb(databaseUrl?: string): AppDb`.
   - Add `runMigrations(databaseUrl?: string): Promise<void>` if migration execution is not handled only by CLI.
-  - Use Drizzle with a SQLite-compatible local driver.
-  - Ensure local `data/` directory is created by runtime scripts, not committed database files.
+  - Use Drizzle with the **`postgres.js` driver** (Phase 01 default; matches Drizzle Postgres docs).
+  - Document local Postgres bootstrap in `Documentation/Setup/local-onboarding.md` (create database role + database, set `DATABASE_URL`); do not commit secrets or production connection strings.
   - Migration creates all Phase 01 tables.
 - **Releasable**: after this task, a local database can be initialized.
 - **Tests (TDD)** — `tests/db/migrations.test.ts`:
-  - Integration: `db_migrations_create_schema` — applies migrations to a temporary database and verifies tables.
+  - Integration: `db_migrations_create_schema` — applies migrations to a temporary **PostgreSQL** database and verifies tables.
   - Integration: `db_client_executes_query` — runs a basic select.
   - Integration: `db_constraints_reject_duplicate_repository_path` — verifies migration-level uniqueness.
   - Integration: `db_constraints_reject_duplicate_pr_number_per_repository` — verifies migration-level uniqueness.
@@ -600,9 +613,9 @@ The task breakdown below is the authoritative test list. This section highlights
   - Add `loadTeamMapping(path?: string): Promise<TeamMappingConfig>`.
   - Add `resolveTeamForRepo(repoName: string, config: TeamMappingConfig): string`.
   - Add `shouldSyncRepo(repoName: string, config: TeamMappingConfig): boolean`.
-  - Repository persistence calls `resolveTeamForRepo(candidate.repo ?? candidate.name, config)` so parsed GitHub repo names win over local folder names.
-  - Pattern matching supports exact name and `*` wildcard suffix/prefix.
-  - `shouldSyncRepo` returns true when `includeRepoPatterns` is omitted or matched, and false when `excludeRepoPatterns` matches.
+  - **`repoName` contract:** both `resolveTeamForRepo` and `shouldSyncRepo` receive the **same** canonical string as persistence: `candidate.repo ?? candidate.name` (GitHub repo name when `owner`/`repo` parse; otherwise local folder name).
+  - Pattern matching supports exact name and `*` **only** as a single leading wildcard (`*-suffix`) or trailing wildcard (`prefix-*`); no mid-string `*` in Phase 01 unless explicitly added later. **Exception:** the literal pattern `*` alone in `includeRepoPatterns` means “match all repository names” (same effect as omitting includes).
+  - `shouldSyncRepo` returns true when `includeRepoPatterns` is omitted or matched, and false when `excludeRepoPatterns` matches (**exclude overrides include** when both match).
   - If no mapping matches, return `defaultTeam` or `Unassigned`.
   - Checked-in `config/team-mapping.example.json` stays a generic placeholder (`Frontend`, `Backend`, `Platform`, `Data`, `Unassigned`). Real team names and `repoPatterns` live in local `config/team-mapping.json` (gitignored).
 - **Releasable**: after this task, discovered repositories can be assigned to teams.
@@ -615,6 +628,8 @@ The task breakdown below is the authoritative test list. This section highlights
   - Unit: `should_sync_repo_defaults_to_include` — omitted include list includes discovered repos.
   - Unit: `should_sync_repo_respects_include_patterns` — only matching repos sync when includes exist.
   - Unit: `should_sync_repo_respects_exclude_patterns` — excludes override includes.
+  - Unit: `should_sync_repo_exclude_overrides_include_when_both_match` — same repo name matches include and exclude patterns.
+  - Unit: `team_mapping_rejects_invalid_patterns` — rejects empty pattern strings and patterns containing more than one `*`.
   - Checkpoint: `npm run test -- tests/config/team-mapping.test.ts`
 
 #### Task 3.4 — Repository persistence
@@ -643,6 +658,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Integration: `repository_store_marks_metadata_incomplete` — stores incomplete status.
   - Integration: `repository_store_marks_excluded_repos` — excluded repos are not active metric inputs.
   - Integration: `repository_store_marks_wrong_github_owner_excluded` — parseable `origin` whose owner is not `GITHUB_SYNC_OWNER` is `excluded` and not synced.
+  - Integration: `repository_store_respects_org_include_and_exclude_together` — owner matches `GITHUB_SYNC_OWNER` but include/exclude mapping still yields correct `ready` vs `excluded`.
   - Integration: `repository_store_marks_missing_repos_inactive` — stale repos are excluded from active dashboard inputs.
   - Integration: `repository_store_only_marks_missing_within_scan_root` — roots are isolated.
   - Integration: `repository_store_reactivates_rediscovered_repo` — rediscovered repos become active again.
@@ -723,6 +739,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Add the `collector:refresh` npm script now that the backing entry file exists.
   - Continue syncing other repositories when one repo fails.
   - Return counts: `reposScanned`, `reposIncluded`, `reposExcluded`, `prsSeen`, `prsMerged`, `prsMissingJiraKey`, `syncErrors`, `syncWarnings`.
+  - **`RefreshSummary.status`**: `failed` if refresh aborts before finishing orchestration **or** every attempted repository PR sync records an error (zero successes). `partial` if at least one repository succeeds and at least one `syncErrors` row is written. `success` if the run completes with **no** `syncErrors` rows. **Vacuous case:** when **zero** repositories are in `ready` status (nothing to sync) but orchestration finished without fatal errors, treat as **`success`** if `syncErrors` is zero, else `failed` if a global failure was recorded.
 - **Releasable**: after this task, local refresh can populate the database.
 - **Tests (TDD)** — `tests/collector/refresh.test.ts`:
   - Integration: `refresh_discovers_and_syncs_repositories` — end-to-end with temp repos and mocked GitHub.
@@ -736,6 +753,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Integration: `refresh_updates_last_pr_synced_at_after_success` — incremental cursor advances only on success.
   - Integration: `refresh_uses_max_persisted_github_updated_at_as_cursor` — cursor is not wall-clock sync finish time.
   - Integration: `refresh_records_remote_identity_change_warning` — changed owner/repo for same path is visible as a sync warning.
+  - Integration: `refresh_status_success_when_zero_ready_repos` — no PR work still yields `success` when no errors.
   - Checkpoint: `npm run test -- tests/collector/refresh.test.ts`
 
 ### Phase 5 — PR Cycle Time calculations
@@ -747,8 +765,8 @@ The task breakdown below is the authoritative test list. This section highlights
 - **Description**:
   - Add `calculatePrCycleTime(pr: PullRequestRecord): PrCycleTimeResult | null`.
   - Return null when `mergedAt` is null.
-  - Calculate `cycleTimeHours` as `mergedAt - openedAt`.
-  - If `mergedAt < openedAt`, return null; refresh records the lifecycle anomaly as a sync error before metrics run.
+  - Return null when `mergedAt < openedAt` (lifecycle anomaly is already counted at sync time).
+  - On success, set `pullRequestId` to `pr.id` and `cycleTimeHours` to `(mergedAt - openedAt)` in hours.
 - **Releasable**: after this task, a single PR cycle time can be computed.
 - **Tests (TDD)** — `tests/metrics/pr-cycle-time.test.ts`:
   - Unit: `cycle_time_calculates_hours` — computes opened-to-merged hours.
@@ -762,9 +780,10 @@ The task breakdown below is the authoritative test list. This section highlights
 - **Description**:
   - Add `median(values: number[]): number | null`.
   - Add `getWeeklyMedianTrend(prs: PullRequestRecord[], range: DateRange): WeeklyMedianPoint[]`.
+  - Ignore PRs with `mergedAt == null` when building weekly medians (open PRs are out of scope for this helper).
   - Use merged date to bucket PRs into weeks.
   - Include empty weeks with `medianHours: null`.
-  - Generate exactly `range.weeks` 7-day buckets. For the default range this is exactly 8 buckets.
+  - Generate exactly `range.weeks` 7-day buckets. For the default range this is exactly 8 buckets. **Bucket assignment:** bucket intervals are half-open `[weekStart, weekStart + 7d)` in local time; a merged PR belongs to the bucket whose interval contains `mergedAt` (instant). PRs exactly equal to `weekStart + 7d` fall into the next bucket.
   - Include PRs in the current range when `mergedAt >= range.from` and `mergedAt <= range.to`.
   - Include PRs in the previous range when `mergedAt >= previous.from` and `mergedAt < range.from`.
   - Exclude future PRs where `mergedAt > range.to`.
@@ -793,13 +812,15 @@ The task breakdown below is the authoritative test list. This section highlights
   - Query active repositories and PRs for the current and previous ranges.
   - Use `mergedAt` for current/previous merged PR metrics and weekly trend buckets.
   - Use `openedAt` and injected `now` for open PR age calculations.
-  - Read latest `syncRuns`/`syncErrors` to expose persisted `latestSyncStatus` as `success`, `partial`, `failed`, or `never_run`.
+  - Read latest `syncRuns`/`syncErrors` to expose persisted `latestSyncStatus` as `success`, `partial`, `failed`, or `never_run` (use the row with greatest `finishedAt`; ties broken by greatest `id`).
   - Compute overall median, previous trend, weekly trend, and team breakdown.
-  - Compute exceptions:
-    - `team_worsened`: team trend worsened by at least 25%.
-    - `long_open_prs`: team has open PRs older than its current median; suppressed when the team median is `null`.
-    - `baseline_pending`: team has current-range merged PRs but lacks at least 3 previous-period merged PRs.
-  - Limit exceptions to 3, sorted by severity.
+  - **`freshness.reposScanned`:** count repositories returned in the latest discovery pass for the configured `repoRoot` (all non-`missing` scan statuses), so operators see how many folders were inspected versus how many contribute metrics.
+  - **`teamBreakdown.longestOpenPrHours`:** for each team, among **open** PRs (`state === 'open'`) on **active** repositories mapped to that team, compute `max(now - openedAt)` in hours; `null` when there are no open PRs.
+  - Compute exceptions (must match locked **Exception thresholds** and **severity** rules above):
+    - `team_worsened` only when previous baseline is available (≥3 previous merged PRs and previous median `> 0`) **and** current median regresses by ≥25%.
+    - `long_open_prs` per the locked definition (open PR age vs current median; suppress when current median is `null`).
+    - `baseline_pending` when the team has current merged PRs but `< 3` merged PRs in the previous window.
+  - Limit exceptions to 3 using the locked sort order (severity, then absolute `trendPercent` with nulls last, then team name).
   - Return serializable strings and numbers only.
 - **Releasable**: after this task, the dashboard data contract is complete.
 - **Tests (TDD)** — `tests/metrics/pr-cycle-time-dashboard.test.ts`:
@@ -811,10 +832,14 @@ The task breakdown below is the authoritative test list. This section highlights
   - Unit: `team_breakdown_computes_per_team_previous_trends` — team trends use team-specific previous medians.
   - Unit: `team_breakdown_groups_unassigned_repositories` — unmapped repos appear under `Unassigned`.
   - Unit: `exceptions_detect_worsening_team` — emits worsening exception.
+  - Unit: `exceptions_team_worsened_not_emitted_when_baseline_pending` — suppresses worsening when previous baseline is pending.
+  - Unit: `exceptions_sort_order_is_deterministic` — severity, `trendPercent` nulls-last, then team name tie-break.
   - Unit: `exceptions_detect_long_open_prs` — emits stale open PR exception.
   - Unit: `exceptions_suppress_long_open_prs_without_team_median` — no null-threshold exception.
   - Unit: `exceptions_include_baseline_pending` — emits baseline pending exception.
   - Unit: `dashboard_excludes_inactive_repositories` — missing repositories do not affect metrics.
+  - Unit: `dashboard_freshness_reports_repos_scanned_count` — `freshness.reposScanned` matches latest discovery non-missing rows.
+  - Unit: `dashboard_team_breakdown_reports_longest_open_pr_hours` — `longestOpenPrHours` matches max open PR age for the team.
   - Unit: `exceptions_are_limited_to_three` — caps exception list.
   - Checkpoint: `npm run test -- tests/metrics/pr-cycle-time-dashboard.test.ts`
 
@@ -896,7 +921,7 @@ The task breakdown below is the authoritative test list. This section highlights
 - [ ] **File**: `tests/e2e/pr-cycle-time-dashboard.spec.ts`
 - **Depends on**: Task 6.3
 - **Description**:
-  - Start app against a seeded temporary database.
+  - Start the app pointed at a **seeded disposable PostgreSQL database** (same strategies as integration tests: local docker compose service, testcontainers, or a throwaway `*_e2e` database torn down after the run).
   - Configure Playwright `webServer` to start the app with `npm run dev`.
   - Visit dashboard.
   - Verify one metric card is visible.

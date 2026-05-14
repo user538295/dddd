@@ -16,8 +16,8 @@ Add quality signals and prepare a cloud path after the local dashboard is useful
 
 ## Cloud Readiness
 
-- Keep local storage portable.
-- Avoid SQLite-only assumptions where practical.
+- Keep PostgreSQL deployment portable (local instance today, managed Postgres later).
+- Avoid database-specific assumptions that would block moving from laptop Postgres to managed Postgres.
 - Keep collector separate from the web runtime.
 - Treat Cloudflare deployment as a later packaging and sync problem, not a blocker for local MVP.
 

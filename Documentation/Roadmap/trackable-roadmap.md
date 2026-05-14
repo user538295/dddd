@@ -43,7 +43,7 @@ Implementation plan: [FEAT-001-pr-cycle-time-mvp-implementation-plan.md](phases/
 Goal: release the first local dashboard with one metric: PR Cycle Time.
 
 - [ ] Initialize the local app project.
-- [ ] Add local database setup with SQLite-compatible schema.
+- [ ] Add local database setup with **PostgreSQL** and Drizzle schema/migrations.
 - [ ] Add repository discovery for `/Users/manczg/Documents/work/development`.
 - [ ] Store discovered repositories and scan status.
 - [ ] Add repository-to-team mapping config.
