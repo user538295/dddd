@@ -31,8 +31,6 @@ The default `DATABASE_URL` in `.env.example` matches Compose (`postgresql://dddd
 
 4. Stop Postgres when finished: **`./scripts/dev-down.sh`** (or `npm run stack:down`). The container stops; data stays in the Docker volume until you remove it (see script output for the volume name).
 
-Vitest loads `.env` from the repo root when `DATABASE_URL` is not already set in the shell, so `npm run test` can run database integration tests after the steps above.
-
 ### Manual install (Homebrew, Postgres.app, or your own server)
 
 1. Install PostgreSQL (e.g. [Homebrew](https://formulae.brew.sh/formula/postgresql@16), [Postgres.app](https://postgresapp.com/), or official [Docker image](https://hub.docker.com/_/postgres)).
@@ -52,7 +50,9 @@ Vitest loads `.env` from the repo root when `DATABASE_URL` is not already set in
 
 ## Automated tests and CI
 
-Vitest integration tests and Playwright e2e expect a **running PostgreSQL** instance. Easiest local option: `./scripts/dev-up.sh` (or `npm run stack:up`), then `npm run test`. Alternatives: **testcontainers**, a disposable `*_test` database, or CI services that provide Postgres. Do not point tests at production databases.
+Vitest integration tests read **`DATABASE_URL` from the process environment** only (the config does not inject it from `.env`). Export it in your shell, use a tool that loads `.env` into the environment, or run via **`./scripts/dev-up.sh`** / CI where the variable is set. Easiest local option: start Postgres (`npm run db:up` or `./scripts/dev-up.sh`), then `export DATABASE_URL=...` matching `.env.example` before `npm run test`.
+
+Playwright (`npm run test:e2e`) reads **`DATABASE_URL` from the environment**; `playwright.config.ts` also loads `.env` into `process.env` when `DATABASE_URL` is unset, matching local dev expectations. The e2e harness sets **`DASHBOARD_E2E_REFRESH_STUB=1`** (see `scripts/e2e-web-server.sh`) so the refresh button exercises the server path without calling GitHub; you still need Postgres for the dashboard loader.
 
 ## Files
 

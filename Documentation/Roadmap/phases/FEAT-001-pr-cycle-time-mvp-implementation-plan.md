@@ -865,7 +865,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Checkpoint: `npm run test -- tests/server/dashboard-functions.test.ts`
 
 #### Task 6.2 — Dashboard UI components
-- [ ] **File**: `src/components/dashboard/PrCycleTimeDashboard.tsx`
+- [x] **File**: `src/components/dashboard/PrCycleTimeDashboard.tsx`
 - **Depends on**: Task 6.1
 - **Description**:
   - Render:
@@ -899,7 +899,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Checkpoint: `npm run test -- tests/components/pr-cycle-time-dashboard.test.tsx`
 
 #### Task 6.3 — Route integration
-- [ ] **File**: `src/routes/index.tsx`
+- [x] **File**: `src/routes/index.tsx`
 - **Depends on**: Task 6.2
 - **Description**:
   - Load dashboard data through `getDashboardData`.
@@ -918,7 +918,7 @@ The task breakdown below is the authoritative test list. This section highlights
 > **Releasable**: after this phase, Phase 01 is ready to mark complete in the trackable roadmap.
 
 #### Task 7.1 — Local e2e smoke test
-- [ ] **File**: `tests/e2e/pr-cycle-time-dashboard.spec.ts`
+- [x] **File**: `tests/e2e/pr-cycle-time-dashboard.spec.ts`
 - **Depends on**: Task 6.3
 - **Description**:
   - Start the app pointed at a **seeded disposable PostgreSQL database** (same strategies as integration tests: local docker compose service, testcontainers, or a throwaway `*_e2e` database torn down after the run).
@@ -935,7 +935,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Checkpoint: `npm run test:e2e -- tests/e2e/pr-cycle-time-dashboard.spec.ts`
 
 #### Task 7.2 — Final verification gate
-- [ ] **File**: `package.json`, verification docs if needed
+- [x] **File**: `package.json`, verification docs if needed
 - **Depends on**: Task 7.1
 - **Description**:
   - Run the complete automated verification gate before marking Phase 01 complete.
@@ -954,7 +954,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Checkpoint: `npm run test:e2e`
 
 #### Task 7.3 — Documentation status update
-- [ ] **File**: `Documentation/Roadmap/trackable-roadmap.md`, `Documentation/Roadmap/phases/phase-01-pr-cycle-time-mvp.md`, `Documentation/README.md`
+- [x] **File**: `Documentation/Roadmap/trackable-roadmap.md`, `Documentation/Roadmap/phases/phase-01-pr-cycle-time-mvp.md`, `Documentation/README.md`
 - **Depends on**: Task 7.2
 - **Description**:
   - Preserve existing links from Phase 01, trackable roadmap, and README to this implementation plan.

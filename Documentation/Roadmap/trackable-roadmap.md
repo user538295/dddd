@@ -1,7 +1,7 @@
 # Trackable Roadmap Checklist
 
 Status: Active
-Last updated: 2026-05-13
+Last updated: 2026-05-14
 
 ## How To Use This File
 
@@ -15,11 +15,11 @@ This is the execution checklist for humans and LLM agents.
 
 ## Current Next Step
 
-Next step: **Phase 01: PR Cycle Time MVP**
+Next step: **Phase 02: First Review Time**
 
-Detailed file: [phase-01-pr-cycle-time-mvp.md](phases/phase-01-pr-cycle-time-mvp.md)
+Detailed file: [phase-02-first-review-time.md](phases/phase-02-first-review-time.md)
 
-Implementation plan: [FEAT-001-pr-cycle-time-mvp-implementation-plan.md](phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md)
+Phase 01 (complete): [phase-01-pr-cycle-time-mvp.md](phases/phase-01-pr-cycle-time-mvp.md) — implementation plan [FEAT-001-pr-cycle-time-mvp-implementation-plan.md](phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md).
 
 Current UI reference: [PR Cycle Time first increment](../Assets/mockups/03-pr-cycle-time-first-increment.png)
 
@@ -42,22 +42,22 @@ Implementation plan: [FEAT-001-pr-cycle-time-mvp-implementation-plan.md](phases/
 
 Goal: release the first local dashboard with one metric: PR Cycle Time.
 
-- [ ] Initialize the local app project.
-- [ ] Add local database setup with **PostgreSQL** and Drizzle schema/migrations.
-- [ ] Add repository discovery for `/Users/manczg/Documents/work/development`.
-- [ ] Store discovered repositories and scan status.
-- [ ] Add repository-to-team mapping config.
-- [ ] Add GitHub PR metadata sync for opened and merged timestamps.
-- [ ] Store PR lifecycle metadata locally.
-- [ ] Compute PR Cycle Time per merged PR.
-- [ ] Compute median PR Cycle Time for the selected range.
-- [ ] Compute previous-period comparison when enough data exists.
-- [ ] Compute PR Cycle Time exceptions.
-- [ ] Build the MVP dashboard using only PR Cycle Time.
-- [ ] Show data freshness: repos scanned, PR metadata sync time, missing Jira keys, sync errors.
-- [ ] Handle empty states: no merged PRs, missing baseline, sync errors.
-- [ ] Verify the dashboard renders no future metric cards.
-- [ ] Verify the current MVP mockup is still aligned or update the mockup/doc if the UI intentionally changes.
+- [x] Initialize the local app project.
+- [x] Add local database setup with **PostgreSQL** and Drizzle schema/migrations.
+- [x] Add repository discovery for `/Users/manczg/Documents/work/development`.
+- [x] Store discovered repositories and scan status.
+- [x] Add repository-to-team mapping config.
+- [x] Add GitHub PR metadata sync for opened and merged timestamps.
+- [x] Store PR lifecycle metadata locally.
+- [x] Compute PR Cycle Time per merged PR.
+- [x] Compute median PR Cycle Time for the selected range.
+- [x] Compute previous-period comparison when enough data exists.
+- [x] Compute PR Cycle Time exceptions.
+- [x] Build the MVP dashboard using only PR Cycle Time.
+- [x] Show data freshness: repos scanned, PR metadata sync time, missing Jira keys, sync errors.
+- [x] Handle empty states: no merged PRs, missing baseline, sync errors.
+- [x] Verify the dashboard renders no future metric cards.
+- [x] Verify the current MVP mockup is still aligned or update the mockup/doc if the UI intentionally changes.
 
 ## Phase 02: First Review Time
 

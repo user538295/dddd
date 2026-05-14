@@ -69,8 +69,38 @@ async function runWithConcurrency<T>(items: T[], limit: number, worker: (item: T
  * repositories, and records sync run / error rows.
  */
 export async function refreshLocalData(input?: Partial<AppEnv>): Promise<RefreshSummary> {
-  const env = getEnv(buildProcessEnvFromPartial(input))
+  const mergedEnv = buildProcessEnvFromPartial(input)
+  const env = getEnv(mergedEnv)
   const db = createDb(env.databaseUrl)
+
+  if (mergedEnv.DASHBOARD_E2E_REFRESH_STUB?.trim() === '1') {
+    try {
+      const startedAt = new Date()
+      const newRunId = randomUUID()
+      await db.insert(syncRuns).values({
+        id: newRunId,
+        kind: 'collector_refresh',
+        status: 'success',
+        startedAt,
+        finishedAt: new Date(),
+        message: 'e2e_stub',
+        errorCount: 0,
+      })
+      return {
+        reposScanned: 0,
+        reposIncluded: 0,
+        reposExcluded: 0,
+        prsSeen: 0,
+        prsMerged: 0,
+        prsMissingJiraKey: 0,
+        syncErrors: 0,
+        syncWarnings: 0,
+        status: 'success',
+      }
+    } finally {
+      await db.$client.end({ timeout: 5 })
+    }
+  }
 
   const summary: RefreshSummary = {
     reposScanned: 0,

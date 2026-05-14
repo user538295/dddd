@@ -9,10 +9,10 @@ import { createDb, runMigrations } from '~/db/client'
 import { pullRequests, repositories } from '~/db/schema'
 import {
   getDashboardData,
-  loadDashboardPayload,
   parseDashboardWeeksInput,
   refreshLocalDataFn,
 } from '~/server/dashboard-functions'
+import { loadDashboardPayload } from '~/server/load-dashboard-payload'
 
 describe('dashboard server exports', () => {
   it('exports_createServerFn_wrappers', () => {

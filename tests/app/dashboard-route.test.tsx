@@ -1,5 +1,5 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router'
 
 import type { PrCycleTimeDashboard } from '~/metrics/pr-cycle-time-dashboard'
@@ -8,8 +8,8 @@ import { routeTree } from '../../src/routeTree.gen'
 const mockDashboard: PrCycleTimeDashboard = {
   range: { from: '2026-01-01T00:00:00.000Z', to: '2026-05-14T23:59:59.999Z', weeks: 8 },
   metric: {
-    medianHours: null,
-    mergedPrCount: 0,
+    medianHours: 12,
+    mergedPrCount: 2,
     trendPercent: null,
     baselineStatus: 'pending',
   },
@@ -20,7 +20,7 @@ const mockDashboard: PrCycleTimeDashboard = {
   })),
   teamBreakdown: [],
   freshness: {
-    reposScanned: 0,
+    reposScanned: 1,
     prMetadataSyncedAt: null,
     prsMissingJiraKey: 0,
     syncErrors: 0,
@@ -61,18 +61,59 @@ vi.mock('@tanstack/react-start', async (importOriginal) => {
   }
 })
 
-describe('app shell', () => {
+describe('dashboard route', () => {
   afterEach(() => {
     cleanup()
   })
 
-  it('renders_app_title', async () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useServerFnMock.mockImplementation((_fn: unknown) => {
+      void _fn
+      return () => Promise.resolve({ ok: true, summary: refreshSummary })
+    })
+  })
+
+  it('route_renders_dashboard_data', async () => {
     const history = createMemoryHistory({ initialEntries: ['/'] })
     const router = createRouter({ routeTree, history })
     await router.load()
     render(<RouterProvider router={router} />)
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Engineering Decision Dashboard' })).toBeInTheDocument()
+      expect(screen.getByTestId('median-pr-cycle-time')).toHaveTextContent('12h')
+    })
+  })
+
+  it('refresh_button_updates_dashboard', async () => {
+    const history = createMemoryHistory({ initialEntries: ['/'] })
+    const router = createRouter({ routeTree, history })
+    const invalidate = vi.spyOn(router, 'invalidate').mockResolvedValue(undefined as never)
+    await router.load()
+    render(<RouterProvider router={router} />)
+    await screen.findByRole('button', { name: 'Refresh' })
+    screen.getByRole('button', { name: 'Refresh' }).click()
+    await waitFor(() => {
+      expect(invalidate).toHaveBeenCalled()
+    })
+  })
+
+  it('route_shows_refresh_error', async () => {
+    useServerFnMock.mockImplementationOnce((_fn: unknown) => {
+      void _fn
+      return () =>
+        Promise.resolve({
+          ok: false,
+          message: 'GitHub rate limit exceeded',
+        } as never)
+    })
+    const history = createMemoryHistory({ initialEntries: ['/'] })
+    const router = createRouter({ routeTree, history })
+    await router.load()
+    render(<RouterProvider router={router} />)
+    await screen.findByRole('button', { name: 'Refresh' })
+    screen.getByRole('button', { name: 'Refresh' }).click()
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('GitHub rate limit exceeded')
     })
   })
 })

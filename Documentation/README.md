@@ -14,10 +14,11 @@ This directory contains the product brief, roadmap, phase plan, setup guides, an
 The app is a **local** web application. After [installing Node.js](https://nodejs.org/) (20 or newer), from the **repository root** (one level above this folder):
 
 1. Install dependencies: `npm install`
-2. Start the UI: `npm run dev`
-3. Open **http://localhost:3000** in a browser.
+2. Copy `.env.example` to `.env`, set **`DATABASE_URL`**, and follow [Local onboarding](Setup/local-onboarding.md) for Postgres and optional GitHub sync.
+3. Start the UI: `npm run dev`
+4. Open **http://localhost:3000** in a browser.
 
-The Phase 01 build may show the **Engineering Decision Dashboard** shell first; PR Cycle Time metrics, refresh, and database-backed behavior are added as [FEAT-001](Roadmap/phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md) tasks are completed. When you use real repositories and GitHub sync, follow **[Local onboarding](Setup/local-onboarding.md)** for PostgreSQL, `.env`, and `config/team-mapping.json`.
+The home route renders the **PR Cycle Time** dashboard (median, exceptions, 8-week trend, team breakdown, freshness, refresh). Run `npm run verify:phase01` before release-style checks (lint, typecheck, build, coverage, Playwright).
 
 ## For developers
 
@@ -26,7 +27,7 @@ The Phase 01 build may show the **Engineering Decision Dashboard** shell first; 
 - **[Scripts and CLI commands](Setup/scripts.md)** — `dev-up` / `dev-down`, migrations, `collector:refresh`, and `db:import-github`.
 - **[GitHub token setup](Setup/github-token.md)** — authenticated GitHub API access.
 
-Implementation work is tracked in **[FEAT-001 — PR Cycle Time MVP](Roadmap/phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md)** (task list and test names).
+Implementation work and task-level tests are tracked in **[FEAT-001 — PR Cycle Time MVP](Roadmap/phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md)** (task list and test names).
 
 ## Current MVP
 
@@ -36,7 +37,9 @@ The first release shows one metric only: PR Cycle Time.
 
 ## Next Step
 
-Current next step: [Phase 01: PR Cycle Time MVP](Roadmap/phases/phase-01-pr-cycle-time-mvp.md).
+Current next step: [Phase 02: First Review Time](Roadmap/phases/phase-02-first-review-time.md).
+
+Completed phase: [Phase 01: PR Cycle Time MVP](Roadmap/phases/phase-01-pr-cycle-time-mvp.md).
 
 Detailed implementation plan: [FEAT-001 — PR Cycle Time MVP](Roadmap/phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md).
 

@@ -1,7 +1,7 @@
 # Phase 01: PR Cycle Time MVP
 
-Status: Draft
-Last updated: 2026-05-13
+Status: Implemented (local MVP)
+Last updated: 2026-05-14
 
 Implementation plan: [FEAT-001 — PR Cycle Time MVP](FEAT-001-pr-cycle-time-mvp-implementation-plan.md)
 
@@ -43,7 +43,25 @@ Required data:
 - Keep the dashboard driven by computed metrics, not static UI slots.
 - Do not add Jira metrics in this phase.
 
-## Acceptance Criteria
+## Acceptance criteria checklist
+
+Verified by **FEAT-001** Task 7.2 (`npm run verify:phase01`).
+
+- [x] The app scans cloned repositories.
+- [x] The app syncs PR lifecycle metadata.
+- [x] The app computes median PR Cycle Time for the selected range.
+- [x] The app compares against the previous range when enough data exists.
+- [x] The dashboard renders exactly one metric.
+- [x] Missing baseline shows `Baseline pending`.
+- [x] No future metric cards are visible.
+
+## Mockup alignment
+
+**Mostly aligned** with [03-pr-cycle-time-first-increment.png](../../Assets/mockups/03-pr-cycle-time-first-increment.png): header, single median card, exceptions, 8-week trend, team table, and freshness strip match the intent. The mockup implies an explicit range control; the MVP shows a fixed **Last 8 weeks** label until range selection is scheduled outside Phase 01.
+
+## Acceptance Criteria (reference)
+
+The checklist above is the tracked completion state; the bullets here are unchanged product intent:
 
 - The app scans cloned repositories.
 - The app syncs PR lifecycle metadata.

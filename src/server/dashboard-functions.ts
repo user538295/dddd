@@ -1,9 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 
-import { refreshLocalData, type RefreshSummary } from '~/collector/refresh'
-import { getEnv } from '~/config/env'
-import { createDb } from '~/db/client'
-import { getPrCycleTimeDashboard, type PrCycleTimeDashboard } from '~/metrics/pr-cycle-time-dashboard'
+import type { RefreshSummary } from '~/collector/refresh'
 
 export function parseDashboardWeeksInput(raw: unknown): { weeks?: number } {
   if (raw === undefined || raw === null) {
@@ -22,20 +19,12 @@ export function parseDashboardWeeksInput(raw: unknown): { weeks?: number } {
   return { weeks: data.weeks }
 }
 
-export async function loadDashboardPayload(weeks?: number, now?: Date): Promise<PrCycleTimeDashboard> {
-  const env = getEnv()
-  const db = createDb(env.databaseUrl)
-  try {
-    const w = weeks ?? env.defaultRangeWeeks
-    return await getPrCycleTimeDashboard({ db, weeks: w, now })
-  } finally {
-    await db.$client.end({ timeout: 5 })
-  }
-}
+export type { PrCycleTimeDashboard } from '~/metrics/pr-cycle-time-dashboard'
 
 export const getDashboardData = createServerFn({ method: 'GET' })
   .inputValidator((raw: unknown) => parseDashboardWeeksInput(raw ?? {}))
-  .handler(async ({ data }): Promise<PrCycleTimeDashboard> => {
+  .handler(async ({ data }) => {
+    const { loadDashboardPayload } = await import('~/server/load-dashboard-payload')
     return loadDashboardPayload(data.weeks)
   })
 
@@ -46,6 +35,7 @@ export type RefreshLocalDataResult =
 export const refreshLocalDataFn = createServerFn({ method: 'POST' }).handler(
   async (): Promise<RefreshLocalDataResult> => {
     try {
+      const { refreshLocalData } = await import('~/collector/refresh')
       const summary = await refreshLocalData()
       return { ok: true, summary }
     } catch (e) {

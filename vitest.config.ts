@@ -7,10 +7,7 @@ import { defineConfig } from 'vitest/config'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig(({ mode }) => {
-  const fromFiles = loadEnv(mode, __dirname, '')
-  if (process.env.DATABASE_URL === undefined && fromFiles.DATABASE_URL) {
-    process.env.DATABASE_URL = fromFiles.DATABASE_URL
-  }
+  loadEnv(mode, __dirname, '')
 
   return {
     plugins: [react()],
@@ -22,6 +19,7 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'jsdom',
       setupFiles: ['./tests/setup.ts'],
+      exclude: ['**/node_modules/**', '**/dist/**', 'tests/e2e/**'],
       coverage: {
         provider: 'v8',
         include: ['src/**/*.{ts,tsx}'],

@@ -399,4 +399,19 @@ describe.skipIf(!hasDatabaseUrl)('refresh', () => {
       await rm(root, { recursive: true, force: true })
     }
   })
+
+  it('refresh_e2e_stub_writes_finished_sync_run', async () => {
+    vi.stubEnv('DASHBOARD_E2E_REFRESH_STUB', '1')
+    try {
+      const summary = await refreshLocalData({ databaseUrl: databaseUrl! })
+      expect(summary.status).toBe('success')
+      expect(summary.reposScanned).toBe(0)
+      const stubRows = await db.select().from(syncRuns).where(eq(syncRuns.message, 'e2e_stub'))
+      expect(stubRows.length).toBeGreaterThanOrEqual(1)
+      expect(stubRows[0]!.finishedAt).not.toBeNull()
+    } finally {
+      await db.delete(syncRuns).where(eq(syncRuns.message, 'e2e_stub'))
+      vi.unstubAllEnvs()
+    }
+  })
 })
