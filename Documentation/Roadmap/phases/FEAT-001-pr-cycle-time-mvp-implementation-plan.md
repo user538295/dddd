@@ -606,7 +606,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Checkpoint: `npm run test -- tests/collector/repo-discovery.test.ts`
 
 #### Task 3.3 — Team mapping config
-- [ ] **File**: `src/config/team-mapping.ts`, `config/team-mapping.example.json`
+- [x] **File**: `src/config/team-mapping.ts`, `config/team-mapping.example.json`
 - **Depends on**: Task 3.2
 - **Description**:
   - Add `TeamMappingConfig` type with `teams: Array<{ name: string; repoPatterns: string[] }>`, optional `defaultTeam`, optional `includeRepoPatterns`, and optional `excludeRepoPatterns`.
