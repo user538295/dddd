@@ -805,7 +805,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Checkpoint: `npm run test -- tests/metrics/pr-cycle-time-summary.test.ts`
 
 #### Task 5.3 — Team breakdown and exceptions
-- [ ] **File**: `src/metrics/pr-cycle-time-dashboard.ts`
+- [x] **File**: `src/metrics/pr-cycle-time-dashboard.ts`
 - **Depends on**: Task 5.2
 - **Description**:
   - Add `getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput): Promise<PrCycleTimeDashboard>`.
