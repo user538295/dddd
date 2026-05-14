@@ -570,7 +570,7 @@ The task breakdown below is the authoritative test list. This section highlights
 > **Releasable**: after this phase, the collector can scan local repositories and persist their team assignment.
 
 #### Task 3.1 — GitHub remote parser
-- [ ] **File**: `src/collector/github-remote.ts`
+- [x] **File**: `src/collector/github-remote.ts`
 - **Depends on**: Task 1.2
 - **Description**:
   - Add `parseGitHubRemote(remoteUrl: string): { owner: string; repo: string } | null`.
