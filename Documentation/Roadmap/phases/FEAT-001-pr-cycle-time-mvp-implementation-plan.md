@@ -550,7 +550,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Unit: `schema_timestamps_use_timestamptz` — migration-generated columns for PR and repository instants use `timestamptz` (not plain `timestamp` without time zone).
 
 #### Task 2.3 — Database client and migrations
-- [ ] **File**: `src/db/client.ts`, `drizzle.config.ts`, `drizzle/0000_initial.sql`
+- [x] **File**: `src/db/client.ts`, `drizzle.config.ts`, `drizzle/0000_initial.sql`
 - **Depends on**: Task 2.2
 - **Description**:
   - Add `createDb(databaseUrl?: string): AppDb`.

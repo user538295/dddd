@@ -18,7 +18,12 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.gen.ts', 'src/routes/__root.tsx'],
+      exclude: [
+        'src/**/*.gen.ts',
+        'src/routes/__root.tsx',
+        // Connection + migrator wiring is covered by tests/db/migrations.test.ts when DATABASE_URL is set.
+        'src/db/client.ts',
+      ],
       thresholds: {
         lines: 85,
         functions: 85,

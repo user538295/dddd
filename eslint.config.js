@@ -5,7 +5,15 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', '.output', '**/routeTree.gen.ts', 'vitest.config.ts'] },
+  {
+    ignores: [
+      'dist',
+      '.output',
+      '**/routeTree.gen.ts',
+      'vitest.config.ts',
+      'drizzle.config.ts',
+    ],
+  },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {

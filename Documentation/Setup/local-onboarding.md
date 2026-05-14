@@ -22,12 +22,19 @@ The current Phase 01 scaffold may start **without** `.env` for UI-only work. **P
 Phase 01 stores dashboard and sync data in **PostgreSQL** on your machine (or in Docker exposing port 5432 to localhost).
 
 1. Install PostgreSQL (e.g. [Homebrew](https://formulae.brew.sh/formula/postgresql@16), [Postgres.app](https://postgresapp.com/), or official [Docker image](https://hub.docker.com/_/postgres)).
-2. Create a database for this project, for example `dddd_dev`.
+2. Create a database for this project, for example `dddd_dev`. If you need a dedicated application user, create a login role (`CREATE ROLE ... LOGIN PASSWORD '...'`) and grant it `CONNECT` on the database (and ownership or table privileges as needed for migrations).
 3. Ensure the DB user can **connect** to that database (`CONNECT`) and run migrations and app queries—typically `CREATE` on the database (if creating tables as owner), plus `SELECT`, `INSERT`, `UPDATE`, `DELETE` on application tables (exact `GRANT`s depend on whether migrations use the same role as the app; for solo local dev, making the user **owner** of the database is acceptable).
 4. Set `DATABASE_URL` in `.env` to a standard URI, for example:
    `postgresql://USER:PASSWORD@localhost:5432/dddd_dev`
+5. Apply database migrations once the URI is set (creates Phase 01 tables and enums):
 
-Use TLS and managed hosts when you deploy later; for local dev, `localhost` without SSL is typical.
+   ```bash
+   npm run db:migrate
+   ```
+
+   This uses `drizzle.config.ts` and SQL under `drizzle/`. The same migrations run in integration tests via `runMigrations` in application code.
+
+6. Use TLS and managed hosts when you deploy later; for local dev, `localhost` without SSL is typical.
 
 ## Automated tests and CI
 
