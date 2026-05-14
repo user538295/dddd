@@ -19,7 +19,19 @@ The current Phase 01 scaffold may start **without** `.env` for UI-only work. **P
 
 ## PostgreSQL (required)
 
-Phase 01 stores dashboard and sync data in **PostgreSQL** on your machine (or in Docker exposing port 5432 to localhost).
+Phase 01 stores dashboard and sync data in **PostgreSQL** on your machine (or in Docker).
+
+### Quick path: Docker Compose (recommended)
+
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or another engine with Compose v2).
+2. From the repository root: `npm run db:up` — starts Postgres **16** on host port **54332**, creates database `dddd_dev`, and waits until the server is healthy.
+3. Copy `.env.example` to `.env` if you do not have one yet. The default `DATABASE_URL` in `.env.example` matches the Compose service (`postgresql://dddd:dddd_local_dev@127.0.0.1:54332/dddd_dev`). **Use a different password if you expose this port beyond localhost.**
+4. Run migrations: `npm run db:migrate`
+5. Stop the database when finished: `npm run db:down` (removes the container; data stays in the named volume `dddd_pgdata` until you `docker volume rm` it).
+
+Vitest loads `.env` from the repo root when `DATABASE_URL` is not already set in the shell, so `npm run test` can run database integration tests after the steps above.
+
+### Manual install (Homebrew, Postgres.app, or your own server)
 
 1. Install PostgreSQL (e.g. [Homebrew](https://formulae.brew.sh/formula/postgresql@16), [Postgres.app](https://postgresapp.com/), or official [Docker image](https://hub.docker.com/_/postgres)).
 2. Create a database for this project, for example `dddd_dev`. If you need a dedicated application user, create a login role (`CREATE ROLE ... LOGIN PASSWORD '...'`) and grant it `CONNECT` on the database (and ownership or table privileges as needed for migrations).
@@ -38,12 +50,13 @@ Phase 01 stores dashboard and sync data in **PostgreSQL** on your machine (or in
 
 ## Automated tests and CI
 
-Vitest integration tests and Playwright e2e expect a **running PostgreSQL** instance. Set `DATABASE_URL` in the environment (or `.env.test`) to a disposable database—commonly **testcontainers**, a **Docker Compose** `postgres` service on `localhost`, or a dedicated `*_test` database wiped between runs. Do not point tests at production databases.
+Vitest integration tests and Playwright e2e expect a **running PostgreSQL** instance. Easiest local option: `npm run db:up`, then ensure `.env` contains `DATABASE_URL` (Vitest merges `.env` when the variable is unset in the shell). Alternatives: **testcontainers**, a disposable `*_test` database, or CI services that provide Postgres. Do not point tests at production databases.
 
 ## Files
 
 - `.env.example` is the tracked template with default values.
 - `.env` is the local editable file and is gitignored.
+- `docker-compose.yml` defines the optional local Postgres service used by `npm run db:up`.
 - `config/team-mapping.example.json` is the tracked repository/team selection template.
 - `config/team-mapping.json` is the local editable config and is gitignored.
 - `data/` may hold optional local exports or scratch files; the **database server** holds Postgres data, not files under `data/` by default.
@@ -52,7 +65,7 @@ Vitest integration tests and Playwright e2e expect a **running PostgreSQL** inst
 
 ```env
 DASHBOARD_REPO_ROOT=/Users/manczg/Documents/work/development
-DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/dddd_dev
+DATABASE_URL=postgresql://dddd:dddd_local_dev@127.0.0.1:54332/dddd_dev
 TEAM_MAPPING_PATH=./config/team-mapping.json
 GITHUB_API_BASE_URL=https://api.github.com
 GITHUB_TOKEN=

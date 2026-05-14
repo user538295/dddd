@@ -1,35 +1,43 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
+import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '~': path.resolve(__dirname, './src'),
-    },
-  },
-  test: {
-    environment: 'jsdom',
-    setupFiles: ['./tests/setup.ts'],
-    coverage: {
-      provider: 'v8',
-      include: ['src/**/*.{ts,tsx}'],
-      exclude: [
-        'src/**/*.gen.ts',
-        'src/routes/__root.tsx',
-        // Connection + migrator wiring is covered by tests/db/migrations.test.ts when DATABASE_URL is set.
-        'src/db/client.ts',
-      ],
-      thresholds: {
-        lines: 85,
-        functions: 85,
-        branches: 85,
-        statements: 85,
+export default defineConfig(({ mode }) => {
+  const fromFiles = loadEnv(mode, __dirname, '')
+  if (process.env.DATABASE_URL === undefined && fromFiles.DATABASE_URL) {
+    process.env.DATABASE_URL = fromFiles.DATABASE_URL
+  }
+
+  return {
+    plugins: [react()],
+    resolve: {
+      alias: {
+        '~': path.resolve(__dirname, './src'),
       },
     },
-  },
+    test: {
+      environment: 'jsdom',
+      setupFiles: ['./tests/setup.ts'],
+      coverage: {
+        provider: 'v8',
+        include: ['src/**/*.{ts,tsx}'],
+        exclude: [
+          'src/**/*.gen.ts',
+          'src/routes/__root.tsx',
+          // Connection + migrator wiring is covered by tests/db/migrations.test.ts when DATABASE_URL is set.
+          'src/db/client.ts',
+        ],
+        thresholds: {
+          lines: 85,
+          functions: 85,
+          branches: 85,
+          statements: 85,
+        },
+      },
+    },
+  }
 })

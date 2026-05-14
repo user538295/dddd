@@ -1,0 +1,25 @@
+# Local PostgreSQL for Phase 01 (development and integration tests).
+# Not for production. Default credentials match .env.example when using Docker.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dddd-postgres
+    environment:
+      POSTGRES_USER: dddd
+      POSTGRES_PASSWORD: dddd_local_dev
+      POSTGRES_DB: dddd_dev
+    ports:
+      # Host 54332 avoids clashing with a Postgres install on 5432.
+      - '54332:5432'
+    volumes:
+      - dddd_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dddd -d dddd_dev']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 3s
+
+volumes:
+  dddd_pgdata:
