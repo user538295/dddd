@@ -13,7 +13,7 @@ The dashboard runs as a **TanStack Start** app on **Vite** (dev server default *
 
 1. Install [Node.js](https://nodejs.org/) 20 or newer and clone this repository.
 2. From the repository root: `npm install`, then `npm run dev`.
-3. For day-to-day engineering commands (tests, lint, build), see **[Developer guide](../Development/README.md)**.
+3. For day-to-day engineering commands (tests, lint, build), see **[Developer guide](../Development/README.md)**. For stack, migrations, and sync CLIs, see **[Scripts and CLI commands](scripts.md)**.
 
 The current Phase 01 scaffold may start **without** `.env` for UI-only work. **PostgreSQL** and `.env` (see below) are required once database migrations, the collector, and server functions are in use.
 
@@ -60,6 +60,7 @@ Vitest integration tests and Playwright e2e expect a **running PostgreSQL** inst
 - `.env` is the local editable file and is gitignored.
 - `docker-compose.yml` defines the optional local Postgres service used by `npm run db:up` and **`./scripts/dev-up.sh`**.
 - **`scripts/dev-up.sh`** / **`scripts/dev-down.sh`** — bring the local DB stack up or down (see [PostgreSQL](#postgresql-required)).
+- **[Scripts and CLI commands](scripts.md)** — `npm run` wrappers, `collector:refresh`, and `db:import-github`.
 - `config/team-mapping.example.json` is the tracked repository/team selection template.
 - `config/team-mapping.json` is the local editable config and is gitignored.
 - `data/` may hold optional local exports or scratch files; the **database server** holds Postgres data, not files under `data/` by default.

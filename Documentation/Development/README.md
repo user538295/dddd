@@ -53,8 +53,10 @@ The current app shell does not require `.env` to start the dev server; database 
 | `npm run db:up` | Start local Postgres via Docker Compose (`--wait` until healthy). |
 | `npm run db:down` | Stop the Compose Postgres service (named volume keeps data). |
 | `npm run db:migrate` | Apply SQL migrations from `drizzle/` (requires `DATABASE_URL`). |
+| `npm run collector:refresh` | Run the collector: scan `DASHBOARD_REPO_ROOT`, upsert repos, sync PRs from GitHub for eligible clones. |
+| `npm run db:import-github` | Import or update PRs for explicit `owner/repo` slugs without local clones (see [Scripts guide](../Setup/scripts.md)). |
 
-Collector and other CLI scripts are added in later FEAT-001 tasks; see the implementation plan for checkpoints.
+For behaviour, environment variables, and when to use refresh vs GitHub import, see **[Scripts and CLI commands](../Setup/scripts.md)**.
 
 ## Testing conventions
 

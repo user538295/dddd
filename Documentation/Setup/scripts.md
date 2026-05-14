@@ -1,0 +1,114 @@
+# Scripts and CLI commands
+
+Status: Draft  
+Last updated: 2026-05-14
+
+## Purpose
+
+This page describes **shell scripts** under `scripts/` and **`npm` scripts** that operate the local stack, database migrations, and data collection. Run all commands from the **repository root** unless noted otherwise.
+
+Prerequisites for database and GitHub commands are covered in **[Local onboarding](local-onboarding.md)** and **[GitHub token setup](github-token.md)**.
+
+## Shell scripts
+
+| Script | Command | What it does |
+| ------ | ------- | ------------ |
+| Local stack bootstrap | `./scripts/dev-up.sh` | Same as `npm run stack:up`: runs `npm install`, creates `.env` from `.env.example` if missing, sources `.env`, starts Postgres via Docker Compose (`--wait` until healthy), runs `npm run db:migrate`. Does **not** start the Vite dev server. |
+| Stop Compose Postgres | `./scripts/dev-down.sh` | Same as `npm run stack:down`: runs `docker compose down`. The named volume keeps database data until you remove it manually (see script output). |
+
+Requirements: **Docker** with **Compose v2** for the stack scripts. On failure, the scripts print a short error to stderr and exit non-zero.
+
+## npm scripts (stack and database)
+
+| Script | What it does |
+| ------ | ------------ |
+| `npm run stack:up` | Runs `./scripts/dev-up.sh`. |
+| `npm run stack:down` | Runs `./scripts/dev-down.sh`. |
+| `npm run db:up` | Starts only the Compose Postgres service (`docker compose up -d --wait`). Does not install deps or migrate. |
+| `npm run db:down` | Stops the Compose stack (`docker compose down`). |
+| `npm run db:migrate` | Applies SQL migrations from `drizzle/` using Drizzle Kit. Requires a valid **`DATABASE_URL`** in the environment (typically loaded from `.env`). |
+
+## npm scripts (data sync)
+
+### `npm run collector:refresh`
+
+Runs `tsx scripts/refresh.ts`, which calls **`refreshLocalData`** in application code.
+
+- **Discovers** git repositories: immediate child directories of **`DASHBOARD_REPO_ROOT`** that contain `.git`.
+- **Upserts** repository rows and applies **`GITHUB_SYNC_OWNER`**, **`config/team-mapping.json`** include/exclude rules, and team assignment.
+- **Syncs** pull requests from the GitHub API only for repositories in **`ready`** status that match the configured org and mapping.
+
+Use this for day-to-day syncing from your **local clone layout**.
+
+Output: JSON **`RefreshSummary`** to stdout. Exit code **1** if the run status is **`failed`**, otherwise **0**.
+
+### `npm run db:import-github`
+
+Runs `tsx scripts/import-github-repos.ts`, which calls **`importGitHubRepositories`** with explicit **`owner/repo`** slugs (no local clones required for those repos).
+
+**Examples:**
+
+```bash
+npm run db:import-github -- octocat/Hello-World my-org/my-service
+npm run db:import-github -- --repo org/repo-a --repo org/repo-b
+npm run db:import-github -- --help
+```
+
+**Environment** (same variables as the collector; usually set in `.env`):
+
+| Variable | Role |
+| -------- | ---- |
+| `DATABASE_URL` | Required. Must be a **`postgresql://`** or **`postgres://`** URI (see local onboarding). |
+| `GITHUB_TOKEN` | Optional for public repositories; recommended for rate limits and private repos. |
+| `GITHUB_API_BASE_URL` | Optional; default `https://api.github.com`. |
+| `DASHBOARD_INITIAL_SYNC_FROM` | Optional; lower bound for the **first** full PR fetch for a repository row that has never synced PRs. |
+| `GITHUB_SYNC_CONCURRENCY` | Optional; default `2`. |
+| `TEAM_MAPPING_PATH` | Optional; default `./config/team-mapping.json` — used only to assign **`team`** on imported rows. Explicit imports are **not** filtered out by include/exclude patterns. |
+
+**Behaviour vs `collector:refresh`:**
+
+- Imported repositories are stored with synthetic paths under a virtual root **`__github_import__`** (for example path `__github_import__/owner/repo`). The refresh job only syncs PRs for rows whose **`root_path`** equals **`DASHBOARD_REPO_ROOT`**, so import rows are **not** updated when you run `collector:refresh`.
+- To refresh PR data for import rows, run **`db:import-github`** again for the same slugs.
+
+Output: JSON summary with `reposTouched`, `prsSeen`, `prsMerged`, `prsOpen`, and `errors`. Exit code **1** if any repository sync failed (`errors` non-empty).
+
+## Quick reference
+
+| Goal | Command |
+| ---- | ------- |
+| First-time local DB + migrations | `./scripts/dev-up.sh` or `npm run stack:up` |
+| Stop local Compose Postgres | `./scripts/dev-down.sh` or `npm run stack:down` |
+| Apply migrations only | `npm run db:migrate` (with `DATABASE_URL` set) |
+| Sync from clones under `DASHBOARD_REPO_ROOT` | `npm run collector:refresh` |
+| Load or update PRs for explicit GitHub repos | `npm run db:import-github -- owner/repo [...]` |
+
+## Database backup and restore (Docker Compose Postgres)
+
+To **save** the current `dddd_dev` database as a portable archive (custom `pg_dump` format), from the repo root with the default Compose credentials:
+
+```bash
+mkdir -p data/pg-backups
+docker exec -e PGPASSWORD=dddd_local_dev dddd-postgres \
+  pg_dump -h 127.0.0.1 -U dddd -d dddd_dev -Fc --no-owner --no-acl \
+  -f /tmp/dddd_dev_snapshot.dump
+docker cp dddd-postgres:/tmp/dddd_dev_snapshot.dump data/pg-backups/dddd_dev_github_sample.dump
+```
+
+`data/pg-backups/*.dump` is gitignored so dumps are not committed.
+
+To **restore** into an empty database (destructive: drops and recreates objects in the target DB). Ensure Postgres is up (`npm run db:up`) and point `PGPASSWORD` at your `POSTGRES_PASSWORD` from `docker-compose.yml`:
+
+```bash
+# Replace the file name if you use a different dump.
+docker cp data/pg-backups/dddd_dev_github_sample.dump dddd-postgres:/tmp/restore.dump
+docker exec -e PGPASSWORD=dddd_local_dev dddd-postgres \
+  pg_restore -h 127.0.0.1 -U dddd -d dddd_dev --clean --if-exists --no-owner --no-acl /tmp/restore.dump
+```
+
+If restore warns about existing connections, stop the app and retry, or use a fresh database name and update `DATABASE_URL` in `.env` to match.
+
+## Related documentation
+
+- [Local onboarding](local-onboarding.md) — PostgreSQL, `.env`, team mapping, repository layout.
+- [GitHub token setup](github-token.md).
+- [Developer guide](../Development/README.md) — full `npm` script list for dev, test, and build.

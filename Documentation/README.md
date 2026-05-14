@@ -23,6 +23,7 @@ The Phase 01 build may show the **Engineering Decision Dashboard** shell first; 
 
 - **[Developer guide](Development/README.md)** — stack, `npm` scripts, tests, and where code lives.
 - **[Local onboarding](Setup/local-onboarding.md)** — Postgres, env vars, team mapping, and first real sync checklist.
+- **[Scripts and CLI commands](Setup/scripts.md)** — `dev-up` / `dev-down`, migrations, `collector:refresh`, and `db:import-github`.
 - **[GitHub token setup](Setup/github-token.md)** — authenticated GitHub API access.
 
 Implementation work is tracked in **[FEAT-001 — PR Cycle Time MVP](Roadmap/phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md)** (task list and test names).
