@@ -6,6 +6,7 @@ dist/
 .tanstack/
 .vite/
 .cache
+.tmp/
 coverage/
 playwright-report/
 test-results/

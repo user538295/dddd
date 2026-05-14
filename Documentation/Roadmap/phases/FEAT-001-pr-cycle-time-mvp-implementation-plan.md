@@ -588,7 +588,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Checkpoint: `npm run test -- tests/collector/github-remote.test.ts`
 
 #### Task 3.2 — Repository discovery
-- [ ] **File**: `src/collector/repo-discovery.ts`
+- [x] **File**: `src/collector/repo-discovery.ts`, `src/collector/git-remote-url.ts`
 - **Depends on**: Task 3.1
 - **Description**:
   - Add `discoverRepositories(rootPath: string): Promise<RepositoryCandidate[]>`.
