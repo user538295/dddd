@@ -723,7 +723,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Checkpoint: `npm run test -- tests/collector/pull-request-store.test.ts`
 
 #### Task 4.3 — Refresh collector orchestration
-- [ ] **File**: `src/collector/refresh.ts`, `scripts/refresh.ts`
+- [x] **File**: `src/collector/refresh.ts`, `scripts/refresh.ts`
 - **Depends on**: Task 4.2
 - **Description**:
   - Add `refreshLocalData(input?: Partial<AppEnv>): Promise<RefreshSummary>`.

@@ -136,6 +136,7 @@ describe.skipIf(!hasDatabaseUrl)('pull-request-store integration', () => {
     ])
 
     expect(summary.invalidLifecycle).toBe(1)
+    expect(summary.invalidLifecyclePullNumbers).toEqual([4])
     expect(summary.seen).toBe(1)
     expect(summary.merged).toBe(0)
 

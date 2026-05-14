@@ -12,6 +12,8 @@ export type PullRequestSyncSummary = {
   open: number
   missingJiraKey: number
   invalidLifecycle: number
+  /** PR numbers skipped due to `mergedAt < openedAt` (for sync error rows). */
+  invalidLifecyclePullNumbers: number[]
 }
 
 function missingJiraKeyForTitle(title: string): boolean {
@@ -43,6 +45,7 @@ export async function upsertPullRequests(
     open: 0,
     missingJiraKey: 0,
     invalidLifecycle: 0,
+    invalidLifecyclePullNumbers: [],
   }
 
   const now = new Date()
@@ -53,6 +56,7 @@ export async function upsertPullRequests(
 
       if (pr.mergedAt !== null && pr.mergedAt.getTime() < pr.openedAt.getTime()) {
         summary.invalidLifecycle += 1
+        summary.invalidLifecyclePullNumbers.push(pr.number)
         continue
       }
 

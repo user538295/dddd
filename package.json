@@ -13,6 +13,7 @@
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:migrate": "drizzle-kit migrate",
+    "collector:refresh": "tsx scripts/refresh.ts",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },
@@ -42,6 +43,7 @@
     "jsdom": "^26.1.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.31.0",
+    "tsx": "^4.19.4",
     "vite": "^8.0.12",
     "vitest": "^3.1.2"
   }
