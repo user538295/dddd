@@ -698,7 +698,7 @@ The task breakdown below is the authoritative test list. This section highlights
   - Checkpoint: `npm run test -- tests/collector/github-client.test.ts`
 
 #### Task 4.2 — Pull request persistence
-- [ ] **File**: `src/collector/pull-request-store.ts`
+- [x] **File**: `src/collector/pull-request-store.ts`
 - **Depends on**: Task 4.1
 - **Description**:
   - Add `upsertPullRequests(db: AppDb, repositoryId: string, prs: GitHubPullRequest[]): Promise<PullRequestSyncSummary>`.
