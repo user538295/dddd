@@ -847,7 +847,7 @@ The task breakdown below is the authoritative test list. This section highlights
 > **Releasable**: after this phase, the MVP dashboard is usable locally.
 
 #### Task 6.1 — Dashboard server functions
-- [ ] **File**: `src/server/dashboard-functions.ts`
+- [x] **File**: `src/server/dashboard-functions.ts`
 - **Depends on**: Task 5.3
 - **Description**:
   - Add `getDashboardData` using TanStack Start `createServerFn({ method: 'GET' })`.
