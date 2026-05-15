@@ -35,6 +35,18 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
   exit 1
 fi
 
+# Phase 01 uses PostgreSQL; older local .env files may still point at SQLite.
+if [[ "${DATABASE_URL}" == file:* ]] || [[ "${DATABASE_URL}" == sqlite:* ]]; then
+  pg_url='postgresql://dddd:dddd_local_dev@127.0.0.1:54332/dddd_dev'
+  echo "==> upgrading stale DATABASE_URL in .env (PostgreSQL via Docker Compose)"
+  if [[ "$(uname)" == Darwin ]]; then
+    sed -i '' "s|^DATABASE_URL=.*|DATABASE_URL=${pg_url}|" .env
+  else
+    sed -i "s|^DATABASE_URL=.*|DATABASE_URL=${pg_url}|" .env
+  fi
+  export DATABASE_URL="${pg_url}"
+fi
+
 echo "==> docker compose up (Postgres, wait for healthy)"
 docker compose up -d --wait
 

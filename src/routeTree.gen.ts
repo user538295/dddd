@@ -10,33 +10,89 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SourcesSyncErrorsRouteImport } from './routes/sources/sync-errors'
+import { Route as SourcesSyncRouteImport } from './routes/sources/sync'
+import { Route as SourcesReposRouteImport } from './routes/sources/repos'
+import { Route as SourcesMergedPrsRouteImport } from './routes/sources/merged-prs'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SourcesSyncErrorsRoute = SourcesSyncErrorsRouteImport.update({
+  id: '/sources/sync-errors',
+  path: '/sources/sync-errors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SourcesSyncRoute = SourcesSyncRouteImport.update({
+  id: '/sources/sync',
+  path: '/sources/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SourcesReposRoute = SourcesReposRouteImport.update({
+  id: '/sources/repos',
+  path: '/sources/repos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SourcesMergedPrsRoute = SourcesMergedPrsRouteImport.update({
+  id: '/sources/merged-prs',
+  path: '/sources/merged-prs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/sources/merged-prs': typeof SourcesMergedPrsRoute
+  '/sources/repos': typeof SourcesReposRoute
+  '/sources/sync': typeof SourcesSyncRoute
+  '/sources/sync-errors': typeof SourcesSyncErrorsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/sources/merged-prs': typeof SourcesMergedPrsRoute
+  '/sources/repos': typeof SourcesReposRoute
+  '/sources/sync': typeof SourcesSyncRoute
+  '/sources/sync-errors': typeof SourcesSyncErrorsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/sources/merged-prs': typeof SourcesMergedPrsRoute
+  '/sources/repos': typeof SourcesReposRoute
+  '/sources/sync': typeof SourcesSyncRoute
+  '/sources/sync-errors': typeof SourcesSyncErrorsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/sources/merged-prs'
+    | '/sources/repos'
+    | '/sources/sync'
+    | '/sources/sync-errors'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/sources/merged-prs'
+    | '/sources/repos'
+    | '/sources/sync'
+    | '/sources/sync-errors'
+  id:
+    | '__root__'
+    | '/'
+    | '/sources/merged-prs'
+    | '/sources/repos'
+    | '/sources/sync'
+    | '/sources/sync-errors'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SourcesMergedPrsRoute: typeof SourcesMergedPrsRoute
+  SourcesReposRoute: typeof SourcesReposRoute
+  SourcesSyncRoute: typeof SourcesSyncRoute
+  SourcesSyncErrorsRoute: typeof SourcesSyncErrorsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +104,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sources/sync-errors': {
+      id: '/sources/sync-errors'
+      path: '/sources/sync-errors'
+      fullPath: '/sources/sync-errors'
+      preLoaderRoute: typeof SourcesSyncErrorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sources/sync': {
+      id: '/sources/sync'
+      path: '/sources/sync'
+      fullPath: '/sources/sync'
+      preLoaderRoute: typeof SourcesSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sources/repos': {
+      id: '/sources/repos'
+      path: '/sources/repos'
+      fullPath: '/sources/repos'
+      preLoaderRoute: typeof SourcesReposRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sources/merged-prs': {
+      id: '/sources/merged-prs'
+      path: '/sources/merged-prs'
+      fullPath: '/sources/merged-prs'
+      preLoaderRoute: typeof SourcesMergedPrsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SourcesMergedPrsRoute: SourcesMergedPrsRoute,
+  SourcesReposRoute: SourcesReposRoute,
+  SourcesSyncRoute: SourcesSyncRoute,
+  SourcesSyncErrorsRoute: SourcesSyncErrorsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

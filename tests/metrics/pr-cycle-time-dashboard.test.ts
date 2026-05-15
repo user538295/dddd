@@ -243,6 +243,34 @@ describe.skipIf(!hasDatabaseUrl)('pr-cycle-time-dashboard', () => {
     const d = await getPrCycleTimeDashboard({ db, now, weeks: 8 })
     const row = d.teamBreakdown.find((t) => t.team === 'Alpha')
     expect(row?.trendPercent).toBe(-50)
+    expect(row?.previousMedianHours).toBe(40)
+    expect(row?.medianHours).toBe(20)
+  })
+
+  it('dashboard_exposes_previous_period_medians', async () => {
+    const now = new Date('2026-05-14T15:00:00.000')
+    const { current, previous } = getDashboardDateRanges(now, 8)
+    const rid = await insertRepo()
+    const prevMerged = new Date(previous.from.getTime() + 2 * 24 * 60 * 60 * 1000)
+    const curMerged = new Date(current.from.getTime() + 2 * 24 * 60 * 60 * 1000)
+    for (let i = 0; i < 3; i += 1) {
+      await insertPr(rid, {
+        number: 50 + i,
+        openedAt: new Date(prevMerged.getTime() - 6 * 60 * 60 * 1000),
+        mergedAt: prevMerged,
+      })
+    }
+    for (let i = 0; i < 3; i += 1) {
+      await insertPr(rid, {
+        number: 60 + i,
+        openedAt: new Date(curMerged.getTime() - 12 * 60 * 60 * 1000),
+        mergedAt: curMerged,
+      })
+    }
+    const d = await getPrCycleTimeDashboard({ db, now, weeks: 8 })
+    expect(d.metric.previousMedianHours).toBe(6)
+    expect(d.metric.medianHours).toBe(12)
+    expect(d.metric.trendPercent).toBe(100)
   })
 
   it('team_breakdown_groups_unassigned_repositories', async () => {

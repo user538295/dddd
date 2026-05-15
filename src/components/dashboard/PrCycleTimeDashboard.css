@@ -226,9 +226,71 @@
 
 /* —— Metric card —— */
 .pr-dashboard__metric-sub {
-  margin: -8px 0 12px;
+  margin: -8px 0 8px;
   font-size: 0.8125rem;
   color: var(--color-muted);
+}
+
+.pr-dashboard__card-help {
+  margin: -8px 0 16px;
+  max-width: 42rem;
+}
+
+.pr-dashboard__metric .pr-dashboard__card-help {
+  margin-top: 0;
+}
+
+.pr-dashboard__card-help-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-teal);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.pr-dashboard__card-help-summary::-webkit-details-marker {
+  display: none;
+}
+
+.pr-dashboard__card-help-summary::before {
+  content: '▸';
+  font-size: 0.75rem;
+  transition: transform 0.15s ease;
+}
+
+.pr-dashboard__card-help[open] .pr-dashboard__card-help-summary::before {
+  transform: rotate(90deg);
+}
+
+.pr-dashboard__card-help-summary:hover {
+  text-decoration: underline;
+}
+
+.pr-dashboard__card-help-body {
+  margin-top: 8px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.pr-dashboard__source-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(13, 148, 136, 0.45);
+  text-underline-offset: 2px;
+}
+
+.pr-dashboard__source-link:hover {
+  color: var(--color-teal);
+  text-decoration-color: var(--color-teal);
+}
+
+.pr-dashboard__freshness-item .pr-dashboard__source-link .pr-dashboard__freshness-strong {
+  color: inherit;
 }
 
 .pr-dashboard__metric-row {
@@ -289,6 +351,28 @@
 .pr-dashboard__metric-trend-sub {
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.pr-dashboard__metric-trend-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin-left: auto;
+  text-align: right;
+}
+
+.pr-dashboard__trend-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.pr-dashboard__trend-prev {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-muted);
 }
 
 .pr-dashboard__metric-footer {
@@ -400,12 +484,6 @@
 /* —— Trend chart —— */
 .pr-dashboard__chart-wrap {
   position: relative;
-}
-
-.pr-dashboard__chart-footnote {
-  margin: 14px 0 0;
-  font-size: 0.75rem;
-  color: var(--color-muted);
 }
 
 .pr-dashboard__chart-svg {

@@ -8,6 +8,16 @@ test('dashboard_e2e_local_dev_server_starts', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Median PR Cycle Time' })).toBeVisible()
 })
 
+test('dashboard_e2e_shows_previous_median_when_trend_available', async ({ page }) => {
+  await page.goto('/')
+  const medianCard = page.getByRole('heading', { name: 'Median PR Cycle Time' }).locator('..')
+  const hasTrend = await medianCard.getByText(/[+-]\d+%/).count()
+  if (hasTrend === 0) {
+    test.skip(true, 'No trend baseline in this environment')
+  }
+  await expect(medianCard.locator('.pr-dashboard__trend-prev').first()).toBeVisible()
+})
+
 test('dashboard_e2e_local_refresh_flow', async ({ page }) => {
   test.setTimeout(90_000)
   await page.goto('/')

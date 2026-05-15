@@ -144,21 +144,27 @@ describe('getEnv', () => {
   it('env_rejects_invalid_database_url', () => {
     expect(() =>
       getEnv({
+        DATABASE_URL: 'file:./data/local.db',
+      }),
+    ).toThrowError(/PostgreSQL/)
+
+    expect(() =>
+      getEnv({
         DATABASE_URL: 'mysql://localhost:3306/db',
       }),
-    ).toThrow(ConfigError)
+    ).toThrowError(/postgresql:\/\/ or postgres:\/\//)
 
     expect(() =>
       getEnv({
         DATABASE_URL: 'not-a-url',
       }),
-    ).toThrow(ConfigError)
+    ).toThrowError(/not a valid URL/)
 
     expect(() =>
       getEnv({
         DATABASE_URL: 'postgresql:///dbname',
       }),
-    ).toThrow(ConfigError)
+    ).toThrowError(/must include a hostname/)
   })
 
   it('env_accepts_postgres_uri_scheme', () => {

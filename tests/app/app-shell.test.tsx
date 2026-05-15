@@ -9,6 +9,7 @@ const mockDashboard: PrCycleTimeDashboard = {
   range: { from: '2026-01-01T00:00:00.000Z', to: '2026-05-14T23:59:59.999Z', weeks: 8 },
   metric: {
     medianHours: null,
+    previousMedianHours: null,
     mergedPrCount: 0,
     trendPercent: null,
     baselineStatus: 'pending',

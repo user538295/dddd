@@ -67,16 +67,25 @@ function validateDatabaseUrl(url: string): void {
   try {
     parsed = new URL(trimmed)
   } catch {
-    throw new ConfigError('DATABASE_URL is not a valid PostgreSQL connection URI')
+    throw new ConfigError(
+      'DATABASE_URL is not a valid URL. If the password contains @, :, #, or other reserved characters, percent-encode them (e.g. @ → %40).',
+    )
   }
 
   const scheme = parsed.protocol.replace(/:$/, '').toLowerCase()
   if (scheme !== 'postgresql' && scheme !== 'postgres') {
-    throw new ConfigError('DATABASE_URL is not a valid PostgreSQL connection URI')
+    if (scheme === 'file' || scheme === 'sqlite') {
+      throw new ConfigError(
+        'DATABASE_URL points at a local file database. Phase 01 uses PostgreSQL — set DATABASE_URL in .env to the Compose URI from .env.example (run ./scripts/dev-up.sh).',
+      )
+    }
+    throw new ConfigError('DATABASE_URL must use the postgresql:// or postgres:// scheme.')
   }
 
   if (!parsed.hostname) {
-    throw new ConfigError('DATABASE_URL is not a valid PostgreSQL connection URI')
+    throw new ConfigError(
+      'DATABASE_URL must include a hostname (e.g. 127.0.0.1 or localhost). Forms like postgresql:///dbname (no host) are not supported here.',
+    )
   }
 }
 

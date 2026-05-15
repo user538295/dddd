@@ -2,8 +2,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 
 import type { PrCycleTimeDashboard as DashboardModel } from '~/metrics/pr-cycle-time-dashboard'
-import { formatCycleDuration, formatDurationHumanDays } from '~/components/dashboard/format-cycle-duration'
+import {
+  formatCycleDuration,
+  formatDurationHumanDays,
+  formatPreviousMedianReference,
+} from '~/components/dashboard/format-cycle-duration'
 import { PrCycleTimeDashboard } from '~/components/dashboard/PrCycleTimeDashboard'
+import { DASHBOARD_SOURCE_PATHS } from '~/metrics/dashboard-source-paths'
 
 function baseDashboard(overrides: Partial<DashboardModel> = {}): DashboardModel {
   const weeklyTrend = Array.from({ length: 8 }, (_, i) => ({
@@ -14,6 +19,7 @@ function baseDashboard(overrides: Partial<DashboardModel> = {}): DashboardModel 
     range: { from: '2026-01-01T00:00:00.000Z', to: '2026-05-14T23:59:59.999Z', weeks: 8 },
     metric: {
       medianHours: 36,
+      previousMedianHours: 40,
       mergedPrCount: 4,
       trendPercent: -10,
       baselineStatus: 'available',
@@ -25,6 +31,7 @@ function baseDashboard(overrides: Partial<DashboardModel> = {}): DashboardModel 
         team: 'Alpha',
         mergedPrs: 4,
         medianHours: 36,
+        previousMedianHours: 40,
         trendPercent: -10,
         longestOpenPrHours: 12,
       },
@@ -65,6 +72,16 @@ describe('formatDurationHumanDays', () => {
   })
 })
 
+describe('formatPreviousMedianReference', () => {
+  it('keeps_precision_for_sub_hour_values', () => {
+    expect(formatPreviousMedianReference(0.077)).toBe('0.077h')
+  })
+
+  it('formats_hour_values', () => {
+    expect(formatPreviousMedianReference(12.4)).toBe('12.4h')
+  })
+})
+
 describe.sequential('PrCycleTimeDashboard', () => {
   afterEach(() => {
     cleanup()
@@ -80,7 +97,13 @@ describe.sequential('PrCycleTimeDashboard', () => {
     render(
       <PrCycleTimeDashboard
         data={baseDashboard({
-          metric: { medianHours: null, mergedPrCount: 0, trendPercent: null, baselineStatus: 'pending' },
+          metric: {
+            medianHours: null,
+            previousMedianHours: null,
+            mergedPrCount: 0,
+            trendPercent: null,
+            baselineStatus: 'pending',
+          },
         })}
       />,
     )
@@ -91,7 +114,13 @@ describe.sequential('PrCycleTimeDashboard', () => {
     render(
       <PrCycleTimeDashboard
         data={baseDashboard({
-          metric: { medianHours: 40, mergedPrCount: 2, trendPercent: null, baselineStatus: 'pending' },
+          metric: {
+            medianHours: 40,
+            previousMedianHours: 0.5,
+            mergedPrCount: 2,
+            trendPercent: null,
+            baselineStatus: 'pending',
+          },
         })}
       />,
     )
@@ -102,7 +131,13 @@ describe.sequential('PrCycleTimeDashboard', () => {
     render(
       <PrCycleTimeDashboard
         data={baseDashboard({
-          metric: { medianHours: null, mergedPrCount: 0, trendPercent: null, baselineStatus: 'pending' },
+          metric: {
+            medianHours: null,
+            previousMedianHours: null,
+            mergedPrCount: 0,
+            trendPercent: null,
+            baselineStatus: 'pending',
+          },
           freshness: {
             reposScanned: 0,
             prMetadataSyncedAt: null,
@@ -124,6 +159,53 @@ describe.sequential('PrCycleTimeDashboard', () => {
     expect(strip).toHaveTextContent('GitHub PR metadata synced')
     expect(strip).toHaveTextContent('1 PR missing Jira key')
     expect(strip).toHaveTextContent('0 sync errors')
+  })
+
+  it('dashboard_links_freshness_and_metric_to_source_pages', () => {
+    render(<PrCycleTimeDashboard data={baseDashboard()} />)
+    expect(screen.getByRole('link', { name: /4 merged PRs analyzed/i })).toHaveAttribute(
+      'href',
+      DASHBOARD_SOURCE_PATHS.mergedPrs,
+    )
+    expect(screen.getByRole('link', { name: /3 repos scanned/i })).toHaveAttribute('href', DASHBOARD_SOURCE_PATHS.repos)
+    expect(screen.getByRole('link', { name: /GitHub PR metadata synced/i })).toHaveAttribute(
+      'href',
+      DASHBOARD_SOURCE_PATHS.sync,
+    )
+    expect(screen.queryByRole('link', { name: /sync errors/i })).not.toBeInTheDocument()
+  })
+
+  it('dashboard_links_sync_errors_when_present', () => {
+    render(
+      <PrCycleTimeDashboard
+        data={baseDashboard({
+          freshness: {
+            reposScanned: 3,
+            prMetadataSyncedAt: '2026-05-14T10:00:00.000Z',
+            prsMissingJiraKey: 0,
+            syncErrors: 2,
+            latestSyncStatus: 'partial',
+          },
+        })}
+      />,
+    )
+    expect(screen.getByRole('link', { name: /2 sync errors/i })).toHaveAttribute(
+      'href',
+      DASHBOARD_SOURCE_PATHS.syncErrors,
+    )
+  })
+
+  it('dashboard_shows_collapsible_how_to_read_on_each_card', () => {
+    render(<PrCycleTimeDashboard data={baseDashboard()} />)
+    expect(screen.getAllByText('How to read this')).toHaveLength(4)
+  })
+
+  it('dashboard_reveals_card_help_when_how_to_read_is_opened', async () => {
+    render(<PrCycleTimeDashboard data={baseDashboard()} />)
+    const toggles = screen.getAllByText('How to read this')
+    await fireEvent.click(toggles[0]!)
+    expect(screen.getByText(/Elapsed time from when a pull request is opened/i)).toBeVisible()
+    expect(screen.getByText(/under about 7 minutes/i)).toBeVisible()
   })
 
   it('dashboard_shows_sync_failed_state', () => {
@@ -158,6 +240,36 @@ describe.sequential('PrCycleTimeDashboard', () => {
     expect(within(table).getByRole('cell', { name: '4' })).toBeInTheDocument()
   })
 
+  it('dashboard_shows_previous_median_beside_trend', () => {
+    render(
+      <PrCycleTimeDashboard
+        data={baseDashboard({
+          metric: {
+            medianHours: 1,
+            previousMedianHours: 0.077,
+            mergedPrCount: 10,
+            trendPercent: 1203,
+            baselineStatus: 'available',
+          },
+          teamBreakdown: [
+            {
+              team: 'DPA / Lecke',
+              mergedPrs: 5,
+              medianHours: 0.49,
+              previousMedianHours: 0.036,
+              trendPercent: 1266,
+              longestOpenPrHours: null,
+            },
+          ],
+        })}
+      />,
+    )
+    expect(screen.getByText('(0.077h)')).toBeInTheDocument()
+    expect(screen.getByText('(0.036h)')).toBeInTheDocument()
+    expect(screen.getByText(/\+1203%/)).toBeInTheDocument()
+    expect(screen.getByText(/\+1266%/)).toBeInTheDocument()
+  })
+
   it('dashboard_renders_unassigned_team', () => {
     render(
       <PrCycleTimeDashboard
@@ -167,6 +279,7 @@ describe.sequential('PrCycleTimeDashboard', () => {
               team: 'Unassigned',
               mergedPrs: 1,
               medianHours: 10,
+              previousMedianHours: null,
               trendPercent: null,
               longestOpenPrHours: null,
             },

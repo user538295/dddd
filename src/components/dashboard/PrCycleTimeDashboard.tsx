@@ -2,7 +2,11 @@ import type { ReactNode } from 'react'
 
 import type { PrCycleTimeDashboard as DashboardModel, PrCycleTimeException } from '~/metrics/pr-cycle-time-dashboard'
 
+import { CardHowToRead } from '~/components/dashboard/card-how-to-read'
+import { DashboardSourceLink } from '~/components/dashboard/dashboard-source-link'
 import { formatCycleDuration, formatDurationHumanDays } from '~/components/dashboard/format-cycle-duration'
+import { TrendComparison } from '~/components/dashboard/trend-comparison'
+import { DASHBOARD_SOURCE_PATHS } from '~/metrics/dashboard-source-paths'
 import { WeeklyTrendChart } from '~/components/dashboard/weekly-trend-chart'
 
 import './PrCycleTimeDashboard.css'
@@ -77,21 +81,12 @@ function medianCellClass(row: TeamRow, teams: TeamRow[]): string {
 }
 
 function trendCell(row: TeamRow): ReactNode {
-  if (row.trendPercent == null && row.mergedPrs > 0) {
-    return <span className="pr-dashboard__trend-cell--muted">— baseline pending</span>
-  }
-  if (row.trendPercent == null) {
-    return <span className="pr-dashboard__trend-cell--muted">—</span>
-  }
-  const up = row.trendPercent > 0
-  const cls = up ? 'pr-dashboard__trend-cell--warn' : 'pr-dashboard__trend-cell--good'
-  const arrow = up ? '↑' : '↓'
-  const sign = row.trendPercent > 0 ? '+' : ''
   return (
-    <span className={cls}>
-      {arrow} {sign}
-      {row.trendPercent.toFixed(0)}%
-    </span>
+    <TrendComparison
+      trendPercent={row.trendPercent}
+      previousMedianHours={row.previousMedianHours}
+      baselinePendingLabel={row.mergedPrs > 0 ? '— baseline pending' : '—'}
+    />
   )
 }
 
@@ -176,19 +171,13 @@ export function PrCycleTimeDashboard({
         </div>
       )
     }
-    const up = tp > 0
-    const trendCls = up ? 'pr-dashboard__metric-trend--up' : 'pr-dashboard__metric-trend--down'
-    const arrow = up ? '↑' : '↓'
-    const sign = tp > 0 ? '+' : ''
     return (
-      <div className={`pr-dashboard__metric-trend ${trendCls}`}>
-        <div className="pr-dashboard__metric-trend-main">
-          <span className="pr-dashboard__metric-trend-arrow">{arrow}</span>
-          <span className="pr-dashboard__metric-trend-pct">
-            {sign}
-            {tp.toFixed(0)}%
-          </span>
-        </div>
+      <div className="pr-dashboard__metric-trend-wrap">
+        <TrendComparison
+          size="metric"
+          trendPercent={tp}
+          previousMedianHours={data.metric.previousMedianHours}
+        />
         <span className="pr-dashboard__metric-trend-sub">vs previous {data.range.weeks} weeks</span>
       </div>
     )
@@ -252,6 +241,11 @@ export function PrCycleTimeDashboard({
             Median PR Cycle Time
           </h2>
           <p className="pr-dashboard__metric-sub">PR opened to PR merged</p>
+          <CardHowToRead>
+            Elapsed time from when a pull request is opened until it is merged, shown in hours or days. A high
+            median often means reviews start late or PRs sit idle. A very low median (for example under about 7
+            minutes) can mean merges happen with little or no review.
+          </CardHowToRead>
           <div className="pr-dashboard__metric-row">
             <div className="pr-dashboard__metric-value" data-testid="median-pr-cycle-time">
               {noRepos ? (
@@ -271,9 +265,9 @@ export function PrCycleTimeDashboard({
           {!noRepos && !noMerged ? (
             <div className="pr-dashboard__metric-footer">
               <IconMergeBranch />
-              <span>
+              <DashboardSourceLink href={DASHBOARD_SOURCE_PATHS.mergedPrs}>
                 {data.metric.mergedPrCount} merged PR{data.metric.mergedPrCount === 1 ? '' : 's'} analyzed
-              </span>
+              </DashboardSourceLink>
             </div>
           ) : null}
         </section>
@@ -282,6 +276,10 @@ export function PrCycleTimeDashboard({
           <h2 id="exceptions-heading" className="pr-dashboard__card-title">
             PR cycle time exceptions
           </h2>
+          <CardHowToRead>
+            Teams that may need attention in this range: cycle time regressed by at least 25%, open PRs older than
+            the team median, or not enough prior-period merges to compare trends. Up to three exceptions are shown.
+          </CardHowToRead>
           {data.exceptions.length === 0 ? (
             <p className="pr-dashboard__exception-empty">None in this range</p>
           ) : (
@@ -311,8 +309,11 @@ export function PrCycleTimeDashboard({
           <h2 id="trend-heading" className="pr-dashboard__card-title">
             8-week PR cycle time trend
           </h2>
+          <CardHowToRead>
+            Weekly median open-to-merge time for PRs merged in each week. Use this to see whether cycle time is
+            improving or worsening over the last {data.range.weeks} weeks. Weeks with no merges appear as gaps.
+          </CardHowToRead>
           <WeeklyTrendChart weeklyTrend={data.weeklyTrend} />
-          <p className="pr-dashboard__chart-footnote">Weekly median calculated from PR opened to PR merged.</p>
           <ol data-testid="weekly-trend-list" className="pr-dashboard__sr-only">
             {data.weeklyTrend.map((p) => (
               <li key={p.weekStart}>
@@ -327,6 +328,10 @@ export function PrCycleTimeDashboard({
           <h2 id="teams-heading" className="pr-dashboard__card-title">
             Team breakdown
           </h2>
+          <CardHowToRead>
+            Per-team median cycle time and trend versus the previous {data.range.weeks} weeks, based on repository
+            team mapping. Longest open PR shows the oldest still-open pull request for that team.
+          </CardHowToRead>
           <div className="pr-dashboard__table-wrap">
             <table className="pr-dashboard__table" aria-label="Team breakdown">
               <thead>
@@ -365,13 +370,18 @@ export function PrCycleTimeDashboard({
         <span className="pr-dashboard__freshness-item">
           <IconRepos />
           <span>
-            <span className="pr-dashboard__freshness-strong">{data.freshness.reposScanned}</span> repos scanned
+            <DashboardSourceLink href={DASHBOARD_SOURCE_PATHS.repos}>
+              <span className="pr-dashboard__freshness-strong">{data.freshness.reposScanned}</span> repos scanned
+            </DashboardSourceLink>
           </span>
         </span>
         <span className="pr-dashboard__freshness-item">
           <IconGitHub />
           <span>
-            GitHub PR metadata synced <span className="pr-dashboard__freshness-strong">{formatSyncedAgo(data.freshness.prMetadataSyncedAt, nowMs)}</span>
+            <DashboardSourceLink href={DASHBOARD_SOURCE_PATHS.sync}>
+              GitHub PR metadata synced{' '}
+              <span className="pr-dashboard__freshness-strong">{formatSyncedAgo(data.freshness.prMetadataSyncedAt, nowMs)}</span>
+            </DashboardSourceLink>
           </span>
         </span>
         <span className="pr-dashboard__freshness-item">
@@ -384,7 +394,15 @@ export function PrCycleTimeDashboard({
         <span className="pr-dashboard__freshness-item">
           {data.freshness.syncErrors === 0 ? <IconCheckCircle /> : <IconAlertSmall />}
           <span>
-            <span className="pr-dashboard__freshness-strong">{data.freshness.syncErrors}</span> sync errors
+            {data.freshness.syncErrors > 0 ? (
+              <DashboardSourceLink href={DASHBOARD_SOURCE_PATHS.syncErrors}>
+                <span className="pr-dashboard__freshness-strong">{data.freshness.syncErrors}</span> sync errors
+              </DashboardSourceLink>
+            ) : (
+              <>
+                <span className="pr-dashboard__freshness-strong">{data.freshness.syncErrors}</span> sync errors
+              </>
+            )}
           </span>
         </span>
         {syncPartial ? <span className="pr-dashboard__partial-note">Partial sync: review sync errors above.</span> : null}

@@ -8,7 +8,19 @@ import {
 
 import '~/styles/global.css'
 
+function NotFound() {
+  return (
+    <main>
+      <h1>Page not found</h1>
+      <p>
+        <a href="/">Return to the dashboard</a>
+      </p>
+    </main>
+  )
+}
+
 export const Route = createRootRoute({
+  notFoundComponent: NotFound,
   head: () => ({
     meta: [
       {

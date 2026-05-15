@@ -25,6 +25,7 @@ export type PrCycleTimeDashboard = {
   range: { from: string; to: string; weeks: number }
   metric: {
     medianHours: number | null
+    previousMedianHours: number | null
     mergedPrCount: number
     trendPercent: number | null
     baselineStatus: 'available' | 'pending'
@@ -35,6 +36,7 @@ export type PrCycleTimeDashboard = {
     team: string
     mergedPrs: number
     medianHours: number | null
+    previousMedianHours: number | null
     trendPercent: number | null
     longestOpenPrHours: number | null
   }>
@@ -188,6 +190,7 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
       team: teamLabel,
       mergedPrs: curTeam.length,
       medianHours: med,
+      previousMedianHours: prevMed,
       trendPercent: teamTrend.trendPercent,
       longestOpenPrHours,
     }
@@ -280,6 +283,7 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
     },
     metric: {
       medianHours: currentMedian,
+      previousMedianHours: previousMedian,
       mergedPrCount,
       trendPercent: trend.trendPercent,
       baselineStatus: trend.baselineStatus,
