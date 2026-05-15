@@ -196,6 +196,26 @@ describe.sequential('PrCycleTimeDashboard', () => {
     expect(screen.getByText(/Alpha baseline pending/)).toBeInTheDocument()
   })
 
+  it('dashboard_renders_long_open_prs_count', () => {
+    render(
+      <PrCycleTimeDashboard
+        data={baseDashboard({
+          exceptions: [
+            {
+              type: 'long_open_prs',
+              severity: 'warning',
+              team: 'Alpha',
+              message: 'Alpha has open pull requests older than the team median cycle time.',
+              count: 6,
+            },
+          ],
+        })}
+      />,
+    )
+
+    expect(screen.getByText('6 PRs older than team median')).toBeInTheDocument()
+  })
+
   it('dashboard_does_not_show_future_metrics', () => {
     render(<PrCycleTimeDashboard data={baseDashboard()} />)
     expect(screen.queryByText(/PR Size/i)).not.toBeInTheDocument()

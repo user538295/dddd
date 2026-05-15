@@ -18,6 +18,7 @@ export type PrCycleTimeException = {
   severity: 'warning' | 'info'
   team: string
   message: string
+  count?: number
 }
 
 export type PrCycleTimeDashboard = {
@@ -248,19 +249,21 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
 
     if (row.medianHours != null) {
       const teamMedian = row.medianHours
-      const tooOld = prs.some((p) => {
+      const tooOldPrs = prs.filter((p) => {
         if (p.state !== 'open') return false
         const r = metricsRepos.find((x) => x.id === p.repositoryId)
         if (!r || repoTeamLabel(r) !== row.team) return false
         const ageH = (now.getTime() - p.openedAt.getTime()) / MS_PER_HOUR
         return ageH > teamMedian
       })
-      if (tooOld) {
+      const tooOldCount = tooOldPrs.length
+      if (tooOldCount > 0) {
         exceptions.push({
           type: 'long_open_prs',
           severity: 'warning',
           team: row.team,
           message: `${row.team} has open pull requests older than the team's current median cycle time.`,
+          count: tooOldCount,
         })
       }
     }

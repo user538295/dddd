@@ -373,7 +373,9 @@ describe.skipIf(!hasDatabaseUrl)('pr-cycle-time-dashboard', () => {
       mergedAt: null,
     })
     const d = await getPrCycleTimeDashboard({ db, now, weeks: 8 })
-    expect(d.exceptions.some((e) => e.type === 'long_open_prs')).toBe(true)
+    const ex = d.exceptions.find((e) => e.type === 'long_open_prs' && e.team === 'Alpha')
+    expect(ex).toBeTruthy()
+    expect(ex?.count).toBe(1)
   })
 
   it('exceptions_suppress_long_open_prs_without_team_median', async () => {

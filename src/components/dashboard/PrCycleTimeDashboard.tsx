@@ -116,7 +116,8 @@ function exceptionMetric(e: PrCycleTimeException, teams: TeamRow[]): string {
       return `${(r.medianHours / 24).toFixed(1)}d median`
     }
     case 'long_open_prs':
-      return 'PRs older than team median'
+      if (e.count == null) return 'PRs older than team median'
+      return `${e.count} ${e.count === 1 ? 'PR' : 'PRs'} older than team median`
     case 'baseline_pending':
       return 'Not enough prior-period data'
     default:
