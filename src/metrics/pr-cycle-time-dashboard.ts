@@ -21,6 +21,14 @@ export type PrCycleTimeException = {
   count?: number
 }
 
+export type FirstReviewException = {
+  type: 'review_latency_worsened' | 'merge_without_review' | 'review_baseline_pending'
+  severity: 'warning' | 'info'
+  team: string
+  message: string
+  count?: number
+}
+
 export type PrCycleTimeDashboard = {
   range: { from: string; to: string; weeks: number }
   metric: {
@@ -40,6 +48,29 @@ export type PrCycleTimeDashboard = {
     trendPercent: number | null
     longestOpenPrHours: number | null
   }>
+  firstReview?: {
+    metric: {
+      medianHours: number | null
+      previousMedianHours: number | null
+      reviewedPrCount: number
+      trendPercent: number | null
+      baselineStatus: 'available' | 'pending'
+    }
+    exceptions: FirstReviewException[]
+    weeklyTrend: Array<{ weekStart: string; medianHours: number | null }>
+    teamBreakdown: Array<{
+      team: string
+      reviewedPrs: number
+      medianHours: number | null
+      previousMedianHours: number | null
+      trendPercent: number | null
+      mergeWithoutReviewCount: number
+    }>
+    freshness: {
+      reviewMetadataSyncedAt: string | null
+      reviewSyncErrors: number
+    }
+  }
   freshness: {
     reposScanned: number
     prMetadataSyncedAt: string | null

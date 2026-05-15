@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react'
 
-import type { PrCycleTimeDashboard as DashboardModel, PrCycleTimeException } from '~/metrics/pr-cycle-time-dashboard'
+import type {
+  FirstReviewException,
+  PrCycleTimeDashboard as DashboardModel,
+  PrCycleTimeException,
+} from '~/metrics/pr-cycle-time-dashboard'
 
 import { CardHowToRead } from '~/components/dashboard/card-how-to-read'
 import { DashboardSourceLink } from '~/components/dashboard/dashboard-source-link'
@@ -40,6 +44,8 @@ function formatSyncedAgo(iso: string | null, nowMs: number): string {
 }
 
 type TeamRow = DashboardModel['teamBreakdown'][number]
+type FirstReviewModel = NonNullable<DashboardModel['firstReview']>
+type FirstReviewTeamRow = FirstReviewModel['teamBreakdown'][number]
 
 function maxPositiveTeamTrend(teams: TeamRow[]): number {
   let m = 0
@@ -147,6 +153,81 @@ function exceptionTrendSnippet(e: PrCycleTimeException, teams: TeamRow[]): React
   )
 }
 
+function firstReviewTeamFor(team: string, rows: FirstReviewTeamRow[]): FirstReviewTeamRow | undefined {
+  return rows.find((r) => r.team === team)
+}
+
+function firstReviewExceptionTitle(e: FirstReviewException): string {
+  switch (e.type) {
+    case 'review_latency_worsened':
+      return `${e.team} review latency worsened`
+    case 'merge_without_review':
+      return `${e.team} merged without review`
+    case 'review_baseline_pending':
+      return `${e.team} review baseline pending`
+    default:
+      return e.team
+  }
+}
+
+function firstReviewExceptionMetric(e: FirstReviewException, rows: FirstReviewTeamRow[]): string {
+  switch (e.type) {
+    case 'review_latency_worsened': {
+      const row = firstReviewTeamFor(e.team, rows)
+      return row?.medianHours == null ? '—' : `${formatCycleDuration(row.medianHours)} median`
+    }
+    case 'merge_without_review':
+      if (e.count == null) return 'Merged PRs with no review signal'
+      return `${e.count} ${e.count === 1 ? 'PR' : 'PRs'} under 7 minutes`
+    case 'review_baseline_pending':
+      return 'Not enough prior review data'
+    default:
+      return e.message
+  }
+}
+
+function firstReviewExceptionRecommendation(e: FirstReviewException): string {
+  switch (e.type) {
+    case 'review_latency_worsened':
+      return 'Start reviews earlier on the affected team'
+    case 'merge_without_review':
+      return 'Check fast merges for intentional review policy exceptions'
+    case 'review_baseline_pending':
+      return 'Collect more reviewed PRs before comparing trends'
+    default:
+      return e.message
+  }
+}
+
+function firstReviewExceptionTrendSnippet(e: FirstReviewException, rows: FirstReviewTeamRow[]): ReactNode {
+  if (e.type !== 'review_latency_worsened') return null
+  const tr = firstReviewTeamFor(e.team, rows)?.trendPercent
+  if (tr == null) return null
+  const up = tr > 0
+  return (
+    <span
+      className={`pr-dashboard__exception-trend ${up ? 'pr-dashboard__exception-trend--warn' : 'pr-dashboard__trend-cell--good'}`}
+    >
+      {up ? '↑' : '↓'} {formatTrendPercent(tr)}
+    </span>
+  )
+}
+
+function firstReviewTrendCell(row: FirstReviewTeamRow): ReactNode {
+  return (
+    <TrendComparison
+      trendPercent={row.trendPercent}
+      previousMedianHours={row.previousMedianHours}
+      baselinePendingLabel={row.reviewedPrs > 0 ? '— baseline pending' : '—'}
+    />
+  )
+}
+
+function noReviewMergeCell(row: FirstReviewTeamRow | undefined): string {
+  if (!row || row.mergeWithoutReviewCount === 0) return '—'
+  return `${row.mergeWithoutReviewCount} no-review ${row.mergeWithoutReviewCount === 1 ? 'merge' : 'merges'}`
+}
+
 export function PrCycleTimeDashboard({
   data,
   onRefresh,
@@ -159,6 +240,8 @@ export function PrCycleTimeDashboard({
   const baselinePending = data.metric.baselineStatus === 'pending'
   const syncFailed = data.freshness.latestSyncStatus === 'failed'
   const syncPartial = data.freshness.latestSyncStatus === 'partial'
+  const firstReview = data.firstReview
+  const firstReviewByTeam = new Map(firstReview?.teamBreakdown.map((row) => [row.team, row]) ?? [])
 
   const metricTrendBlock = (() => {
     if (noRepos || noMerged) return null
@@ -177,6 +260,29 @@ export function PrCycleTimeDashboard({
           size="metric"
           trendPercent={tp}
           previousMedianHours={data.metric.previousMedianHours}
+        />
+        <span className="pr-dashboard__metric-trend-sub">vs previous {data.range.weeks} weeks</span>
+      </div>
+    )
+  })()
+
+  const firstReviewTrendBlock = (() => {
+    if (!firstReview || firstReview.metric.reviewedPrCount === 0) return null
+    const tp = firstReview.metric.trendPercent
+    if (firstReview.metric.baselineStatus === 'pending' || tp == null) {
+      return (
+        <div className="pr-dashboard__metric-trend pr-dashboard__metric-trend--neutral">
+          <span className="pr-dashboard__metric-trend-pct">—</span>
+          <span className="pr-dashboard__metric-trend-sub">vs previous {data.range.weeks} weeks</span>
+        </div>
+      )
+    }
+    return (
+      <div className="pr-dashboard__metric-trend-wrap">
+        <TrendComparison
+          size="metric"
+          trendPercent={tp}
+          previousMedianHours={firstReview.metric.previousMedianHours}
         />
         <span className="pr-dashboard__metric-trend-sub">vs previous {data.range.weeks} weeks</span>
       </div>
@@ -272,6 +378,42 @@ export function PrCycleTimeDashboard({
           ) : null}
         </section>
 
+        {firstReview ? (
+          <section aria-labelledby="first-review-metric-heading" className="pr-dashboard__card pr-dashboard__metric">
+            <h2 id="first-review-metric-heading" className="pr-dashboard__card-title">
+              Median First Review Time
+            </h2>
+            <p className="pr-dashboard__metric-sub">PR opened to first submitted review</p>
+            <CardHowToRead>
+              Elapsed time from when a merged pull request is opened until its first submitted GitHub review. PRs
+              without a qualifying review are excluded from this median and tracked separately as merge-without-review
+              hygiene.
+            </CardHowToRead>
+            <div className="pr-dashboard__metric-row">
+              <div className="pr-dashboard__metric-value" data-testid="median-first-review-time">
+                {firstReview.metric.reviewedPrCount === 0 || firstReview.metric.medianHours == null ? (
+                  <span>No merged PRs with a review in range</span>
+                ) : (
+                  <span>{formatCycleDuration(firstReview.metric.medianHours)}</span>
+                )}
+              </div>
+              {firstReviewTrendBlock}
+            </div>
+            {firstReview.metric.baselineStatus === 'pending' && firstReview.metric.reviewedPrCount > 0 ? (
+              <p className="pr-dashboard__baseline">Baseline pending</p>
+            ) : null}
+            {firstReview.metric.reviewedPrCount > 0 ? (
+              <div className="pr-dashboard__metric-footer">
+                <IconReview />
+                <DashboardSourceLink href={DASHBOARD_SOURCE_PATHS.mergedPrs}>
+                  {firstReview.metric.reviewedPrCount} reviewed PR
+                  {firstReview.metric.reviewedPrCount === 1 ? '' : 's'} analyzed
+                </DashboardSourceLink>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
         <section aria-labelledby="exceptions-heading" className="pr-dashboard__card">
           <h2 id="exceptions-heading" className="pr-dashboard__card-title">
             PR cycle time exceptions
@@ -305,6 +447,44 @@ export function PrCycleTimeDashboard({
           )}
         </section>
 
+        {firstReview ? (
+          <section aria-labelledby="review-exceptions-heading" className="pr-dashboard__card">
+            <h2 id="review-exceptions-heading" className="pr-dashboard__card-title">
+              Review-latency exceptions
+            </h2>
+            <CardHowToRead>
+              Teams that may need attention in this range: first review time regressed by at least 25%, merged PRs
+              passed the no-review hygiene rule, or prior review data is not yet enough for a baseline. Up to three
+              review exceptions are shown.
+            </CardHowToRead>
+            {firstReview.exceptions.length === 0 ? (
+              <p className="pr-dashboard__exception-empty">None in this range</p>
+            ) : (
+              <ul className="pr-dashboard__exception-list">
+                {firstReview.exceptions.map((e) => (
+                  <li key={`${e.type}-${e.team}-${e.message}`} className="pr-dashboard__exception-row">
+                    {e.severity === 'warning' ? (
+                      <IconWarning className="pr-dashboard__exception-icon" />
+                    ) : (
+                      <IconInfo className="pr-dashboard__exception-icon" />
+                    )}
+                    <div className="pr-dashboard__exception-body">
+                      <div className="pr-dashboard__exception-title-row">
+                        <span className="pr-dashboard__exception-title">{firstReviewExceptionTitle(e)}</span>
+                        <span className="pr-dashboard__exception-metric">
+                          {firstReviewExceptionMetric(e, firstReview.teamBreakdown)}
+                        </span>
+                        {firstReviewExceptionTrendSnippet(e, firstReview.teamBreakdown)}
+                      </div>
+                      <p className="pr-dashboard__exception-recommendation">{firstReviewExceptionRecommendation(e)}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ) : null}
+
         <section aria-labelledby="trend-heading" className="pr-dashboard__card">
           <h2 id="trend-heading" className="pr-dashboard__card-title">
             8-week PR cycle time trend
@@ -324,7 +504,31 @@ export function PrCycleTimeDashboard({
           </ol>
         </section>
 
-        <section aria-labelledby="teams-heading" className="pr-dashboard__card">
+        {firstReview ? (
+          <section aria-labelledby="first-review-trend-heading" className="pr-dashboard__card">
+            <h2 id="first-review-trend-heading" className="pr-dashboard__card-title">
+              8-week First Review trend
+            </h2>
+            <CardHowToRead>
+              Weekly median open-to-first-review time for PRs merged in each week. Weeks with no qualifying reviews
+              appear as gaps.
+            </CardHowToRead>
+            <WeeklyTrendChart weeklyTrend={firstReview.weeklyTrend} />
+            <ol data-testid="first-review-weekly-trend-list" className="pr-dashboard__sr-only">
+              {firstReview.weeklyTrend.map((p) => (
+                <li key={p.weekStart}>
+                  <span>{p.weekStart}</span>:{' '}
+                  {p.medianHours === null ? <span>empty</span> : <span>{formatCycleDuration(p.medianHours)}</span>}
+                </li>
+              ))}
+            </ol>
+          </section>
+        ) : null}
+
+        <section
+          aria-labelledby="teams-heading"
+          className={`pr-dashboard__card ${firstReview ? 'pr-dashboard__team-card--wide' : ''}`}
+        >
           <h2 id="teams-heading" className="pr-dashboard__card-title">
             Team breakdown
           </h2>
@@ -339,6 +543,9 @@ export function PrCycleTimeDashboard({
                   <th>Team</th>
                   <th>Merged PRs</th>
                   <th>Median</th>
+                  {firstReview ? <th>First Review</th> : null}
+                  {firstReview ? <th>Review Trend</th> : null}
+                  {firstReview ? <th>No-review Merges</th> : null}
                   <th>Trend (vs prev {data.range.weeks} w)</th>
                   <th>Longest Open PR</th>
                 </tr>
@@ -354,6 +561,18 @@ export function PrCycleTimeDashboard({
                     </td>
                     <td className="pr-dashboard__num">{row.mergedPrs}</td>
                     <td className={medianCellClass(row, data.teamBreakdown)}>{formatCycleDuration(row.medianHours)}</td>
+                    {firstReview ? (
+                      <td className="pr-dashboard__num">{formatCycleDuration(firstReviewByTeam.get(row.team)?.medianHours ?? null)}</td>
+                    ) : null}
+                    {firstReview ? <td>{firstReviewTrendCell(firstReviewByTeam.get(row.team) ?? {
+                      team: row.team,
+                      reviewedPrs: 0,
+                      medianHours: null,
+                      previousMedianHours: null,
+                      trendPercent: null,
+                      mergeWithoutReviewCount: 0,
+                    })}</td> : null}
+                    {firstReview ? <td className="pr-dashboard__num">{noReviewMergeCell(firstReviewByTeam.get(row.team))}</td> : null}
                     <td>{trendCell(row)}</td>
                     <td className="pr-dashboard__num">
                       {row.longestOpenPrHours === null ? '—' : formatDurationHumanDays(row.longestOpenPrHours)}
@@ -375,6 +594,19 @@ export function PrCycleTimeDashboard({
             </DashboardSourceLink>
           </span>
         </span>
+        {firstReview ? (
+          <span className="pr-dashboard__freshness-item">
+            <IconReview />
+            <span>
+              <DashboardSourceLink href={DASHBOARD_SOURCE_PATHS.sync}>
+                GitHub review metadata synced{' '}
+                <span className="pr-dashboard__freshness-strong">
+                  {formatSyncedAgo(firstReview.freshness.reviewMetadataSyncedAt, nowMs)}
+                </span>
+              </DashboardSourceLink>
+            </span>
+          </span>
+        ) : null}
         <span className="pr-dashboard__freshness-item">
           <IconGitHub />
           <span>
@@ -384,6 +616,24 @@ export function PrCycleTimeDashboard({
             </DashboardSourceLink>
           </span>
         </span>
+        {firstReview ? (
+          <span className="pr-dashboard__freshness-item">
+            {firstReview.freshness.reviewSyncErrors === 0 ? <IconCheckCircle /> : <IconAlertSmall />}
+            <span>
+              {firstReview.freshness.reviewSyncErrors > 0 ? (
+                <DashboardSourceLink href={DASHBOARD_SOURCE_PATHS.syncErrors}>
+                  <span className="pr-dashboard__freshness-strong">{firstReview.freshness.reviewSyncErrors}</span> review
+                  sync error{firstReview.freshness.reviewSyncErrors === 1 ? '' : 's'}
+                </DashboardSourceLink>
+              ) : (
+                <>
+                  <span className="pr-dashboard__freshness-strong">{firstReview.freshness.reviewSyncErrors}</span> review
+                  sync errors
+                </>
+              )}
+            </span>
+          </span>
+        ) : null}
         <span className="pr-dashboard__freshness-item">
           <IconLink />
           <span>
@@ -466,6 +716,20 @@ function IconMergeBranch() {
       <circle cx="13" cy="9" r="2.2" stroke="currentColor" strokeWidth="1.2" />
       <path d="M7 5h4a2 2 0 012 2v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
       <path d="M7 13H9a2 2 0 002-2V9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconReview() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <path
+        d="M3 4.5A2.5 2.5 0 015.5 2h7A2.5 2.5 0 0115 4.5v4A2.5 2.5 0 0112.5 11H8l-3.5 3v-3A2.5 2.5 0 013 8.5v-4z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      <path d="M6 5.5h6M6 8h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
     </svg>
   )
 }

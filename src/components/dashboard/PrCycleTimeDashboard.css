@@ -497,6 +497,10 @@
   overflow-x: auto;
 }
 
+.pr-dashboard__team-card--wide {
+  grid-column: 1 / -1;
+}
+
 .pr-dashboard__table {
   width: 100%;
   border-collapse: collapse;

@@ -37,3 +37,39 @@ describe('documentation links and phase 01 status', () => {
     expect(body).toMatch(/## Mockup alignment/)
   })
 })
+
+describe('phase 02 first review time spec', () => {
+  const phase02 = 'Documentation/Roadmap/phases/phase-02-first-review-time.md'
+
+  it('docs_phase_02_defines_metric_locks', () => {
+    const body = readDoc(phase02)
+    expect(body).toMatch(/## Metric definition \(locked\)/)
+    expect(body).toMatch(/Qualifying review/)
+    expect(body).toMatch(/PENDING.*DISMISSED|DISMISSED.*PENDING/)
+    expect(body).toMatch(/No qualifying review/)
+  })
+
+  it('docs_phase_02_links_feat_002_placeholder', () => {
+    const body = readDoc(phase02)
+    expect(body).toMatch(/FEAT-002/)
+    expect(body).toMatch(/FEAT-001-pr-cycle-time-mvp-implementation-plan\.md/)
+  })
+
+  it('docs_phase_02_requires_verification_and_tests', () => {
+    const body = readDoc(phase02)
+    expect(body).toMatch(/## Verification and tests/)
+    expect(body).toMatch(/verify:phase02/)
+  })
+
+  it('docs_phase_02_exception_gating_documented', () => {
+    const body = readDoc(phase02)
+    expect(body).toMatch(/merge_without_review/)
+    expect(body).toMatch(/qualifying reviews \*\*not\*\* required/)
+    expect(body).toMatch(/Cap at 3/)
+  })
+
+  it('docs_trackable_roadmap_links_phase_02', () => {
+    const body = readDoc('Documentation/Roadmap/trackable-roadmap.md')
+    expect(body).toMatch(/phase-02-first-review-time\.md/)
+  })
+})

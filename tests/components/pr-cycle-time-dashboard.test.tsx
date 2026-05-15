@@ -47,6 +47,79 @@ function baseDashboard(overrides: Partial<DashboardModel> = {}): DashboardModel 
   }
 }
 
+function firstReviewDashboard(): DashboardModel {
+  return baseDashboard({
+    firstReview: {
+      metric: {
+        medianHours: 6,
+        previousMedianHours: 4,
+        reviewedPrCount: 312,
+        trendPercent: 50,
+        baselineStatus: 'available',
+      },
+      exceptions: [
+        {
+          type: 'review_latency_worsened',
+          severity: 'warning',
+          team: 'Alpha',
+          message: 'Alpha first review time worsened by at least 25% versus the previous period.',
+        },
+        {
+          type: 'merge_without_review',
+          severity: 'warning',
+          team: 'Beta',
+          message: 'Beta merged pull requests without review hygiene signals.',
+          count: 2,
+        },
+      ],
+      weeklyTrend: Array.from({ length: 8 }, (_, i) => ({
+        weekStart: `2026-0${1 + i}-01`,
+        medianHours: i === 2 ? null : 6 + i,
+      })),
+      teamBreakdown: [
+        {
+          team: 'Alpha',
+          reviewedPrs: 120,
+          medianHours: 8,
+          previousMedianHours: 4,
+          trendPercent: 100,
+          mergeWithoutReviewCount: 0,
+        },
+        {
+          team: 'Beta',
+          reviewedPrs: 42,
+          medianHours: null,
+          previousMedianHours: null,
+          trendPercent: null,
+          mergeWithoutReviewCount: 2,
+        },
+      ],
+      freshness: {
+        reviewMetadataSyncedAt: '2026-05-14T09:00:00.000Z',
+        reviewSyncErrors: 1,
+      },
+    },
+    teamBreakdown: [
+      {
+        team: 'Alpha',
+        mergedPrs: 4,
+        medianHours: 36,
+        previousMedianHours: 40,
+        trendPercent: -10,
+        longestOpenPrHours: 12,
+      },
+      {
+        team: 'Beta',
+        mergedPrs: 2,
+        medianHours: 0.1,
+        previousMedianHours: null,
+        trendPercent: null,
+        longestOpenPrHours: null,
+      },
+    ],
+  })
+}
+
 describe('formatCycleDuration', () => {
   it('formats_under_48h_as_hours', () => {
     expect(formatCycleDuration(12)).toBe('12h')
@@ -334,6 +407,64 @@ describe.sequential('PrCycleTimeDashboard', () => {
     expect(screen.queryByText(/PR Size/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/First Review/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/WIP/i)).not.toBeInTheDocument()
+  })
+
+  it('first_review_card_renders_median_when_review_data_is_present', () => {
+    render(<PrCycleTimeDashboard data={firstReviewDashboard()} />)
+    expect(screen.getByRole('heading', { level: 2, name: 'Median First Review Time' })).toBeInTheDocument()
+    expect(screen.getByText('PR opened to first submitted review')).toBeInTheDocument()
+    expect(screen.getByTestId('median-first-review-time')).toHaveTextContent('6h')
+    expect(screen.getByRole('link', { name: /312 reviewed PRs analyzed/i })).toBeInTheDocument()
+  })
+
+  it('first_review_shows_explicit_no_review_state', () => {
+    render(
+      <PrCycleTimeDashboard
+        data={baseDashboard({
+          firstReview: {
+            metric: {
+              medianHours: null,
+              previousMedianHours: null,
+              reviewedPrCount: 0,
+              trendPercent: null,
+              baselineStatus: 'pending',
+            },
+            exceptions: [],
+            weeklyTrend: Array.from({ length: 8 }, (_, i) => ({
+              weekStart: `2026-0${1 + i}-01`,
+              medianHours: null,
+            })),
+            teamBreakdown: [],
+            freshness: {
+              reviewMetadataSyncedAt: '2026-05-14T09:00:00.000Z',
+              reviewSyncErrors: 0,
+            },
+          },
+        })}
+      />,
+    )
+    expect(screen.getByTestId('median-first-review-time')).toHaveTextContent(
+      'No merged PRs with a review in range',
+    )
+  })
+
+  it('first_review_weekly_trend_and_exceptions_render_separately', () => {
+    render(<PrCycleTimeDashboard data={firstReviewDashboard()} />)
+    expect(screen.getByRole('heading', { level: 2, name: 'Review-latency exceptions' })).toBeInTheDocument()
+    expect(screen.getByText('Alpha review latency worsened')).toBeInTheDocument()
+    expect(screen.getByText('Beta merged without review')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: '8-week First Review trend' })).toBeInTheDocument()
+    expect(screen.getByTestId('first-review-weekly-trend-list')).toHaveTextContent('empty')
+  })
+
+  it('first_review_team_column_and_freshness_render', () => {
+    render(<PrCycleTimeDashboard data={firstReviewDashboard()} />)
+    const table = screen.getByRole('table', { name: /Team breakdown/i })
+    expect(within(table).getByRole('columnheader', { name: 'First Review' })).toBeInTheDocument()
+    expect(within(table).getByRole('cell', { name: '8h' })).toBeInTheDocument()
+    expect(within(table).getByRole('cell', { name: '2 no-review merges' })).toBeInTheDocument()
+    expect(screen.getByTestId('data-freshness')).toHaveTextContent('GitHub review metadata synced')
+    expect(screen.getByTestId('data-freshness')).toHaveTextContent('1 review sync error')
   })
 
   it('refresh_button_invokes_callback', async () => {
