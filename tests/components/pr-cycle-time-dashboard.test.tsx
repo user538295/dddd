@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 
 import type { PrCycleTimeDashboard as DashboardModel } from '~/metrics/pr-cycle-time-dashboard'
-import { formatCycleDuration } from '~/components/dashboard/format-cycle-duration'
+import { formatCycleDuration, formatDurationHumanDays } from '~/components/dashboard/format-cycle-duration'
 import { PrCycleTimeDashboard } from '~/components/dashboard/PrCycleTimeDashboard'
 
 function baseDashboard(overrides: Partial<DashboardModel> = {}): DashboardModel {
@@ -48,6 +48,20 @@ describe('formatCycleDuration', () => {
 
   it('formats_48h_plus_as_days', () => {
     expect(formatCycleDuration(72)).toBe('3.0 days')
+  })
+})
+
+describe('formatDurationHumanDays', () => {
+  it('formats_plural_days', () => {
+    expect(formatDurationHumanDays(216)).toBe('9 days')
+  })
+
+  it('formats_singular_day', () => {
+    expect(formatDurationHumanDays(24)).toBe('1 day')
+  })
+
+  it('formats_null', () => {
+    expect(formatDurationHumanDays(null)).toBe('—')
   })
 })
 
@@ -106,8 +120,10 @@ describe.sequential('PrCycleTimeDashboard', () => {
   it('dashboard_shows_data_freshness', () => {
     render(<PrCycleTimeDashboard data={baseDashboard()} />)
     const strip = screen.getByTestId('data-freshness')
-    expect(strip).toHaveTextContent('Repos scanned: 3')
-    expect(strip).toHaveTextContent('Latest sync: success')
+    expect(strip).toHaveTextContent('3 repos scanned')
+    expect(strip).toHaveTextContent('GitHub PR metadata synced')
+    expect(strip).toHaveTextContent('1 PR missing Jira key')
+    expect(strip).toHaveTextContent('0 sync errors')
   })
 
   it('dashboard_shows_sync_failed_state', () => {
