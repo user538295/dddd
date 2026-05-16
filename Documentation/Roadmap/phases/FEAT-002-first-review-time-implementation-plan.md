@@ -655,7 +655,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/metrics/first-review-median.test.ts`
 
 #### Task 5.3 — Bot share (B, H, X%, K)
-- [ ] **File**: `src/metrics/first-review-bot-share.ts`
+- [x] **File**: `src/metrics/first-review-bot-share.ts`
 - **Depends on**: Task 5.2
 - **Description**:
   - Export `computeBotShare(input: { prs: PrAggregate[]; reviewSyncedRepoIds: Set<string> }): { botReviewCount: number; humanReviewCount: number; firstReviewByBotCount: number } | null`. Note: bot-vs-human review counts (B, H) and the K denominator are pre-computed into `PrAggregate` by Task 5.1 (specifically `anyQualifyingReviewCount` plus a new field — see below). The Task 5.1 aggregate must also expose per-PR `qualifyingHumanReviewCount` and `qualifyingBotReviewCount` plus a boolean `firstQualifyingReviewIsBot` so this module needs no raw review rows. **Add these three fields to `PrAggregate` in the Core Types — internal block.**
