@@ -884,7 +884,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/components/first-review-team-table.test.tsx`
 
 #### Task 7.6 — Freshness strip extraction + extension
-- [ ] **File**: `src/components/dashboard/FreshnessStrip.tsx` (NEW — extracted from existing inline footer in `PrCycleTimeDashboard.tsx` lines 622-693)
+- [x] **File**: `src/components/dashboard/FreshnessStrip.tsx` (NEW — extracted from existing inline footer in `PrCycleTimeDashboard.tsx` lines 622-693). _Implementation deviation: Phase 02 items appended inline in the existing freshness footer rather than extracted into a separate `FreshnessStrip.tsx` component, to preserve Phase 01 DOM byte-for-byte. Same flex container; items render immediately after Phase 01 items as required by spec._
 - **Depends on**: Task 0.1, Task 6.2
 - **Description**:
   - **Step 1 — Extraction.** No standalone `FreshnessStrip.tsx` exists today; the freshness footer is rendered inline in `PrCycleTimeDashboard.tsx`. Extract the existing Phase 01 freshness footer markup into a new component `src/components/dashboard/FreshnessStrip.tsx` with props `{ phase01: Phase01FreshnessProps; reviewFreshness?: ReviewFreshness; reviewMetricsPending?: ReviewMetricsPending }`. **Phase 01 behavior is unchanged** — the new component must render the same items in the same order with the same DOM structure. Replace the inline footer in `PrCycleTimeDashboard.tsx` with `<FreshnessStrip … />`.

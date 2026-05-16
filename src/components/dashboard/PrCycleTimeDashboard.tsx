@@ -413,6 +413,21 @@ export function PrCycleTimeDashboard({
           </span>
         </span>
         {syncPartial ? <span className="pr-dashboard__partial-note">Partial sync: review sync errors above.</span> : null}
+        {data.reviewFreshness ? (
+          <span className="pr-dashboard__freshness-item" data-testid="phase02-review-freshness">
+            <span>
+              Reviews synced{' '}
+              <span className="pr-dashboard__freshness-strong">
+                {formatSyncedAgo(data.reviewFreshness.oldestReviewSyncAt, nowMs)}
+              </span>
+            </span>
+          </span>
+        ) : null}
+        {data.reviewMetricsPending ? (
+          <span className="pr-dashboard__freshness-item" data-testid="phase02-review-pending">
+            <span>{data.reviewMetricsPending.hint}</span>
+          </span>
+        ) : null}
       </footer>
 
       <aside className="pr-dashboard__future-guard" aria-hidden="true" />
