@@ -413,7 +413,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
 > **Releasable**: after this phase, the database schema supports Phase 02 storage; Phase 01 schema is unchanged in semantics.
 
 #### Task 2.1 — Extend Drizzle schema
-- [ ] **File**: `src/db/schema.ts`
+- [x] **File**: `src/db/schema.ts`
 - **Depends on**: Task 1.1
 - **Description**:
   - Add `pullRequestReviews` table per the schema additions above (UUID PK, FK to `pull_requests.id` with cascade delete, unique `(pull_request_id, github_review_id)`).

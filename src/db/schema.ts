@@ -1,11 +1,14 @@
 import {
+  bigint,
   boolean,
+  index,
   integer,
   pgEnum,
   pgTable,
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
 
@@ -30,6 +33,7 @@ export const repositories = pgTable('repositories', {
   active: boolean('active').notNull().default(true),
   lastScannedAt: timestamp('last_scanned_at', { withTimezone: true }),
   lastPrSyncedAt: timestamp('last_pr_synced_at', { withTimezone: true }),
+  lastReviewSyncedAt: timestamp('last_review_synced_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
@@ -65,6 +69,46 @@ export const pullRequests = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [unique('pull_requests_repository_id_number_unique').on(table.repositoryId, table.number)],
+)
+
+export const pullRequestReviews = pgTable(
+  'pull_request_reviews',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    pullRequestId: uuid('pull_request_id')
+      .notNull()
+      .references(() => pullRequests.id, { onDelete: 'cascade' }),
+    githubReviewId: bigint('github_review_id', { mode: 'number' }).notNull(),
+    state: text('state').notNull(),
+    submittedAt: timestamp('submitted_at', { withTimezone: true }),
+    authorLogin: text('author_login'),
+    authorType: text('author_type'),
+    isBot: boolean('is_bot').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('pull_request_reviews_unique_github_review').on(t.pullRequestId, t.githubReviewId),
+    index('pull_request_reviews_pr_id_idx').on(t.pullRequestId),
+  ],
+)
+
+export const pullRequestReviewComments = pgTable(
+  'pull_request_review_comments',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    pullRequestId: uuid('pull_request_id')
+      .notNull()
+      .references(() => pullRequests.id, { onDelete: 'cascade' }),
+    githubCommentId: bigint('github_comment_id', { mode: 'number' }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    uniqueIndex('pull_request_review_comments_unique_github_comment').on(
+      t.pullRequestId,
+      t.githubCommentId,
+    ),
+    index('idx_pull_request_review_comments_pr_id').on(t.pullRequestId),
+  ],
 )
 
 export const syncErrors = pgTable('sync_errors', {
