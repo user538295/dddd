@@ -797,7 +797,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
 > **Releasable**: after this phase, the Phase 02 section renders correctly across all empty/visible states; Phase 01 UI is unchanged.
 
 #### Task 7.1 — First Review section wrapper + layout
-- [ ] **File**: `src/components/dashboard/FirstReviewSection.tsx`, `src/components/dashboard/PrCycleTimeDashboard.tsx` (mount the section)
+- [x] **File**: `src/components/dashboard/FirstReviewSection.tsx`, `src/components/dashboard/PrCycleTimeDashboard.tsx` (mount the section)
 - **Depends on**: Task 6.2
 - **Description**:
   - `<FirstReviewSection firstReview={...} />` returns `null` when `firstReview` is undefined.

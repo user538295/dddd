@@ -11,6 +11,7 @@ import { formatCycleDuration, formatDurationHumanDays } from '~/components/dashb
 import { TrendComparison } from '~/components/dashboard/trend-comparison'
 import { DASHBOARD_SOURCE_PATHS } from '~/metrics/dashboard-source-paths'
 import { WeeklyTrendChart } from '~/components/dashboard/weekly-trend-chart'
+import { FirstReviewSection } from '~/components/dashboard/FirstReviewSection'
 
 import './PrCycleTimeDashboard.css'
 
@@ -367,6 +368,8 @@ export function PrCycleTimeDashboard({
             </table>
           </div>
         </section>
+
+        <FirstReviewSection firstReview={data.firstReview} />
 
       </div>
 
