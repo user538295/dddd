@@ -852,7 +852,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/components/first-review-exceptions-panel.test.tsx`
 
 #### Task 7.4 — Weekly trend chart
-- [ ] **File**: `src/components/dashboard/FirstReviewTrendChart.tsx`
+- [x] **File**: `src/components/dashboard/FirstReviewTrendChart.tsx`
 - **Depends on**: Task 7.1
 - **Description**:
   - Props: `weeklyTrend: WeeklyMedianPoint[]`.
