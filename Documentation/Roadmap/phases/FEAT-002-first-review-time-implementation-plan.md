@@ -733,7 +733,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/metrics/first-review-exceptions.test.ts`
 
 #### Task 5.7 — Team breakdown
-- [ ] **File**: `src/metrics/first-review-team-breakdown.ts`
+- [x] **File**: `src/metrics/first-review-team-breakdown.ts`
 - **Depends on**: Task 5.2, Task 5.5, Task 5.4
 - **Description**:
   - Export `getFirstReviewTeamBreakdown(input: { teams: TeamFirstReviewAgg[] }): FirstReviewTeamRow[]`.
