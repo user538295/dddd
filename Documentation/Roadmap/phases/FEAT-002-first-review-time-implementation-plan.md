@@ -915,7 +915,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/e2e/fixtures/phase-02-reviews.fixture.test.ts`
 
 #### Task 8.1 — Phase 01 regression suite
-- [ ] **File**: `tests/regression/phase-01-unchanged.test.ts`
+- [x] **File**: `tests/regression/phase-01-unchanged.test.ts`
 - **Depends on**: Tasks 6.2, 7.1–7.6
 - **Description**:
   - Re-run/aggregate Phase 01 surface assertions: `metric`, `exceptions`, `weeklyTrend`, `teamBreakdown`, `freshness` types and computed values against fixtures known to Phase 01. Assert these did not change with Phase 02 changes loaded.
