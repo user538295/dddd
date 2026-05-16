@@ -47,10 +47,12 @@ describe.skipIf(!hasDatabaseUrl)('dashboard-sources', () => {
 
   afterEach(async () => {
     vi.unstubAllEnvs()
+    // Clean shared sync tables and this file's repos so tests are order-independent.
+    await db.delete(syncErrors)
+    await db.delete(syncRuns)
     const repoRows = await db.select({ id: repositories.id }).from(repositories).where(eq(repositories.rootPath, testRoot))
     const ids = repoRows.map((r) => r.id)
     if (ids.length > 0) {
-      await db.delete(syncErrors).where(inArray(syncErrors.repositoryId, ids))
       await db.delete(pullRequests).where(inArray(pullRequests.repositoryId, ids))
       await db.delete(repositories).where(inArray(repositories.id, ids))
     }

@@ -18,7 +18,7 @@ import {
 import { GitHubClient } from '~/collector/github-client'
 import { refreshLocalData } from '~/collector/refresh'
 import { createDb, runMigrations } from '~/db/client'
-import { repositories, syncErrors, syncRuns } from '~/db/schema'
+import { pullRequests, repositories, syncErrors, syncRuns } from '~/db/schema'
 
 const execFileAsync = promisify(execFile)
 
@@ -68,8 +68,13 @@ describe.skipIf(!hasDatabaseUrl)('refresh', () => {
     listSpy = vi.spyOn(GitHubClient.prototype, 'listPullRequests').mockResolvedValue([])
   })
 
-  afterEach(() => {
+  afterEach(async () => {
     listSpy.mockRestore()
+    // Clean shared sync tables and repositories so tests are order-independent.
+    await db.delete(syncErrors)
+    await db.delete(pullRequests)
+    await db.delete(repositories)
+    await db.delete(syncRuns)
   })
 
   it('refresh_discovers_and_syncs_repositories', async () => {
@@ -242,7 +247,7 @@ describe.skipIf(!hasDatabaseUrl)('refresh', () => {
         teamMappingPath: mappingPath,
         githubSyncOwner: 'gde-mit',
       })
-      const [last] = await db.select().from(syncRuns).orderBy(desc(syncRuns.id)).limit(1)
+      const [last] = await db.select().from(syncRuns).orderBy(desc(syncRuns.startedAt)).limit(1)
       expect(last?.status).toBe('success')
       expect(last?.finishedAt).not.toBeNull()
     } finally {

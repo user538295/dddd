@@ -6,7 +6,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { refreshLocalData } from '~/collector/refresh'
 import { createDb, runMigrations } from '~/db/client'
-import { pullRequests, repositories } from '~/db/schema'
+import { pullRequests, repositories, syncErrors, syncRuns } from '~/db/schema'
 import {
   getDashboardData,
   parseDashboardWeeksInput,
@@ -73,6 +73,9 @@ describe.skipIf(!hasDatabaseUrl)('dashboard server integration', () => {
 
   afterEach(async () => {
     vi.unstubAllEnvs()
+    // Clean shared sync tables and this file's repos so tests are order-independent.
+    await db.delete(syncErrors)
+    await db.delete(syncRuns)
     const repoRows = await db.select({ id: repositories.id }).from(repositories).where(eq(repositories.rootPath, testRoot))
     const ids = repoRows.map((r) => r.id)
     if (ids.length > 0) {

@@ -54,6 +54,8 @@ describe.skipIf(!hasDatabaseUrl)('pr-cycle-time-dashboard', () => {
 
   afterEach(async () => {
     vi.unstubAllEnvs()
+    // Clean shared sync tables and this file's repos so tests are order-independent.
+    await db.delete(syncRuns)
     const repoRows = await db.select({ id: repositories.id }).from(repositories).where(eq(repositories.rootPath, testRoot))
     const ids = repoRows.map((r) => r.id)
     if (ids.length > 0) {

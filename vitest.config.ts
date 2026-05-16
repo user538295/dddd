@@ -20,6 +20,10 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: ['./tests/setup.ts'],
       exclude: ['**/node_modules/**', '**/dist/**', 'tests/e2e/**'],
+      // DB-touching tests share a single Postgres instance and would race on
+      // shared tables (sync_runs, sync_errors). Serialize file execution so
+      // each file owns the DB while it runs.
+      fileParallelism: false,
       coverage: {
         provider: 'v8',
         include: ['src/**/*.{ts,tsx}'],
