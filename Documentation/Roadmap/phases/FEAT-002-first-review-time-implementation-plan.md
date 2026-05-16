@@ -815,7 +815,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/components/first-review-section.test.tsx`
 
 #### Task 7.2 — First Review card
-- [ ] **File**: `src/components/dashboard/FirstReviewCard.tsx`
+- [x] **File**: `src/components/dashboard/FirstReviewCard.tsx`
 - **Depends on**: Task 7.1
 - **Description**:
   - Props: `metric: FirstReviewMetric`.
