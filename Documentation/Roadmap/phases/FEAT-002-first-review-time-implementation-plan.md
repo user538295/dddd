@@ -504,7 +504,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
 > **Releasable**: after this phase, Refresh persists per-review rows for merged PRs and sets `lastReviewSyncedAt`.
 
 #### Task 4.1 — Review store
-- [ ] **File**: `src/collector/review-store.ts`
+- [x] **File**: `src/collector/review-store.ts`
 - **Depends on**: Task 3.3
 - **Description**:
   - Export `upsertReviewsForPr(db: AppDb, input: { pullRequestId: string; mergedAt: Date; reviews: GitHubReview[]; comments: GitHubReviewComment[] }): Promise<{ reviewsWritten: number; preMergeCommentCount: number }>`.
