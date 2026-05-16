@@ -469,7 +469,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/collector/github-client-reviews.test.ts`
 
 #### Task 3.2 — GitHub client: list PR review comments
-- [ ] **File**: `src/collector/github-client.ts`
+- [x] **File**: `src/collector/github-client.ts`
 - **Depends on**: Task 3.1
 - **Description**:
   - Add method `GitHubClient.listPullRequestReviewComments(input: { owner: string; repo: string; pullNumber: number }): Promise<GitHubReviewComment[]>`.

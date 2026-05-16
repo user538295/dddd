@@ -202,6 +202,22 @@ function normalizeReview(raw: Record<string, unknown>): GitHubReview {
   return { id, state: state as GitHubReviewState, submittedAt: submitted, user }
 }
 
+function normalizeReviewComment(raw: Record<string, unknown>): GitHubReviewComment {
+  const id = raw.id
+  const createdAt = raw.created_at
+  if (typeof id !== 'number' || !Number.isFinite(id)) {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub review comment missing id' })
+  }
+  if (typeof createdAt !== 'string') {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub review comment missing created_at' })
+  }
+  const d = new Date(createdAt)
+  if (Number.isNaN(d.getTime())) {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub review comment has invalid created_at' })
+  }
+  return { id, createdAt: d }
+}
+
 async function readJsonBody(res: Response): Promise<unknown> {
   const text = await res.text()
   if (text.trim() === '') return null
@@ -254,6 +270,16 @@ export class GitHubClient {
     const items = await this.paginatedGet<GitHubReview>(
       `/repos/${encodeURIComponent(input.owner)}/${encodeURIComponent(input.repo)}/pulls/${input.pullNumber}/reviews`,
       normalizeReview,
+    )
+    return items
+  }
+
+  async listPullRequestReviewComments(
+    input: GitHubClientListPullRequestReviewsInput,
+  ): Promise<GitHubReviewComment[]> {
+    const items = await this.paginatedGet<GitHubReviewComment>(
+      `/repos/${encodeURIComponent(input.owner)}/${encodeURIComponent(input.repo)}/pulls/${input.pullNumber}/comments`,
+      normalizeReviewComment,
     )
     return items
   }
