@@ -689,7 +689,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/metrics/first-review-trend.test.ts`
 
 #### Task 5.5 — Hygiene rule
-- [ ] **File**: `src/metrics/first-review-hygiene.ts`
+- [x] **File**: `src/metrics/first-review-hygiene.ts`
 - **Depends on**: Task 4.1 (review row + comment count shape), Task 4.4 (re-exports / wraps the `isMergeWithoutReview` predicate). This split keeps Tasks 5.1 and 5.5 non-circular — both consume the predicate from Task 4.4 (see MO-2).
 - **Description**:
   - Import `isMergeWithoutReview` from `src/metrics/first-review-hygiene-predicate.ts` (Task 4.4) and **re-export** it from this module so `first-review-hygiene.ts` remains the public API surface for the hygiene rule. Callers should continue to import `isMergeWithoutReview` from `first-review-hygiene.ts`.
