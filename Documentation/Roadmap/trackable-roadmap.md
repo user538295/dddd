@@ -63,6 +63,8 @@ Goal: release the first local dashboard with one metric: PR Cycle Time.
 
 Detailed file: [phase-02-first-review-time.md](phases/phase-02-first-review-time.md)
 
+Implementation plan: [FEAT-002-first-review-time-implementation-plan.md](phases/FEAT-002-first-review-time-implementation-plan.md)
+
 Goal: add review-latency visibility after PR Cycle Time is working.
 
 - [ ] Sync GitHub review event metadata.

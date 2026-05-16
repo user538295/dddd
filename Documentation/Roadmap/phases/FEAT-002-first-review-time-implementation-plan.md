@@ -396,7 +396,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
 > **Releasable**: after this phase, FEAT-002 exists as a tracked plan with documentation links.
 
 #### Task 1.1 — Add FEAT-002 docs links
-- [ ] **File**: `Documentation/Roadmap/phases/phase-02-first-review-time.md`, `Documentation/Roadmap/trackable-roadmap.md`, `Documentation/README.md`
+- [x] **File**: `Documentation/Roadmap/phases/phase-02-first-review-time.md`, `Documentation/Roadmap/trackable-roadmap.md`, `Documentation/README.md`
 - **Depends on**: nothing
 - **Description**:
   - Phase 02 phase doc: replace the "Implementation plan: FEAT-002 (to be authored before coding starts)" line with a direct link to `FEAT-002-first-review-time-implementation-plan.md`.

@@ -3,7 +3,7 @@
 Status: Draft (spec locked for implementation)
 Last updated: 2026-05-15
 
-Implementation plan: **FEAT-002** (to be authored before coding starts; follow the structure of [FEAT-001 — PR Cycle Time MVP](FEAT-001-pr-cycle-time-mvp-implementation-plan.md)).
+Implementation plan: [FEAT-002 — First Review Time](FEAT-002-first-review-time-implementation-plan.md) (follows the structure of [FEAT-001 — PR Cycle Time MVP](FEAT-001-pr-cycle-time-mvp-implementation-plan.md)).
 
 Depends on: [Phase 01: PR Cycle Time MVP](phase-01-pr-cycle-time-mvp.md) complete (`npm run verify:phase01`).
 
