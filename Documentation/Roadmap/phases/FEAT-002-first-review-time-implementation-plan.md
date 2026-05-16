@@ -605,7 +605,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/metrics/exception-sort.test.ts && npm run verify:phase01`
 
 #### Task 5.1 — First Review per-PR computation and PR aggregate derivation
-- [ ] **File**: `src/metrics/first-review-time.ts`
+- [x] **File**: `src/metrics/first-review-time.ts`
 - **Depends on**: Task 4.1 (uses review row shape), Task 4.4 (uses the `isMergeWithoutReview` predicate to populate `mergeWithoutReviewMatchesHygieneRule` on `PrAggregate`). The predicate lives in a separate module (`src/metrics/first-review-hygiene-predicate.ts`); Task 5.1 imports it and combines it with the 7-minute window check to populate the aggregate flag. This split keeps Tasks 5.1 and 5.5 non-circular — both depend on Task 4.4, not on each other.
 - **Description**:
   - Export `getFirstHumanReviewSubmittedAt(reviews: ReviewRow[], mergedAt: Date): Date | null`.
