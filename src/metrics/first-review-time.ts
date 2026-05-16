@@ -1,4 +1,5 @@
 import { isMergeWithoutReview } from '~/metrics/first-review-hygiene-predicate'
+import { median } from '~/metrics/pr-cycle-time-summary'
 
 export type ReviewState = 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'PENDING' | 'DISMISSED'
 
@@ -75,6 +76,38 @@ export function getFirstHumanReviewSubmittedAt(reviews: ReviewRow[], mergedAt: D
 
 export function getFirstReviewHours(pr: { openedAt: Date }, firstHumanReviewSubmittedAt: Date): number {
   return (firstHumanReviewSubmittedAt.getTime() - pr.openedAt.getTime()) / (1000 * 60 * 60)
+}
+
+export type DateRange = { start: Date; end: Date }
+
+function isInRange(date: Date, range: DateRange): boolean {
+  const t = date.getTime()
+  return t >= range.start.getTime() && t < range.end.getTime()
+}
+
+export type FirstReviewMedianResult = {
+  medianHours: number | null
+  M: number
+  N: number
+}
+
+export function computeFirstReviewMedian(input: {
+  prs: PrAggregate[]
+  range: DateRange
+  reviewSyncedRepoIds: Set<string>
+}): FirstReviewMedianResult {
+  const inN = input.prs.filter(
+    (p) => input.reviewSyncedRepoIds.has(p.repoId) && isInRange(p.mergedAt, input.range),
+  )
+  const qualifying = inN.filter((p) => p.firstQualifyingHumanReviewAt !== null)
+  const hours = qualifying.map((p) =>
+    getFirstReviewHours(p, p.firstQualifyingHumanReviewAt as Date),
+  )
+  return {
+    medianHours: hours.length === 0 ? null : median(hours),
+    M: qualifying.length,
+    N: inN.length,
+  }
 }
 
 export function buildPrAggregate(input: PrWithReviews): PrAggregate {

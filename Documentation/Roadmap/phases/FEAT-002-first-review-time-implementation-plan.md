@@ -635,7 +635,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/metrics/first-review-time.test.ts`
 
 #### Task 5.2 — Median, M, N, qualifying population
-- [ ] **File**: `src/metrics/first-review-time.ts`
+- [x] **File**: `src/metrics/first-review-time.ts`
 - **Depends on**: Task 5.1
 - **Description**:
   - Export `computeFirstReviewMedian(input: { prs: PrAggregate[]; range: DateRange; reviewSyncedRepoIds: Set<string> }): { medianHours: number | null; M: number; N: number }`. Input is already-aggregated; no raw review rows are needed here.
