@@ -22,6 +22,60 @@ export type PrCycleTimeException = {
   count?: number
 }
 
+export type FirstReviewMetric = {
+  medianHours: number | null
+  previousMedianHours: number | null
+  qualifyingPrCount: number
+  mergedPrCountInSyncedRepos: number
+  trendPercent: number | null
+  baselineStatus: 'available' | 'pending'
+  botShare: {
+    botReviewCount: number
+    humanReviewCount: number
+    firstReviewByBotCount: number
+  } | null
+}
+
+export type FirstReviewException = {
+  type: 'review_latency_worsened' | 'merge_without_review' | 'review_baseline_pending'
+  severity: 'warning' | 'info'
+  team: string
+  message: string
+  trendPercent?: number | null
+  count?: number
+  prDetails?: Array<{ prNumber: number; title: string; repo: string }>
+}
+
+export type SyncError = {
+  repoFullName: string
+  source: 'github_prs' | 'github_reviews'
+  message: string
+  occurredAt: string
+}
+
+export type FirstReviewTeamRow = {
+  team: string
+  medianHours: number | null
+  trendPercent: number | null
+  noReviewMergeCount: number | null
+}
+
+export type FirstReview = {
+  metric: FirstReviewMetric
+  exceptions: FirstReviewException[]
+  weeklyTrend: Array<{ weekStart: string; medianHours: number | null }>
+  teamBreakdown: FirstReviewTeamRow[]
+}
+
+export type ReviewFreshness = {
+  oldestReviewSyncAt: string
+  reviewSyncErrors: SyncError[]
+}
+
+export type ReviewMetricsPending = {
+  hint: string
+}
+
 export type PrCycleTimeDashboard = {
   range: { from: string; to: string; weeks: number }
   metric: {
@@ -48,6 +102,9 @@ export type PrCycleTimeDashboard = {
     syncErrors: number
     latestSyncStatus: 'success' | 'partial' | 'failed' | 'never_run'
   }
+  firstReview?: FirstReview
+  reviewFreshness?: ReviewFreshness
+  reviewMetricsPending?: ReviewMetricsPending
 }
 
 const MS_PER_HOUR = 1000 * 60 * 60

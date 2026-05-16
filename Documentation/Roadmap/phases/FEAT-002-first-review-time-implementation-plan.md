@@ -753,7 +753,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
 > **Releasable**: after this phase, `getDashboardData` returns the extended payload with correct presence/absence of `firstReview`, `reviewFreshness`, `reviewMetricsPending`.
 
 #### Task 6.1 — Dashboard payload type additions
-- [ ] **File**: `src/metrics/pr-cycle-time-dashboard.ts`
+- [x] **File**: `src/metrics/pr-cycle-time-dashboard.ts`
 - **Depends on**: Tasks 5.2–5.7
 - **Description**:
   - Add `FirstReview`, `FirstReviewMetric`, `FirstReviewException`, `FirstReviewTeamRow`, `ReviewFreshness`, `ReviewMetricsPending` types per Core Types above.
