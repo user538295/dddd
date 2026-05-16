@@ -903,7 +903,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
 > **Releasable**: after this phase, Phase 01 regression and Phase 02 e2e smoke pass.
 
 #### Task 8.0 — E2E review fixture seeder
-- [ ] **File**: `tests/e2e/fixtures/phase-02-reviews.fixture.ts`
+- [x] **File**: `tests/e2e/fixtures/phase-02-reviews.fixture.ts`
 - **Depends on**: Task 2.2 (schema), Task 4.1 (review row shape)
 - **Description**:
   - Provide a deterministic seeding function that populates a local test database with: two repositories (one with `lastReviewSyncedAt` set, one with `lastReviewSyncedAt = null`), N merged PRs distributed across two teams, mixed bot and human reviews on those PRs (covering qualifying-human-review, bot-only, and zero-review cases), and exactly one PR matching the `merge_without_review` hygiene rule.
