@@ -949,7 +949,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
 > **Releasable**: after this phase, FEAT-002 is complete and verifiable end-to-end.
 
 #### Task 9.1 — `verify:phase02` script
-- [ ] **File**: `package.json`, `vitest.config.phase02.ts` (or coverage scope helper file used by the script)
+- [x] **File**: `package.json`, `vitest.config.phase02.ts` (or coverage scope helper file used by the script)
 - **Depends on**: Tasks 1.1–8.2
 - **Description**:
   - Add `"verify:phase02": "eslint && tsc --noEmit && vitest run --coverage --config vitest.config.phase02.ts && playwright test --grep @phase02"`.
