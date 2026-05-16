@@ -705,7 +705,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/metrics/first-review-hygiene.test.ts`
 
 #### Task 5.6 — Exception list builder
-- [ ] **File**: `src/metrics/first-review-exceptions.ts`
+- [x] **File**: `src/metrics/first-review-exceptions.ts`
 - **Depends on**: Task 5.0 (shared sort helper), Task 5.4, Task 5.5
 - **Description**:
   - Export `buildFirstReviewExceptions(input: { teams: TeamFirstReviewAgg[]; prs: PrAggregate[] }): FirstReviewException[]`. The `prs` array is the same filtered-to-`reviewSyncedRepoIds` set already passed to Tasks 5.2–5.7 by the payload assembler (Task 6.2); it carries the PR-level fields (`prNumber`, `title`, `repoFullName`) needed to populate `prDetails` on `merge_without_review` exceptions.
