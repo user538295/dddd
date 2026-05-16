@@ -3,8 +3,31 @@ import { desc, eq, inArray, isNotNull } from 'drizzle-orm'
 import { getDashboardDateRanges, getEnv } from '~/config/env'
 import { loadTeamMapping } from '~/config/team-mapping'
 import type { AppDb } from '~/db/client'
-import { pullRequests, repositories, syncRuns } from '~/db/schema'
+import {
+  pullRequestReviewComments,
+  pullRequestReviews,
+  pullRequests,
+  repositories,
+  syncErrors,
+  syncRuns,
+} from '~/db/schema'
 import { sortExceptionsBySeverityThenMagnitude } from '~/metrics/exception-sort'
+import { computeBotShare } from '~/metrics/first-review-bot-share'
+import {
+  buildFirstReviewExceptions,
+  type TeamFirstReviewAgg,
+} from '~/metrics/first-review-exceptions'
+import { countMergeWithoutReviewByTeam } from '~/metrics/first-review-hygiene'
+import { getFirstReviewTeamBreakdown } from '~/metrics/first-review-team-breakdown'
+import {
+  buildPrAggregate,
+  compareFirstReviewPeriods,
+  computeFirstReviewMedian,
+  getFirstReviewWeeklyTrend,
+  type PrAggregate,
+  type PrWithReviews,
+  type ReviewRow,
+} from '~/metrics/first-review-time'
 import { calculatePrCycleTime, type PullRequestRecord } from '~/metrics/pr-cycle-time'
 import { comparePeriods, getWeeklyMedianTrend, median } from '~/metrics/pr-cycle-time-summary'
 
@@ -319,7 +342,7 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
   sortExceptions(exceptions, teamBreakdown)
   const limited = exceptions.slice(0, 3)
 
-  return {
+  const phase01: PrCycleTimeDashboard = {
     range: {
       from: formatIso(current.from),
       to: formatIso(current.to),
@@ -343,4 +366,213 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
       latestSyncStatus,
     },
   }
+
+  const syncedRepos = metricsRepos.filter((r) => r.lastReviewSyncedAt !== null)
+  if (syncedRepos.length === 0) {
+    return {
+      ...phase01,
+      reviewMetricsPending: { hint: 'Review metrics will appear after the next refresh' },
+    }
+  }
+
+  const syncedRepoIds = new Set(syncedRepos.map((r) => r.id))
+  const repoById = new Map(metricsRepos.map((r) => [r.id, r]))
+  const mergedPrsInSyncedRepos = prs.filter(
+    (p) => p.mergedAt !== null && syncedRepoIds.has(p.repositoryId),
+  )
+  const mergedPrIds = mergedPrsInSyncedRepos.map((p) => p.id)
+
+  const reviewRows =
+    mergedPrIds.length === 0
+      ? []
+      : await input.db
+          .select()
+          .from(pullRequestReviews)
+          .where(inArray(pullRequestReviews.pullRequestId, mergedPrIds))
+  const reviewCommentRows =
+    mergedPrIds.length === 0
+      ? []
+      : await input.db
+          .select()
+          .from(pullRequestReviewComments)
+          .where(inArray(pullRequestReviewComments.pullRequestId, mergedPrIds))
+
+  const reviewsByPrId = new Map<string, ReviewRow[]>()
+  for (const r of reviewRows) {
+    const list = reviewsByPrId.get(r.pullRequestId) ?? []
+    list.push({
+      state: r.state as ReviewRow['state'],
+      submittedAt: r.submittedAt,
+      isBot: r.isBot,
+    })
+    reviewsByPrId.set(r.pullRequestId, list)
+  }
+  const commentsByPrId = new Map<string, { createdAt: Date }[]>()
+  for (const c of reviewCommentRows) {
+    const list = commentsByPrId.get(c.pullRequestId) ?? []
+    list.push({ createdAt: c.createdAt })
+    commentsByPrId.set(c.pullRequestId, list)
+  }
+
+  const aggregates: PrAggregate[] = mergedPrsInSyncedRepos.map((p) => {
+    const repo = repoById.get(p.repositoryId)
+    const repoFullName = repo?.owner && repo.repo ? `${repo.owner}/${repo.repo}` : repo?.name ?? ''
+    const input: PrWithReviews = {
+      pr: {
+        id: p.id,
+        number: p.number,
+        title: p.title,
+        repositoryId: p.repositoryId,
+        repoFullName,
+        team: repo ? repoTeamLabel(repo) : DASHBOARD_UNASSIGNED_TEAM,
+        openedAt: p.openedAt,
+        mergedAt: p.mergedAt as Date,
+        authorBotFlag: false,
+      },
+      reviews: reviewsByPrId.get(p.id) ?? [],
+      reviewComments: commentsByPrId.get(p.id) ?? [],
+    }
+    return buildPrAggregate(input)
+  })
+
+  const currentRange = { start: current.from, end: current.to }
+  const previousRange = { start: previous.from, end: current.from }
+
+  const currentAggs = aggregates.filter((a) => {
+    const t = a.mergedAt.getTime()
+    return t >= currentRange.start.getTime() && t < currentRange.end.getTime()
+  })
+  const previousAggs = aggregates.filter((a) => {
+    const t = a.mergedAt.getTime()
+    return t >= previousRange.start.getTime() && t < previousRange.end.getTime()
+  })
+
+  const cur = computeFirstReviewMedian({
+    prs: currentAggs,
+    range: currentRange,
+    reviewSyncedRepoIds: syncedRepoIds,
+  })
+  const prev = computeFirstReviewMedian({
+    prs: previousAggs,
+    range: previousRange,
+    reviewSyncedRepoIds: syncedRepoIds,
+  })
+  const firstReviewCompare = compareFirstReviewPeriods({
+    currentMedian: cur.medianHours,
+    previousMedian: prev.medianHours,
+    previousQualifyingPrCount: prev.M,
+  })
+
+  const bot = computeBotShare({
+    prs: currentAggs,
+    reviewSyncedRepoIds: syncedRepoIds,
+    range: currentRange,
+  })
+
+  const firstReviewWeekly = getFirstReviewWeeklyTrend(currentAggs, currentRange)
+
+  const teamLabelsFR = new Set<string>()
+  for (const a of currentAggs) teamLabelsFR.add(a.team)
+  const sortedTeamLabelsFR = [...teamLabelsFR].sort((a, b) => a.localeCompare(b))
+
+  const hygieneCounts = countMergeWithoutReviewByTeam(currentAggs)
+
+  const teamAggs: TeamFirstReviewAgg[] = sortedTeamLabelsFR.map((teamName) => {
+    const curTeam = currentAggs.filter((a) => a.team === teamName)
+    const prevTeam = previousAggs.filter((a) => a.team === teamName)
+    const curHumanHours = curTeam
+      .filter((a) => a.firstQualifyingHumanReviewAt !== null)
+      .map(
+        (a) =>
+          ((a.firstQualifyingHumanReviewAt as Date).getTime() - a.openedAt.getTime()) /
+          MS_PER_HOUR,
+      )
+    const prevHumanHours = prevTeam
+      .filter((a) => a.firstQualifyingHumanReviewAt !== null)
+      .map(
+        (a) =>
+          ((a.firstQualifyingHumanReviewAt as Date).getTime() - a.openedAt.getTime()) /
+          MS_PER_HOUR,
+      )
+    const med = median(curHumanHours)
+    const prevMed = median(prevHumanHours)
+    const cmp = compareFirstReviewPeriods({
+      currentMedian: med,
+      previousMedian: prevMed,
+      previousQualifyingPrCount: prevHumanHours.length,
+    })
+    const nrm = hygieneCounts.get(teamName) ?? null
+    return {
+      team: teamName,
+      currentQualifyingPrCount: curHumanHours.length,
+      previousQualifyingPrCount: prevHumanHours.length,
+      medianHours: med,
+      previousMedianHours: prevMed,
+      trendPercent: cmp.trendPercent,
+      noReviewMergeCount: nrm,
+    }
+  })
+
+  const firstReviewExceptions = buildFirstReviewExceptions({
+    teams: teamAggs,
+    prs: currentAggs,
+  }).map((e) => ({ ...e, message: formatFirstReviewMessage(e) }))
+
+  const firstReview: FirstReview = {
+    metric: {
+      medianHours: cur.medianHours,
+      previousMedianHours: prev.medianHours,
+      qualifyingPrCount: cur.M,
+      mergedPrCountInSyncedRepos: cur.N,
+      trendPercent: firstReviewCompare.trendPercent,
+      baselineStatus: firstReviewCompare.baselineStatus,
+      botShare: bot,
+    },
+    exceptions: firstReviewExceptions,
+    weeklyTrend: firstReviewWeekly,
+    teamBreakdown: getFirstReviewTeamBreakdown({ teams: teamAggs }),
+  }
+
+  const oldestReviewSyncMs = Math.min(
+    ...syncedRepos.map((r) => (r.lastReviewSyncedAt as Date).getTime()),
+  )
+
+  let reviewSyncErrorsList: SyncError[] = []
+  if (latestRun) {
+    const rows = await input.db
+      .select()
+      .from(syncErrors)
+      .where(eq(syncErrors.syncRunId, latestRun.id))
+    for (const row of rows) {
+      if (row.source !== 'github_reviews') continue
+      const repo = row.repositoryId ? repoById.get(row.repositoryId) : null
+      const repoFullName =
+        repo && repo.owner && repo.repo ? `${repo.owner}/${repo.repo}` : repo?.name ?? ''
+      reviewSyncErrorsList.push({
+        repoFullName,
+        source: 'github_reviews',
+        message: row.message,
+        occurredAt: formatIso(row.createdAt),
+      })
+    }
+  }
+
+  return {
+    ...phase01,
+    firstReview,
+    reviewFreshness: {
+      oldestReviewSyncAt: formatIso(new Date(oldestReviewSyncMs)),
+      reviewSyncErrors: reviewSyncErrorsList,
+    },
+  }
+}
+
+function formatFirstReviewMessage(e: { type: string; team: string }): string {
+  if (e.type === 'review_latency_worsened') {
+    return `${e.team} first review median worsened by at least 25% versus the previous period.`
+  }
+  if (e.type === 'merge_without_review') {
+    return `${e.team} merged at least one PR with no qualifying review.`
+  }
+  return `${e.team} first review baseline is pending (fewer than 3 qualifying human reviews in the previous period).`
 }

@@ -767,7 +767,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/metrics/dashboard-types-phase-02.test.ts`
 
 #### Task 6.2 — Dashboard payload assembly
-- [ ] **File**: `src/metrics/pr-cycle-time-dashboard.ts`
+- [x] **File**: `src/metrics/pr-cycle-time-dashboard.ts`
 - **Depends on**: Task 0.1 (old nested `firstReview.freshness` already removed), Task 6.1
 - **Description**:
   - **Explicit removal contract.** The existing nested `firstReview.freshness` block (with `reviewMetadataSyncedAt` and `reviewSyncErrors: number`) was already deleted in Task 0.1. This task **does not re-introduce** freshness fields nested under `firstReview`. Review freshness lives **only** in the new top-level siblings `reviewFreshness` and `reviewMetricsPending` per the Core Types section above and per brief §83.
