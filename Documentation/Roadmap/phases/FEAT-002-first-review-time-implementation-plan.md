@@ -522,7 +522,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/collector/review-store.test.ts`
 
 #### Task 4.2 — Review sync orchestrator
-- [ ] **File**: `src/collector/review-sync.ts`
+- [x] **File**: `src/collector/review-sync.ts`
 - **Depends on**: Task 4.1, Task 3.1, Task 3.2
 - **Description**:
   - Export `syncRepositoryReviews(db: AppDb, deps: { client: GitHubClient; now: Date }, repo: RepositoryRow): Promise<{ status: 'success' | 'partial' | 'skipped'; perPrErrors: SyncError[] }>`.
