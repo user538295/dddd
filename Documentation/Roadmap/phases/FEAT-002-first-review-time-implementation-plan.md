@@ -865,7 +865,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/components/first-review-trend-chart.test.tsx`
 
 #### Task 7.5 — Phase 02 team table
-- [ ] **File**: `src/components/dashboard/FirstReviewTeamTable.tsx`
+- [x] **File**: `src/components/dashboard/FirstReviewTeamTable.tsx`
 - **Depends on**: Task 7.1
 - **Description**:
   - Props: `rows: FirstReviewTeamRow[]`.
