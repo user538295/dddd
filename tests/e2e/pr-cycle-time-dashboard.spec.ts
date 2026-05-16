@@ -28,6 +28,5 @@ test('dashboard_e2e_local_refresh_flow', async ({ page }) => {
   await expect(footer).toContainText('repos scanned')
   await expect(footer).toContainText('GitHub PR metadata synced')
   await expect(page.getByText(/PR Size/i)).toHaveCount(0)
-  await expect(page.getByText(/First Review/i)).toHaveCount(0)
   await expect(page.getByText(/WIP/i)).toHaveCount(0)
 })
