@@ -377,7 +377,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
 > **Releasable**: after this phase, the existing partial Phase 02 surface is reduced to a known starting state that matches the brief's contract. No new behavior is shipped here; this is a refactor pass that prepares the codebase for Phases 2–9.
 
 #### Task 0.1 — Remove existing partial Phase 02 fields and inline UI
-- [ ] **File**: `src/metrics/pr-cycle-time-dashboard.ts`, `src/components/dashboard/PrCycleTimeDashboard.tsx`, `src/components/dashboard/PrCycleTimeDashboard.css`, `tests/components/pr-cycle-time-dashboard.test.tsx`
+- [x] **File**: `src/metrics/pr-cycle-time-dashboard.ts`, `src/components/dashboard/PrCycleTimeDashboard.tsx`, `src/components/dashboard/PrCycleTimeDashboard.css`, `tests/components/pr-cycle-time-dashboard.test.tsx`
 - **Depends on**: nothing (must run before Task 6.1 reshapes the payload type)
 - **Description**:
   - **Payload type (in `src/metrics/pr-cycle-time-dashboard.ts`).** Delete the existing nested `firstReview?: { metric: { ..., reviewedPrCount, reviewedPrs, mergeWithoutReviewCount, ... }, ..., freshness: { reviewMetadataSyncedAt, reviewSyncErrors } }` block (current lines 51–73). Also delete the exported `FirstReviewException` type alias from this file (it will be re-introduced in Task 6.1 with the new shape). Leave the rest of `PrCycleTimeDashboard` untouched. The new shape is added by Task 6.1; this task only removes the old one so the codebase compiles in a clean intermediate state with `firstReview` temporarily absent. Any payload-assembly code that populates the old `firstReview` block is deleted in the same edit (this is the partial Phase 02 implementation; Phase 01 logic is untouched).
