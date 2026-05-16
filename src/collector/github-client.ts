@@ -18,6 +18,26 @@ export type GitHubClientListPullRequestsInput = {
   stopAfterUpdatedAt?: Date
 }
 
+export type GitHubReviewState = 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'PENDING' | 'DISMISSED'
+
+export type GitHubReview = {
+  id: number
+  state: GitHubReviewState
+  submittedAt: Date | null
+  user: { login: string; type: 'User' | 'Bot' | null } | null
+}
+
+export type GitHubReviewComment = {
+  id: number
+  createdAt: Date
+}
+
+export type GitHubClientListPullRequestReviewsInput = {
+  owner: string
+  repo: string
+  pullNumber: number
+}
+
 export type GitHubSyncErrorCode = 'rate_limited' | 'unauthorized' | 'forbidden' | 'unknown'
 
 export class GitHubSyncError extends Error {
@@ -131,6 +151,57 @@ function normalizePullRequest(raw: Record<string, unknown>): GitHubPullRequest {
   }
 }
 
+const REVIEW_STATES: ReadonlySet<GitHubReviewState> = new Set([
+  'APPROVED',
+  'CHANGES_REQUESTED',
+  'COMMENTED',
+  'PENDING',
+  'DISMISSED',
+])
+
+function normalizeReview(raw: Record<string, unknown>): GitHubReview {
+  const id = raw.id
+  const state = raw.state
+  const submittedAt = raw.submitted_at
+  const userRaw = raw.user
+
+  if (typeof id !== 'number' || !Number.isFinite(id)) {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub review missing id' })
+  }
+  if (typeof state !== 'string' || !REVIEW_STATES.has(state as GitHubReviewState)) {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub review has invalid state' })
+  }
+
+  let submitted: Date | null = null
+  if (submittedAt !== null && submittedAt !== undefined) {
+    if (typeof submittedAt !== 'string') {
+      throw new GitHubSyncError({ code: 'unknown', message: 'GitHub review has invalid submitted_at' })
+    }
+    const d = new Date(submittedAt)
+    if (Number.isNaN(d.getTime())) {
+      throw new GitHubSyncError({ code: 'unknown', message: 'GitHub review has invalid submitted_at' })
+    }
+    submitted = d
+  }
+
+  let user: GitHubReview['user'] = null
+  if (userRaw !== null && userRaw !== undefined) {
+    if (typeof userRaw !== 'object') {
+      throw new GitHubSyncError({ code: 'unknown', message: 'GitHub review has invalid user' })
+    }
+    const obj = userRaw as Record<string, unknown>
+    const login = obj.login
+    const type = obj.type
+    if (typeof login !== 'string' || login.length === 0) {
+      throw new GitHubSyncError({ code: 'unknown', message: 'GitHub review user missing login' })
+    }
+    const userType = type === 'User' || type === 'Bot' ? type : null
+    user = { login, type: userType }
+  }
+
+  return { id, state: state as GitHubReviewState, submittedAt: submitted, user }
+}
+
 async function readJsonBody(res: Response): Promise<unknown> {
   const text = await res.text()
   if (text.trim() === '') return null
@@ -175,6 +246,93 @@ export class GitHubClient {
     this.token = options.token
     this.baseUrl = trimTrailingSlash(options.baseUrl)
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis)
+  }
+
+  async listPullRequestReviews(
+    input: GitHubClientListPullRequestReviewsInput,
+  ): Promise<GitHubReview[]> {
+    const items = await this.paginatedGet<GitHubReview>(
+      `/repos/${encodeURIComponent(input.owner)}/${encodeURIComponent(input.repo)}/pulls/${input.pullNumber}/reviews`,
+      normalizeReview,
+    )
+    return items
+  }
+
+  private async paginatedGet<T>(
+    path: string,
+    mapItem: (raw: Record<string, unknown>) => T,
+  ): Promise<T[]> {
+    const root = trimTrailingSlash(this.baseUrl)
+    const first = new URL(`${root}${path}`)
+    first.searchParams.set('per_page', String(PER_PAGE))
+
+    const results: T[] = []
+    let nextUrl: string | null = first.toString()
+
+    while (nextUrl !== null) {
+      const headers = new Headers({
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'dddd-pr-cycle-time-collector',
+      })
+      if (this.token !== undefined && this.token !== '') {
+        headers.set('Authorization', `token ${this.token}`)
+      }
+      const res = await this.fetchImpl(nextUrl, { headers })
+
+      if (!res.ok) {
+        const body = await readJsonBody(res)
+        const retryAfterSeconds = parseRetryAfterSeconds(res)
+        if (res.status === 401) {
+          throw new GitHubSyncError({
+            code: 'unauthorized',
+            message: 'GitHub rejected the request (401 Unauthorized)',
+            retryAfterSeconds,
+          })
+        }
+        if (isRateLimitedResponse(res, body)) {
+          throw new GitHubSyncError({
+            code: 'rate_limited',
+            message: 'GitHub rate limit exceeded',
+            retryAfterSeconds,
+          })
+        }
+        if (res.status === 403) {
+          throw new GitHubSyncError({
+            code: 'forbidden',
+            message: 'GitHub rejected the request (403 Forbidden)',
+            retryAfterSeconds,
+          })
+        }
+        const msg =
+          typeof body === 'object' &&
+          body !== null &&
+          'message' in body &&
+          typeof (body as { message: unknown }).message === 'string'
+            ? (body as { message: string }).message
+            : `GitHub request failed with status ${res.status}`
+        throw new GitHubSyncError({ code: 'unknown', message: msg, retryAfterSeconds })
+      }
+
+      const body = await readJsonBody(res)
+      if (!Array.isArray(body)) {
+        throw new GitHubSyncError({ code: 'unknown', message: 'GitHub response is not an array' })
+      }
+      for (const item of body) {
+        if (typeof item !== 'object' || item === null) continue
+        results.push(mapItem(item as Record<string, unknown>))
+      }
+
+      const parsedNext = parseLinkNext(res.headers.get('Link'))
+      if (parsedNext !== null && !isSameApiOrigin(this.baseUrl, parsedNext)) {
+        throw new GitHubSyncError({
+          code: 'unknown',
+          message: 'GitHub Link header next URL does not match the configured API host',
+        })
+      }
+      nextUrl = parsedNext
+    }
+
+    return results
   }
 
   async listPullRequests(input: GitHubClientListPullRequestsInput): Promise<GitHubPullRequest[]> {

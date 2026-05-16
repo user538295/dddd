@@ -452,7 +452,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
 > **Releasable**: after each task in this phase, the corresponding helper is callable in isolation.
 
 #### Task 3.1 — GitHub client: list PR reviews
-- [ ] **File**: `src/collector/github-client.ts`
+- [x] **File**: `src/collector/github-client.ts`
 - **Depends on**: Task 2.2
 - **Description**:
   - Add method `GitHubClient.listPullRequestReviews(input: { owner: string; repo: string; pullNumber: number }): Promise<GitHubReview[]>`.
