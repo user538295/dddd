@@ -837,7 +837,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/components/first-review-card.test.tsx`
 
 #### Task 7.3 — Review-latency exceptions panel
-- [ ] **File**: `src/components/dashboard/FirstReviewExceptionsPanel.tsx`
+- [x] **File**: `src/components/dashboard/FirstReviewExceptionsPanel.tsx`
 - **Depends on**: Task 7.1
 - **Description**:
   - Props: `exceptions: FirstReviewException[]`.
