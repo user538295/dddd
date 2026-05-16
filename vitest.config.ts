@@ -7,7 +7,8 @@ import { defineConfig } from 'vitest/config'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig(({ mode }) => {
-  loadEnv(mode, __dirname, '')
+  const env = loadEnv(mode, __dirname, '')
+  Object.assign(process.env, env)
 
   return {
     plugins: [react()],
