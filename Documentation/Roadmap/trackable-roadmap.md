@@ -59,7 +59,7 @@ Goal: release the first local dashboard with one metric: PR Cycle Time.
 - [x] Verify the dashboard renders no future metric cards.
 - [x] Verify the current MVP mockup is still aligned or update the mockup/doc if the UI intentionally changes.
 
-## Phase 02: First Review Time
+## Phase 02: First Review Time (Implemented)
 
 Detailed file: [phase-02-first-review-time.md](phases/phase-02-first-review-time.md)
 

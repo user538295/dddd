@@ -964,7 +964,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/scripts/verify-phase-02.test.ts && npm run verify:phase02 && npm run verify:phase01`
 
 #### Task 9.2 — Acceptance checklist + roadmap finalization
-- [ ] **File**: `Documentation/Roadmap/phases/phase-02-first-review-time.md`, `Documentation/Roadmap/trackable-roadmap.md`, `Documentation/README.md`
+- [x] **File**: `Documentation/Roadmap/phases/phase-02-first-review-time.md`, `Documentation/Roadmap/trackable-roadmap.md`, `Documentation/README.md`
 - **Depends on**: Task 9.1
 - **Description**:
   - Tick Phase 02 acceptance checklist boxes in the phase doc to match what FEAT-002 delivered.

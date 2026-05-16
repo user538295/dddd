@@ -37,7 +37,7 @@ The first release shows one metric only: PR Cycle Time.
 
 ## Next Step
 
-Current next step: [Phase 02: First Review Time](Roadmap/phases/phase-02-first-review-time.md) — implementation plan [FEAT-002-first-review-time-implementation-plan.md](Roadmap/phases/FEAT-002-first-review-time-implementation-plan.md).
+Phase 02 (First Review Time) is implemented (see [FEAT-002-first-review-time-implementation-plan.md](Roadmap/phases/FEAT-002-first-review-time-implementation-plan.md)). Next step: [Phase 03: PR Size](Roadmap/phases/phase-03-pr-size.md).
 
 Current Phase 02 UI reference:
 

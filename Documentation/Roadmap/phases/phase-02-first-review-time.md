@@ -129,13 +129,13 @@ Sort using the same severity and tie-break rules as Phase 01 (`warning` before `
 
 ## Acceptance criteria checklist
 
-- [ ] Drizzle migration adds review fields and applies cleanly.
-- [ ] Collector syncs GitHub review metadata and stores `firstReviewSubmittedAt` and participation counts.
-- [ ] First Review median, previous-period comparison, trend, team breakdown, and exceptions are computed per locked rules.
-- [ ] Dashboard shows the First Review card only when review data has been synced at least once (empty computation states use explicit copy, not placeholders).
-- [ ] Merge-without-review hygiene is visible without polluting the First Review median.
-- [ ] PR Cycle Time metric, UI, and `npm run verify:phase01` behavior remain unchanged.
-- [ ] `npm run verify:phase02` passes (lint, typecheck, build, coverage ≥85%, e2e including Phase 02 scenarios).
+- [x] Drizzle migration adds review fields and applies cleanly.
+- [x] Collector syncs GitHub review metadata and stores `firstReviewSubmittedAt` and participation counts.
+- [x] First Review median, previous-period comparison, trend, team breakdown, and exceptions are computed per locked rules.
+- [x] Dashboard shows the First Review card only when review data has been synced at least once (empty computation states use explicit copy, not placeholders).
+- [x] Merge-without-review hygiene is visible without polluting the First Review median.
+- [x] PR Cycle Time metric, UI, and `npm run verify:phase01` behavior remain unchanged.
+- [x] `npm run verify:phase02` passes (lint, typecheck, build, coverage ≥85%, e2e including Phase 02 scenarios).
 
 ## Verification and tests (required in FEAT-002)
 
