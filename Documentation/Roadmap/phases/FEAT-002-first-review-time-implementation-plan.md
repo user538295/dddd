@@ -482,7 +482,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/collector/github-client-review-comments.test.ts`
 
 #### Task 3.3 — Bot identity helper
-- [ ] **File**: `src/collector/bot-identity.ts`
+- [x] **File**: `src/collector/bot-identity.ts`
 - **Depends on**: nothing (pure helper; can be parallel to 3.1/3.2 but ordered for review predictability)
 - **Description**:
   - Export `isBotReviewer(user: { login?: string | null; type?: 'User' | 'Bot' | null } | null | undefined): boolean`.
