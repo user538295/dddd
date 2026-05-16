@@ -1,14 +1,13 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import type { PrCycleTimeDashboard } from '~/metrics/pr-cycle-time-dashboard'
 
-const PHASE_01_TEAM_TABLE_COLUMNS = [
-  'team',
-  'mergedPrs',
-  'medianHours',
-  'previousMedianHours',
-  'trendPercent',
-  'longestOpenPrHours',
-] as const
+type Phase01TeamColumn =
+  | 'team'
+  | 'mergedPrs'
+  | 'medianHours'
+  | 'previousMedianHours'
+  | 'trendPercent'
+  | 'longestOpenPrHours'
 
 describe('phase 01 unchanged regression', () => {
   it('phase01_cycle_time_unchanged', () => {
@@ -23,7 +22,7 @@ describe('phase 01 unchanged regression', () => {
 
   it('phase_01_team_table_columns_unchanged_regression', () => {
     type TeamRow = PrCycleTimeDashboard['teamBreakdown'][number]
-    expectTypeOf<keyof TeamRow>().toEqualTypeOf<(typeof PHASE_01_TEAM_TABLE_COLUMNS)[number]>()
+    expectTypeOf<keyof TeamRow>().toEqualTypeOf<Phase01TeamColumn>()
   })
 
   it('no_future_metric_cards', () => {

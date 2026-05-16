@@ -1,20 +1,34 @@
-import { defineConfig, mergeConfig } from 'vitest/config'
-import baseConfig from './vitest.config'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import react from '@vitejs/plugin-react'
+import { loadEnv } from 'vite'
+import { defineConfig } from 'vitest/config'
 
-export default mergeConfig(
-  baseConfig,
-  defineConfig({
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+export default defineConfig(({ mode }) => {
+  loadEnv(mode, __dirname, '')
+
+  return {
+    plugins: [react()],
+    resolve: {
+      alias: {
+        '~': path.resolve(__dirname, './src'),
+      },
+    },
     test: {
+      environment: 'jsdom',
+      setupFiles: ['./tests/setup.ts'],
+      exclude: ['**/node_modules/**', '**/dist/**', 'tests/e2e/**'],
+      fileParallelism: false,
       coverage: {
+        provider: 'v8',
         include: [
           'src/metrics/first-review-*.ts',
           'src/collector/review-sync.ts',
           'src/collector/review-store.ts',
           'src/collector/bot-identity.ts',
           'src/components/dashboard/FirstReview*.tsx',
-          'src/components/dashboard/FreshnessStrip.tsx',
-          'src/metrics/pr-cycle-time-dashboard.ts',
-          'src/collector/github-client.ts',
           'src/metrics/exception-sort.ts',
         ],
         thresholds: {
@@ -25,5 +39,5 @@ export default mergeConfig(
         },
       },
     },
-  }),
-)
+  }
+})

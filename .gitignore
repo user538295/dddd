@@ -20,3 +20,4 @@ data/*.db-*
 # Local Postgres dumps (may contain repo metadata; do not commit).
 data/pg-backups/*.dump
 config/team-mapping.json
+.obsidian/

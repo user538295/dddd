@@ -537,7 +537,7 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
     ...syncedRepos.map((r) => (r.lastReviewSyncedAt as Date).getTime()),
   )
 
-  let reviewSyncErrorsList: SyncError[] = []
+  const reviewSyncErrorsList: SyncError[] = []
   if (latestRun) {
     const rows = await input.db
       .select()
