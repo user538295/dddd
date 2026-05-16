@@ -68,9 +68,10 @@ Goal: add review-latency visibility after PR Cycle Time is working.
 - [ ] Sync GitHub review event metadata.
 - [ ] Store first review timestamp per PR.
 - [ ] Compute First Review Time.
+- [ ] Add scroll-below-Phase-01 First Review Time section.
 - [ ] Add First Review metric card.
 - [ ] Add review-latency exceptions.
-- [ ] Add First Review data to team breakdown.
+- [ ] Add separate Review team breakdown.
 - [ ] Add First Review weekly trend.
 - [ ] Show review metadata freshness and review sync errors.
 - [ ] Verify PR Cycle Time behavior remains unchanged.

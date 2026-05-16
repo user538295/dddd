@@ -308,7 +308,7 @@ describe.sequential('PrCycleTimeDashboard', () => {
 
   it('dashboard_renders_team_breakdown', () => {
     render(<PrCycleTimeDashboard data={baseDashboard()} />)
-    const table = screen.getByRole('table', { name: /Team breakdown/i })
+    const table = screen.getByRole('table', { name: 'Team breakdown' })
     expect(within(table).getByRole('cell', { name: 'Alpha' })).toBeInTheDocument()
     expect(within(table).getByRole('cell', { name: '4' })).toBeInTheDocument()
   })
@@ -360,7 +360,7 @@ describe.sequential('PrCycleTimeDashboard', () => {
         })}
       />,
     )
-    const table = screen.getByRole('table', { name: /Team breakdown/i })
+    const table = screen.getByRole('table', { name: 'Team breakdown' })
     expect(within(table).getByRole('cell', { name: 'Unassigned' })).toBeInTheDocument()
   })
 
@@ -450,6 +450,7 @@ describe.sequential('PrCycleTimeDashboard', () => {
 
   it('first_review_weekly_trend_and_exceptions_render_separately', () => {
     render(<PrCycleTimeDashboard data={firstReviewDashboard()} />)
+    expect(screen.getByRole('heading', { level: 2, name: 'First Review Time' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: 'Review-latency exceptions' })).toBeInTheDocument()
     expect(screen.getByText('Alpha review latency worsened')).toBeInTheDocument()
     expect(screen.getByText('Beta merged without review')).toBeInTheDocument()
@@ -459,10 +460,12 @@ describe.sequential('PrCycleTimeDashboard', () => {
 
   it('first_review_team_column_and_freshness_render', () => {
     render(<PrCycleTimeDashboard data={firstReviewDashboard()} />)
-    const table = screen.getByRole('table', { name: /Team breakdown/i })
-    expect(within(table).getByRole('columnheader', { name: 'First Review' })).toBeInTheDocument()
-    expect(within(table).getByRole('cell', { name: '8h' })).toBeInTheDocument()
-    expect(within(table).getByRole('cell', { name: '2 no-review merges' })).toBeInTheDocument()
+    const table = screen.getByRole('table', { name: 'Team breakdown' })
+    expect(within(table).queryByRole('columnheader', { name: 'First Review' })).not.toBeInTheDocument()
+    const reviewTable = screen.getByRole('table', { name: 'Review team breakdown' })
+    expect(within(reviewTable).getByRole('columnheader', { name: 'First Review' })).toBeInTheDocument()
+    expect(within(reviewTable).getByRole('cell', { name: '8h' })).toBeInTheDocument()
+    expect(within(reviewTable).getByRole('cell', { name: '2 no-review merges' })).toBeInTheDocument()
     expect(screen.getByTestId('data-freshness')).toHaveTextContent('GitHub review metadata synced')
     expect(screen.getByTestId('data-freshness')).toHaveTextContent('1 review sync error')
   })

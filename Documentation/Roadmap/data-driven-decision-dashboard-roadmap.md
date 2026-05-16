@@ -48,6 +48,6 @@ Design history:
 
 ## Current Priority
 
-Continue with Phase 02. The next release should add GitHub review metadata sync, First Review Time computation, review-latency exceptions, First Review trend, review team columns, and review freshness while preserving the Phase 01 PR Cycle Time behavior.
+Continue with Phase 02. The next release should add GitHub review metadata sync, First Review Time computation, a scroll-below-Phase-01 First Review section, review-latency exceptions, First Review trend, a separate review team breakdown, and review freshness while preserving the Phase 01 PR Cycle Time behavior.
 
 Track implementation status in [Trackable roadmap checklist](trackable-roadmap.md). The detailed next-step file is [Phase 02: First Review Time](phases/phase-02-first-review-time.md).

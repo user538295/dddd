@@ -378,42 +378,6 @@ export function PrCycleTimeDashboard({
           ) : null}
         </section>
 
-        {firstReview ? (
-          <section aria-labelledby="first-review-metric-heading" className="pr-dashboard__card pr-dashboard__metric">
-            <h2 id="first-review-metric-heading" className="pr-dashboard__card-title">
-              Median First Review Time
-            </h2>
-            <p className="pr-dashboard__metric-sub">PR opened to first submitted review</p>
-            <CardHowToRead>
-              Elapsed time from when a merged pull request is opened until its first submitted GitHub review. PRs
-              without a qualifying review are excluded from this median and tracked separately as merge-without-review
-              hygiene.
-            </CardHowToRead>
-            <div className="pr-dashboard__metric-row">
-              <div className="pr-dashboard__metric-value" data-testid="median-first-review-time">
-                {firstReview.metric.reviewedPrCount === 0 || firstReview.metric.medianHours == null ? (
-                  <span>No merged PRs with a review in range</span>
-                ) : (
-                  <span>{formatCycleDuration(firstReview.metric.medianHours)}</span>
-                )}
-              </div>
-              {firstReviewTrendBlock}
-            </div>
-            {firstReview.metric.baselineStatus === 'pending' && firstReview.metric.reviewedPrCount > 0 ? (
-              <p className="pr-dashboard__baseline">Baseline pending</p>
-            ) : null}
-            {firstReview.metric.reviewedPrCount > 0 ? (
-              <div className="pr-dashboard__metric-footer">
-                <IconReview />
-                <DashboardSourceLink href={DASHBOARD_SOURCE_PATHS.mergedPrs}>
-                  {firstReview.metric.reviewedPrCount} reviewed PR
-                  {firstReview.metric.reviewedPrCount === 1 ? '' : 's'} analyzed
-                </DashboardSourceLink>
-              </div>
-            ) : null}
-          </section>
-        ) : null}
-
         <section aria-labelledby="exceptions-heading" className="pr-dashboard__card">
           <h2 id="exceptions-heading" className="pr-dashboard__card-title">
             PR cycle time exceptions
@@ -447,44 +411,6 @@ export function PrCycleTimeDashboard({
           )}
         </section>
 
-        {firstReview ? (
-          <section aria-labelledby="review-exceptions-heading" className="pr-dashboard__card">
-            <h2 id="review-exceptions-heading" className="pr-dashboard__card-title">
-              Review-latency exceptions
-            </h2>
-            <CardHowToRead>
-              Teams that may need attention in this range: first review time regressed by at least 25%, merged PRs
-              passed the no-review hygiene rule, or prior review data is not yet enough for a baseline. Up to three
-              review exceptions are shown.
-            </CardHowToRead>
-            {firstReview.exceptions.length === 0 ? (
-              <p className="pr-dashboard__exception-empty">None in this range</p>
-            ) : (
-              <ul className="pr-dashboard__exception-list">
-                {firstReview.exceptions.map((e) => (
-                  <li key={`${e.type}-${e.team}-${e.message}`} className="pr-dashboard__exception-row">
-                    {e.severity === 'warning' ? (
-                      <IconWarning className="pr-dashboard__exception-icon" />
-                    ) : (
-                      <IconInfo className="pr-dashboard__exception-icon" />
-                    )}
-                    <div className="pr-dashboard__exception-body">
-                      <div className="pr-dashboard__exception-title-row">
-                        <span className="pr-dashboard__exception-title">{firstReviewExceptionTitle(e)}</span>
-                        <span className="pr-dashboard__exception-metric">
-                          {firstReviewExceptionMetric(e, firstReview.teamBreakdown)}
-                        </span>
-                        {firstReviewExceptionTrendSnippet(e, firstReview.teamBreakdown)}
-                      </div>
-                      <p className="pr-dashboard__exception-recommendation">{firstReviewExceptionRecommendation(e)}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        ) : null}
-
         <section aria-labelledby="trend-heading" className="pr-dashboard__card">
           <h2 id="trend-heading" className="pr-dashboard__card-title">
             8-week PR cycle time trend
@@ -504,31 +430,7 @@ export function PrCycleTimeDashboard({
           </ol>
         </section>
 
-        {firstReview ? (
-          <section aria-labelledby="first-review-trend-heading" className="pr-dashboard__card">
-            <h2 id="first-review-trend-heading" className="pr-dashboard__card-title">
-              8-week First Review trend
-            </h2>
-            <CardHowToRead>
-              Weekly median open-to-first-review time for PRs merged in each week. Weeks with no qualifying reviews
-              appear as gaps.
-            </CardHowToRead>
-            <WeeklyTrendChart weeklyTrend={firstReview.weeklyTrend} />
-            <ol data-testid="first-review-weekly-trend-list" className="pr-dashboard__sr-only">
-              {firstReview.weeklyTrend.map((p) => (
-                <li key={p.weekStart}>
-                  <span>{p.weekStart}</span>:{' '}
-                  {p.medianHours === null ? <span>empty</span> : <span>{formatCycleDuration(p.medianHours)}</span>}
-                </li>
-              ))}
-            </ol>
-          </section>
-        ) : null}
-
-        <section
-          aria-labelledby="teams-heading"
-          className={`pr-dashboard__card ${firstReview ? 'pr-dashboard__team-card--wide' : ''}`}
-        >
+        <section aria-labelledby="teams-heading" className="pr-dashboard__card">
           <h2 id="teams-heading" className="pr-dashboard__card-title">
             Team breakdown
           </h2>
@@ -543,9 +445,6 @@ export function PrCycleTimeDashboard({
                   <th>Team</th>
                   <th>Merged PRs</th>
                   <th>Median</th>
-                  {firstReview ? <th>First Review</th> : null}
-                  {firstReview ? <th>Review Trend</th> : null}
-                  {firstReview ? <th>No-review Merges</th> : null}
                   <th>Trend (vs prev {data.range.weeks} w)</th>
                   <th>Longest Open PR</th>
                 </tr>
@@ -561,18 +460,6 @@ export function PrCycleTimeDashboard({
                     </td>
                     <td className="pr-dashboard__num">{row.mergedPrs}</td>
                     <td className={medianCellClass(row, data.teamBreakdown)}>{formatCycleDuration(row.medianHours)}</td>
-                    {firstReview ? (
-                      <td className="pr-dashboard__num">{formatCycleDuration(firstReviewByTeam.get(row.team)?.medianHours ?? null)}</td>
-                    ) : null}
-                    {firstReview ? <td>{firstReviewTrendCell(firstReviewByTeam.get(row.team) ?? {
-                      team: row.team,
-                      reviewedPrs: 0,
-                      medianHours: null,
-                      previousMedianHours: null,
-                      trendPercent: null,
-                      mergeWithoutReviewCount: 0,
-                    })}</td> : null}
-                    {firstReview ? <td className="pr-dashboard__num">{noReviewMergeCell(firstReviewByTeam.get(row.team))}</td> : null}
                     <td>{trendCell(row)}</td>
                     <td className="pr-dashboard__num">
                       {row.longestOpenPrHours === null ? '—' : formatDurationHumanDays(row.longestOpenPrHours)}
@@ -583,6 +470,153 @@ export function PrCycleTimeDashboard({
             </table>
           </div>
         </section>
+
+        {firstReview ? (
+          <>
+            <div className="pr-dashboard__section-heading">
+              <h2>First Review Time</h2>
+              <p>Review latency for merged PRs with submitted reviews</p>
+            </div>
+
+            <section aria-labelledby="first-review-metric-heading" className="pr-dashboard__card pr-dashboard__metric">
+              <h2 id="first-review-metric-heading" className="pr-dashboard__card-title">
+                Median First Review Time
+              </h2>
+              <p className="pr-dashboard__metric-sub">PR opened to first submitted review</p>
+              <CardHowToRead>
+                Elapsed time from when a merged pull request is opened until its first submitted GitHub review. PRs
+                without a qualifying review are excluded from this median and tracked separately as merge-without-review
+                hygiene.
+              </CardHowToRead>
+              <div className="pr-dashboard__metric-row">
+                <div className="pr-dashboard__metric-value" data-testid="median-first-review-time">
+                  {firstReview.metric.reviewedPrCount === 0 || firstReview.metric.medianHours == null ? (
+                    <span>No merged PRs with a review in range</span>
+                  ) : (
+                    <span>{formatCycleDuration(firstReview.metric.medianHours)}</span>
+                  )}
+                </div>
+                {firstReviewTrendBlock}
+              </div>
+              {firstReview.metric.baselineStatus === 'pending' && firstReview.metric.reviewedPrCount > 0 ? (
+                <p className="pr-dashboard__baseline">Baseline pending</p>
+              ) : null}
+              {firstReview.metric.reviewedPrCount > 0 ? (
+                <div className="pr-dashboard__metric-footer">
+                  <IconReview />
+                  <DashboardSourceLink href={DASHBOARD_SOURCE_PATHS.mergedPrs}>
+                    {firstReview.metric.reviewedPrCount} reviewed PR
+                    {firstReview.metric.reviewedPrCount === 1 ? '' : 's'} analyzed
+                  </DashboardSourceLink>
+                </div>
+              ) : null}
+            </section>
+
+            <section aria-labelledby="review-exceptions-heading" className="pr-dashboard__card">
+              <h2 id="review-exceptions-heading" className="pr-dashboard__card-title">
+                Review-latency exceptions
+              </h2>
+              <CardHowToRead>
+                Teams that may need attention in this range: first review time regressed by at least 25%, merged PRs
+                passed the no-review hygiene rule, or prior review data is not yet enough for a baseline. Up to three
+                review exceptions are shown.
+              </CardHowToRead>
+              {firstReview.exceptions.length === 0 ? (
+                <p className="pr-dashboard__exception-empty">None in this range</p>
+              ) : (
+                <ul className="pr-dashboard__exception-list">
+                  {firstReview.exceptions.map((e) => (
+                    <li key={`${e.type}-${e.team}-${e.message}`} className="pr-dashboard__exception-row">
+                      {e.severity === 'warning' ? (
+                        <IconWarning className="pr-dashboard__exception-icon" />
+                      ) : (
+                        <IconInfo className="pr-dashboard__exception-icon" />
+                      )}
+                      <div className="pr-dashboard__exception-body">
+                        <div className="pr-dashboard__exception-title-row">
+                          <span className="pr-dashboard__exception-title">{firstReviewExceptionTitle(e)}</span>
+                          <span className="pr-dashboard__exception-metric">
+                            {firstReviewExceptionMetric(e, firstReview.teamBreakdown)}
+                          </span>
+                          {firstReviewExceptionTrendSnippet(e, firstReview.teamBreakdown)}
+                        </div>
+                        <p className="pr-dashboard__exception-recommendation">{firstReviewExceptionRecommendation(e)}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section aria-labelledby="first-review-trend-heading" className="pr-dashboard__card">
+              <h2 id="first-review-trend-heading" className="pr-dashboard__card-title">
+                8-week First Review trend
+              </h2>
+              <CardHowToRead>
+                Weekly median open-to-first-review time for PRs merged in each week. Weeks with no qualifying reviews
+                appear as gaps.
+              </CardHowToRead>
+              <WeeklyTrendChart weeklyTrend={firstReview.weeklyTrend} />
+              <ol data-testid="first-review-weekly-trend-list" className="pr-dashboard__sr-only">
+                {firstReview.weeklyTrend.map((p) => (
+                  <li key={p.weekStart}>
+                    <span>{p.weekStart}</span>:{' '}
+                    {p.medianHours === null ? <span>empty</span> : <span>{formatCycleDuration(p.medianHours)}</span>}
+                  </li>
+                ))}
+              </ol>
+            </section>
+
+            <section aria-labelledby="review-teams-heading" className="pr-dashboard__card">
+              <h2 id="review-teams-heading" className="pr-dashboard__card-title">
+                Review team breakdown
+              </h2>
+              <div className="pr-dashboard__table-wrap">
+                <table className="pr-dashboard__table" aria-label="Review team breakdown">
+                  <thead>
+                    <tr>
+                      <th>Team</th>
+                      <th>Reviewed PRs</th>
+                      <th>First Review</th>
+                      <th>Review Trend</th>
+                      <th>No-review Merges</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.teamBreakdown.map((row) => {
+                      const reviewRow = firstReviewByTeam.get(row.team)
+                      return (
+                        <tr key={row.team}>
+                          <td>
+                            <span className="pr-dashboard__team-cell">
+                              <span className={teamDotClass(row, data.teamBreakdown)} aria-hidden="true" />
+                              {row.team}
+                            </span>
+                          </td>
+                          <td className="pr-dashboard__num">{reviewRow?.reviewedPrs ?? 0}</td>
+                          <td className="pr-dashboard__num">{formatCycleDuration(reviewRow?.medianHours ?? null)}</td>
+                          <td>
+                            {firstReviewTrendCell(
+                              reviewRow ?? {
+                                team: row.team,
+                                reviewedPrs: 0,
+                                medianHours: null,
+                                previousMedianHours: null,
+                                trendPercent: null,
+                                mergeWithoutReviewCount: 0,
+                              },
+                            )}
+                          </td>
+                          <td className="pr-dashboard__num">{noReviewMergeCell(reviewRow)}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </>
+        ) : null}
       </div>
 
       <footer className="pr-dashboard__freshness" data-testid="data-freshness">

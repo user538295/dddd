@@ -54,12 +54,13 @@ Surface as a **review-latency exception** and as a team-level **No-review Merges
 
 ## UI Changes
 
-- Add a **Median First Review Time** metric card (second card beside PR Cycle Time).
+- Add a **First Review Time** section below the Phase 01 dashboard content so users scroll down from the PR Cycle Time view into the review-latency view.
+- Add a **Median First Review Time** metric card at the top of that section.
 - Subtitle: `PR opened to first submitted review`.
 - Show `No merged PRs with a review in range` when every merged PR in range lacks a qualifying review (not `0 minutes`).
 - Show `Baseline pending` when previous-period comparison is unavailable (same rules as Phase 01).
 - Add a separate **Review-latency exceptions** panel so Phase 01's PR Cycle Time exception slots remain unchanged.
-- Add **First Review**, **Review Trend**, and **No-review Merges** columns to team breakdown.
+- Add a separate **Review team breakdown** table with **Reviewed PRs**, **First Review**, **Review Trend**, and **No-review Merges** columns.
   - **First Review** shows median hours; `—` when the team has no qualifying PRs.
   - **Review Trend** shows First Review trend versus the previous 8 weeks; `—` when comparison is unavailable.
   - **No-review Merges** shows the team-level merge-without-review hygiene count; `—` when none match.
@@ -67,17 +68,17 @@ Surface as a **review-latency exception** and as a team-level **No-review Merges
 - Extend data freshness: last review sync time and review sync errors (per-repo partial failure allowed).
 - **Do not** add placeholder cards for Phase 03+ metrics.
 
-Phase 01 PR Cycle Time card, trend, exceptions, and copy remain unchanged.
+Phase 01 PR Cycle Time card, exceptions, trend, team breakdown, and copy remain unchanged in the first viewport.
 
 ## Mockup alignment
 
 The Phase 02 UI should match [04-pr-cycle-time-and-first-review.png](../../Assets/mockups/04-pr-cycle-time-and-first-review.png):
 
-- Keep the Phase 01 header, range label, Local data pill, Refresh action, PR Cycle Time card, PR Cycle Time exceptions, PR Cycle Time trend, and freshness strip styling.
-- Place **Median PR Cycle Time** and **Median First Review Time** as the first-row metric cards.
-- Place **PR cycle time exceptions** and **Review-latency exceptions** as separate second-row panels.
-- Place **8-week PR cycle time trend** and **8-week First Review trend** as separate third-row charts.
-- Use one full-width team table with the Phase 02 review columns listed above.
+- Keep the Phase 01 header, range label, Local data pill, Refresh action, PR Cycle Time card, PR Cycle Time exceptions, PR Cycle Time trend, and Phase 01 team breakdown as the first viewport.
+- Place the **First Review Time** section below the Phase 01 grid with enough spacing that the dashboard reads as scrollable, not cramped.
+- In the First Review section, place **Median First Review Time** beside **Review-latency exceptions**.
+- Place **8-week First Review trend** beside **Review team breakdown**.
+- Keep review-specific team metrics out of the Phase 01 team table.
 - Include footer freshness items for both GitHub PR metadata and GitHub review metadata, plus separate review sync errors.
 
 ## Data and schema
@@ -157,7 +158,7 @@ Add `verify:phase02` to `package.json` when implementation starts (mirror `verif
 
 ## Resolved FEAT-002 UI decisions
 
-- None. The Phase 02 mockup and separate review-latency exceptions panel are now locked for FEAT-002.
+- None. The Phase 02 mockup, scroll-below-Phase-01 layout, and separate review-latency exceptions panel are now locked for FEAT-002.
 
 ## Acceptance Criteria (reference)
 
