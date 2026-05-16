@@ -13,6 +13,7 @@
     "stack:down": "bash scripts/dev-down.sh",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
+    "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "collector:refresh": "tsx scripts/refresh.ts",
     "db:import-github": "tsx scripts/import-github-repos.ts",

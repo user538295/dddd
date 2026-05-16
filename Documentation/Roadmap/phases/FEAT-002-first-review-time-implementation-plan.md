@@ -429,7 +429,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/db/schema-phase-02.test.ts`
 
 #### Task 2.2 — Generate and apply migration
-- [ ] **File**: the next sequential migration file produced by `drizzle-kit generate`, expected to be `drizzle/0002_*.sql` (Drizzle picks the filename suffix; do **not** hand-rename it).
+- [x] **File**: the next sequential migration file produced by `drizzle-kit generate`, expected to be `drizzle/0002_*.sql` (Drizzle picks the filename suffix; do **not** hand-rename it). _Implementation note: actual generated file is `drizzle/0001_rapid_starjammers.sql` (Phase 01 shipped only `0000_initial.sql`, so the next index is `0001`)._
 - **Depends on**: Task 2.1
 - **Description**:
   - Run `npm run db:generate` to produce the next migration file (Drizzle assigns the `0002_<auto-suffix>.sql` name). Phase 02 ships exactly **one** migration file; per the brief, no second migration is permitted in this phase.
