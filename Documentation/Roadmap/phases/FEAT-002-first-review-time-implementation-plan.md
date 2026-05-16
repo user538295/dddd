@@ -562,7 +562,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/collector/refresh-phase-02.test.ts`
 
 #### Task 4.4 — Hygiene predicate primitive
-- [ ] **File**: `src/metrics/first-review-hygiene-predicate.ts` (new)
+- [x] **File**: `src/metrics/first-review-hygiene-predicate.ts` (new)
 - **Depends on**: nothing (pure function over its inputs)
 - **Description**:
   - Export a single pure predicate: `isMergeWithoutReview(pr: { authorBotFlag: boolean; anyQualifyingReviewCount: number; preMergeCommentCount: number }): boolean`.
