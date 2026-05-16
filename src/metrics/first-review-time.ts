@@ -91,6 +91,65 @@ export type FirstReviewMedianResult = {
   N: number
 }
 
+export type WeeklyMedianPoint = {
+  weekStart: string
+  medianHours: number | null
+}
+
+function formatLocalDate(d: Date): string {
+  const y = d.getUTCFullYear()
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+
+export function getFirstReviewWeeklyTrend(
+  prs: PrAggregate[],
+  range: DateRange,
+): WeeklyMedianPoint[] {
+  const startMs = range.start.getTime()
+  const endMs = range.end.getTime()
+  const weeks = Math.max(1, Math.round((endMs - startMs) / WEEK_MS))
+  const points: WeeklyMedianPoint[] = []
+  for (let i = 0; i < weeks; i += 1) {
+    const wStart = new Date(startMs + i * WEEK_MS)
+    const wEnd = new Date(startMs + (i + 1) * WEEK_MS)
+    const hours: number[] = []
+    for (const p of prs) {
+      if (p.firstQualifyingHumanReviewAt === null) continue
+      const t = p.mergedAt.getTime()
+      if (t < wStart.getTime() || t >= wEnd.getTime()) continue
+      hours.push(getFirstReviewHours(p, p.firstQualifyingHumanReviewAt))
+    }
+    points.push({
+      weekStart: formatLocalDate(wStart),
+      medianHours: hours.length === 0 ? null : median(hours),
+    })
+  }
+  return points
+}
+
+export function compareFirstReviewPeriods(input: {
+  currentMedian: number | null
+  previousMedian: number | null
+  previousQualifyingPrCount: number
+}): { trendPercent: number | null; baselineStatus: 'available' | 'pending' } {
+  if (
+    input.previousQualifyingPrCount < 3 ||
+    input.previousMedian === null ||
+    input.previousMedian === 0
+  ) {
+    return { trendPercent: null, baselineStatus: 'pending' }
+  }
+  if (input.currentMedian === null) {
+    return { trendPercent: null, baselineStatus: 'available' }
+  }
+  const trendPercent = ((input.currentMedian - input.previousMedian) / input.previousMedian) * 100
+  return { trendPercent, baselineStatus: 'available' }
+}
+
 export function computeFirstReviewMedian(input: {
   prs: PrAggregate[]
   range: DateRange

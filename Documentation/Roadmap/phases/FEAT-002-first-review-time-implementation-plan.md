@@ -673,7 +673,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/metrics/first-review-bot-share.test.ts`
 
 #### Task 5.4 — Weekly trend and previous-period comparison
-- [ ] **File**: `src/metrics/first-review-time.ts`
+- [x] **File**: `src/metrics/first-review-time.ts`
 - **Depends on**: Task 5.2
 - **Description**:
   - Export `getFirstReviewWeeklyTrend(prs: PrAggregate[], range: DateRange): WeeklyMedianPoint[]` — 8 buckets, null for empty weeks. Operates over `PrAggregate.firstQualifyingHumanReviewAt` and `openedAt`.
