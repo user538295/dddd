@@ -7,7 +7,7 @@ This directory contains the product brief, roadmap, phase plan, setup guides, an
 - [Feature brief](Backlog/data-driven-decision-dashboard-brief.md)
 - [Roadmap](Roadmap/data-driven-decision-dashboard-roadmap.md)
 - [Trackable roadmap checklist](Roadmap/trackable-roadmap.md)
-- [Current Phase 02 mockup](Assets/mockups/04-pr-cycle-time-and-first-review.png)
+- [Current one-page mockup](Assets/mockups/05-pr-cycle-time-first-review-and-pr-size.png)
 
 ## For users (running the product locally)
 
@@ -18,7 +18,7 @@ The app is a **local** web application. After [installing Node.js](https://nodej
 3. Start the UI: `npm run dev`
 4. Open **http://localhost:3000** in a browser.
 
-The home route renders the **PR Cycle Time** dashboard (median, exceptions, 8-week trend, team breakdown, freshness, refresh). Run `npm run verify:phase01` before release-style checks (lint, typecheck, build, coverage, Playwright).
+The home route renders a **one-page scrolling dashboard**. PR Cycle Time stays first, and each later metric is appended below the previous metric section once its data is collected and computed. Run the phase-specific verify command before release-style checks.
 
 ## For developers
 
@@ -39,9 +39,9 @@ The first release shows one metric only: PR Cycle Time.
 
 Phase 02 (First Review Time) is implemented (see [FEAT-002-first-review-time-implementation-plan.md](Roadmap/phases/FEAT-002-first-review-time-implementation-plan.md)). Next step: [Phase 03: PR Size](Roadmap/phases/phase-03-pr-size.md).
 
-Current Phase 02 UI reference:
+Current one-page UI reference:
 
-![PR Cycle Time and First Review](Assets/mockups/04-pr-cycle-time-and-first-review.png)
+![PR Cycle Time, First Review, and PR Size](Assets/mockups/05-pr-cycle-time-first-review-and-pr-size.png)
 
 Completed phase: [Phase 01: PR Cycle Time MVP](Roadmap/phases/phase-01-pr-cycle-time-mvp.md).
 

@@ -81,3 +81,28 @@ describe('phase 02 first review time spec', () => {
     expect(body).toMatch(/04-pr-cycle-time-and-first-review\.png/)
   })
 })
+
+describe('one-page metric layout rule', () => {
+  it('docs_define_one_page_scroll_layout_rule', () => {
+    const roadmap = readDoc('Documentation/Roadmap/data-driven-decision-dashboard-roadmap.md')
+    expect(roadmap).toMatch(/## One-Page Scroll Layout Rule/)
+    expect(roadmap).toMatch(/single-page dashboard/)
+    expect(roadmap).toMatch(/appending a new vertical section/)
+    expect(roadmap).toMatch(/Do not crowd new metric cards into the first viewport/)
+  })
+
+  it('docs_current_mockup_links_phase_03_scroll_reference', () => {
+    const readme = readDoc('Documentation/README.md')
+    const trackable = readDoc('Documentation/Roadmap/trackable-roadmap.md')
+    expect(readme).toMatch(/05-pr-cycle-time-first-review-and-pr-size\.png/)
+    expect(trackable).toMatch(/05-pr-cycle-time-first-review-and-pr-size\.png/)
+  })
+
+  it('docs_phase_03_appends_pr_size_below_first_review', () => {
+    const body = readDoc('Documentation/Roadmap/phases/phase-03-pr-size.md')
+    expect(body).toMatch(/PR Size.*section below the First Review Time section/s)
+    expect(body).toMatch(/PR Cycle Time remains first/)
+    expect(body).toMatch(/First Review Time remains second/)
+    expect(body).toMatch(/PR Size is appended below First Review Time/)
+  })
+})

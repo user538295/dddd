@@ -1,7 +1,7 @@
 # Trackable Roadmap Checklist
 
 Status: Active
-Last updated: 2026-05-15
+Last updated: 2026-05-16
 
 ## How To Use This File
 
@@ -12,16 +12,20 @@ This is the execution checklist for humans and LLM agents.
 - Mark an item as complete only when the related behavior is implemented and verified.
 - Use the linked phase file as the detailed source of truth for each phase.
 - Do not add UI for a metric until its data is collected, stored, and computed.
+- Keep the app as a one-page scrolling dashboard. Add each new metric as the next vertical section after the last implemented metric section.
+- When implementing from a new mockup, preserve existing sections above it and append the new metric section below; do not create a new page, tab, or first-viewport card cluster unless the roadmap explicitly changes.
 
 ## Current Next Step
 
-Next step: **Phase 02: First Review Time**
+Next step: **Phase 03: PR Size**
 
-Detailed file: [phase-02-first-review-time.md](phases/phase-02-first-review-time.md)
+Detailed file: [phase-03-pr-size.md](phases/phase-03-pr-size.md)
 
 Phase 01 (complete): [phase-01-pr-cycle-time-mvp.md](phases/phase-01-pr-cycle-time-mvp.md) — implementation plan [FEAT-001-pr-cycle-time-mvp-implementation-plan.md](phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md).
 
-Current UI reference: [PR Cycle Time and First Review](../Assets/mockups/04-pr-cycle-time-and-first-review.png)
+Phase 02 (implemented): [phase-02-first-review-time.md](phases/phase-02-first-review-time.md) — implementation plan [FEAT-002-first-review-time-implementation-plan.md](phases/FEAT-002-first-review-time-implementation-plan.md).
+
+Current UI reference: [PR Cycle Time, First Review, and PR Size](../Assets/mockups/05-pr-cycle-time-first-review-and-pr-size.png)
 
 ## Phase 00: Product Refinement And UI
 
@@ -33,6 +37,7 @@ Detailed file: [phase-00-product-refinement-and-ui.md](phases/phase-00-product-r
 - [x] Save mockups inside the project.
 - [x] Mark broad mockups as superseded.
 - [x] Mark PR Cycle Time-only mockup as current MVP reference.
+- [x] Lock the one-page scroll layout rule for future metric phases.
 
 ## Phase 01: PR Cycle Time MVP
 
@@ -65,6 +70,8 @@ Detailed file: [phase-02-first-review-time.md](phases/phase-02-first-review-time
 
 Implementation plan: [FEAT-002-first-review-time-implementation-plan.md](phases/FEAT-002-first-review-time-implementation-plan.md)
 
+UI reference: [PR Cycle Time and First Review](../Assets/mockups/04-pr-cycle-time-and-first-review.png)
+
 Goal: add review-latency visibility after PR Cycle Time is working.
 
 - [ ] Sync GitHub review event metadata.
@@ -82,14 +89,19 @@ Goal: add review-latency visibility after PR Cycle Time is working.
 
 Detailed file: [phase-03-pr-size.md](phases/phase-03-pr-size.md)
 
+UI reference: [PR Cycle Time, First Review, and PR Size](../Assets/mockups/05-pr-cycle-time-first-review-and-pr-size.png)
+
 Goal: detect oversized PR patterns.
 
 - [ ] Sync changed-line and file-count metadata per PR.
 - [ ] Store PR size metadata locally.
 - [ ] Compute median PR size.
+- [ ] Add PR Size section below First Review Time.
 - [ ] Add PR Size metric card.
 - [ ] Add oversized PR exceptions.
-- [ ] Add PR Size data to team breakdown.
+- [ ] Add separate Size team breakdown.
+- [ ] Add PR Size weekly trend.
+- [ ] Show size metadata freshness.
 - [ ] Verify the UI does not rank or shame individual authors.
 
 ## Phase 04: Jira Flow Metrics

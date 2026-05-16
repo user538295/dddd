@@ -1,13 +1,13 @@
 # Data Driven Decision Dashboard Roadmap
 
 Status: Draft
-Last updated: 2026-05-15
+Last updated: 2026-05-16
 
 ## Strategy
 
 Ship the dashboard metric by metric. Each phase adds one new data capability and only then extends the UI. The product should never show fake placeholders for metrics that are not collected and computed yet.
 
-Current UI reference: [PR Cycle Time and First Review](../Assets/mockups/04-pr-cycle-time-and-first-review.png)
+Current UI reference: [PR Cycle Time, First Review, and PR Size](../Assets/mockups/05-pr-cycle-time-first-review-and-pr-size.png)
 
 Execution checklist: [Trackable roadmap checklist](trackable-roadmap.md)
 
@@ -17,6 +17,7 @@ Design history:
 - [Seven-metric MVP concept](../Assets/mockups/02-seven-metric-mvp-concept.png) - superseded, still too broad for first release.
 - [PR Cycle Time first increment](../Assets/mockups/03-pr-cycle-time-first-increment.png) - Phase 01 reference.
 - [PR Cycle Time and First Review](../Assets/mockups/04-pr-cycle-time-and-first-review.png) - Phase 02 reference.
+- [PR Cycle Time, First Review, and PR Size](../Assets/mockups/05-pr-cycle-time-first-review-and-pr-size.png) - Phase 03 reference and current one-page layout pattern.
 
 ## Phase Roadmap
 
@@ -37,6 +38,19 @@ Design history:
 - Keep exceptions tied only to available metrics.
 - Avoid individual performance scoring.
 
+## One-Page Scroll Layout Rule
+
+The app is a **single-page dashboard**. Do not add top-level pages, tabs, route changes, or side navigation for new metrics unless the roadmap explicitly changes this rule.
+
+Each new metric phase extends the same page by appending a new vertical section **after the previous metric section**, matching the ordering in the latest mockup. Users scroll down to later metrics:
+
+1. Phase 01: PR Cycle Time remains the first viewport and primary top section.
+2. Phase 02: First Review Time appears below PR Cycle Time.
+3. Phase 03: PR Size appears below First Review Time.
+4. Future phases continue below the last implemented metric section.
+
+When a new mockup is generated, implement it by preserving the existing sections above and adding the new metric as the next scroll section at the bottom. Do not crowd new metric cards into the first viewport.
+
 ## Phase Links
 
 - [Phase 00: Product refinement and UI](phases/phase-00-product-refinement-and-ui.md)
@@ -48,6 +62,6 @@ Design history:
 
 ## Current Priority
 
-Continue with Phase 02. The next release should add GitHub review metadata sync, First Review Time computation, a scroll-below-Phase-01 First Review section, review-latency exceptions, First Review trend, a separate review team breakdown, and review freshness while preserving the Phase 01 PR Cycle Time behavior.
+Continue with Phase 03. The next release should add PR size metadata sync, median PR Size computation, a PR Size section below First Review Time, oversized PR exceptions, PR Size trend, a separate size team breakdown, and size freshness while preserving the Phase 01 and Phase 02 sections above it.
 
-Track implementation status in [Trackable roadmap checklist](trackable-roadmap.md). The detailed next-step file is [Phase 02: First Review Time](phases/phase-02-first-review-time.md).
+Track implementation status in [Trackable roadmap checklist](trackable-roadmap.md). The detailed next-step file is [Phase 03: PR Size](phases/phase-03-pr-size.md).
