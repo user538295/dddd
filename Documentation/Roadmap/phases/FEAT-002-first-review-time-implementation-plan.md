@@ -930,7 +930,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/regression/phase-01-unchanged.test.ts && npm run verify:phase01`
 
 #### Task 8.2 — Phase 02 e2e
-- [ ] **File**: `tests/e2e/phase-02.spec.ts`
+- [x] **File**: `tests/e2e/phase-02.spec.ts`
 - **Depends on**: Task 8.0, Task 8.1
 - **Description**:
   - Tag each test with `@phase02` so `verify:phase02` can grep them.
