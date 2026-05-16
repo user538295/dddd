@@ -68,8 +68,16 @@ describe('phase 02 first review time spec', () => {
     expect(body).toMatch(/Cap at 3/)
   })
 
+  it('docs_phase_02_links_locked_mockup', () => {
+    const body = readDoc(phase02)
+    expect(body).toMatch(/04-pr-cycle-time-and-first-review\.png/)
+    expect(body).toMatch(/Review-latency exceptions/)
+    expect(body).toMatch(/No-review Merges/)
+  })
+
   it('docs_trackable_roadmap_links_phase_02', () => {
     const body = readDoc('Documentation/Roadmap/trackable-roadmap.md')
     expect(body).toMatch(/phase-02-first-review-time\.md/)
+    expect(body).toMatch(/04-pr-cycle-time-and-first-review\.png/)
   })
 })

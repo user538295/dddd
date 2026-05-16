@@ -7,7 +7,7 @@ This directory contains the product brief, roadmap, phase plan, setup guides, an
 - [Feature brief](Backlog/data-driven-decision-dashboard-brief.md)
 - [Roadmap](Roadmap/data-driven-decision-dashboard-roadmap.md)
 - [Trackable roadmap checklist](Roadmap/trackable-roadmap.md)
-- [Current MVP mockup](Assets/mockups/03-pr-cycle-time-first-increment.png)
+- [Current Phase 02 mockup](Assets/mockups/04-pr-cycle-time-and-first-review.png)
 
 ## For users (running the product locally)
 
@@ -38,6 +38,10 @@ The first release shows one metric only: PR Cycle Time.
 ## Next Step
 
 Current next step: [Phase 02: First Review Time](Roadmap/phases/phase-02-first-review-time.md).
+
+Current Phase 02 UI reference:
+
+![PR Cycle Time and First Review](Assets/mockups/04-pr-cycle-time-and-first-review.png)
 
 Completed phase: [Phase 01: PR Cycle Time MVP](Roadmap/phases/phase-01-pr-cycle-time-mvp.md).
 

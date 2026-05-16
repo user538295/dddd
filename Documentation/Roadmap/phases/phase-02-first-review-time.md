@@ -7,6 +7,10 @@ Implementation plan: **FEAT-002** (to be authored before coding starts; follow t
 
 Depends on: [Phase 01: PR Cycle Time MVP](phase-01-pr-cycle-time-mvp.md) complete (`npm run verify:phase01`).
 
+UI reference: [PR Cycle Time and First Review](../../Assets/mockups/04-pr-cycle-time-and-first-review.png).
+
+![PR Cycle Time and First Review](../../Assets/mockups/04-pr-cycle-time-and-first-review.png)
+
 ## Goal
 
 Add review-latency visibility after PR Cycle Time is working.
@@ -46,7 +50,7 @@ Flag merged PRs in range where **all** of the following hold:
 - `reviewCommentCount === 0` (diff review comments with `created_at < mergedAt` — see schema), and
 - `mergedAt - openedAt` is less than **7 minutes** (same threshold called out in the Phase 01 “how to read” copy).
 
-Surface as an **exception or freshness-style count**, not as a team median input. PR title and repo only in the UI — **no author names** (leadership hygiene, not surveillance).
+Surface as a **review-latency exception** and as a team-level **No-review Merges** count, not as a team median input. Any PR-level detail view must show PR title and repo only — **no author names** (leadership hygiene, not surveillance).
 
 ## UI Changes
 
@@ -54,13 +58,27 @@ Surface as an **exception or freshness-style count**, not as a team median input
 - Subtitle: `PR opened to first submitted review`.
 - Show `No merged PRs with a review in range` when every merged PR in range lacks a qualifying review (not `0 minutes`).
 - Show `Baseline pending` when previous-period comparison is unavailable (same rules as Phase 01).
-- Add **review-latency exceptions** (separate list or shared exceptions panel with clear type labels — implementation choice in FEAT-002).
-- Add **First Review** column to team breakdown (median hours; `—` when team has no qualifying PRs).
+- Add a separate **Review-latency exceptions** panel so Phase 01's PR Cycle Time exception slots remain unchanged.
+- Add **First Review**, **Review Trend**, and **No-review Merges** columns to team breakdown.
+  - **First Review** shows median hours; `—` when the team has no qualifying PRs.
+  - **Review Trend** shows First Review trend versus the previous 8 weeks; `—` when comparison is unavailable.
+  - **No-review Merges** shows the team-level merge-without-review hygiene count; `—` when none match.
 - Add **8-week First Review weekly trend** chart (always renders; empty weeks show `null`, same as Phase 01). Show **trend percentage** on the card only when at least **3** qualifying PRs exist in the previous period and previous median `> 0`.
 - Extend data freshness: last review sync time and review sync errors (per-repo partial failure allowed).
 - **Do not** add placeholder cards for Phase 03+ metrics.
 
 Phase 01 PR Cycle Time card, trend, exceptions, and copy remain unchanged.
+
+## Mockup alignment
+
+The Phase 02 UI should match [04-pr-cycle-time-and-first-review.png](../../Assets/mockups/04-pr-cycle-time-and-first-review.png):
+
+- Keep the Phase 01 header, range label, Local data pill, Refresh action, PR Cycle Time card, PR Cycle Time exceptions, PR Cycle Time trend, and freshness strip styling.
+- Place **Median PR Cycle Time** and **Median First Review Time** as the first-row metric cards.
+- Place **PR cycle time exceptions** and **Review-latency exceptions** as separate second-row panels.
+- Place **8-week PR cycle time trend** and **8-week First Review trend** as separate third-row charts.
+- Use one full-width team table with the Phase 02 review columns listed above.
+- Include footer freshness items for both GitHub PR metadata and GitHub review metadata, plus separate review sync errors.
 
 ## Data and schema
 
@@ -137,10 +155,9 @@ Each acceptance checklist item above must map to at least one named test in FEAT
 
 Add `verify:phase02` to `package.json` when implementation starts (mirror `verify:phase01`).
 
-## Open questions (resolve in FEAT-002, not at implementation time)
+## Resolved FEAT-002 UI decisions
 
-- Mockup: extend [03-pr-cycle-time-first-increment.png](../../Assets/mockups/03-pr-cycle-time-first-increment.png) or add `04-pr-cycle-time-and-first-review.png` before UI work.
-- Whether review-latency exceptions share one panel with PR Cycle Time exceptions or use a tabbed/typed list.
+- None. The Phase 02 mockup and separate review-latency exceptions panel are now locked for FEAT-002.
 
 ## Acceptance Criteria (reference)
 

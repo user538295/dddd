@@ -1,7 +1,7 @@
 # Phase 00: Product Refinement And UI
 
 Status: Draft
-Last updated: 2026-05-09
+Last updated: 2026-05-15
 
 ## Goal
 
@@ -22,6 +22,10 @@ Lock the product direction, save the design history, and make the first release 
 
 ![PR Cycle Time first increment](../../Assets/mockups/03-pr-cycle-time-first-increment.png)
 
+### Phase 02 Reference
+
+![PR Cycle Time and First Review](../../Assets/mockups/04-pr-cycle-time-and-first-review.png)
+
 ### Superseded Concepts
 
 ![Seven-metric MVP concept](../../Assets/mockups/02-seven-metric-mvp-concept.png)
@@ -39,4 +43,3 @@ This version is superseded because it includes broader navigation, quality views
 - Phase docs exist.
 - Mockups are stored inside the project.
 - Phase 01 can be implemented without re-deciding the MVP scope.
-

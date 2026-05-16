@@ -1,7 +1,7 @@
 # Trackable Roadmap Checklist
 
 Status: Active
-Last updated: 2026-05-14
+Last updated: 2026-05-15
 
 ## How To Use This File
 
@@ -21,7 +21,7 @@ Detailed file: [phase-02-first-review-time.md](phases/phase-02-first-review-time
 
 Phase 01 (complete): [phase-01-pr-cycle-time-mvp.md](phases/phase-01-pr-cycle-time-mvp.md) — implementation plan [FEAT-001-pr-cycle-time-mvp-implementation-plan.md](phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md).
 
-Current UI reference: [PR Cycle Time first increment](../Assets/mockups/03-pr-cycle-time-first-increment.png)
+Current UI reference: [PR Cycle Time and First Review](../Assets/mockups/04-pr-cycle-time-and-first-review.png)
 
 ## Phase 00: Product Refinement And UI
 
@@ -71,6 +71,8 @@ Goal: add review-latency visibility after PR Cycle Time is working.
 - [ ] Add First Review metric card.
 - [ ] Add review-latency exceptions.
 - [ ] Add First Review data to team breakdown.
+- [ ] Add First Review weekly trend.
+- [ ] Show review metadata freshness and review sync errors.
 - [ ] Verify PR Cycle Time behavior remains unchanged.
 
 ## Phase 03: PR Size

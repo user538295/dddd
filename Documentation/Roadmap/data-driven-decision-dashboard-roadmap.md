@@ -1,13 +1,13 @@
 # Data Driven Decision Dashboard Roadmap
 
 Status: Draft
-Last updated: 2026-05-13
+Last updated: 2026-05-15
 
 ## Strategy
 
 Ship the dashboard metric by metric. Each phase adds one new data capability and only then extends the UI. The product should never show fake placeholders for metrics that are not collected and computed yet.
 
-Current MVP mockup: [PR Cycle Time first increment](../Assets/mockups/03-pr-cycle-time-first-increment.png)
+Current UI reference: [PR Cycle Time and First Review](../Assets/mockups/04-pr-cycle-time-and-first-review.png)
 
 Execution checklist: [Trackable roadmap checklist](trackable-roadmap.md)
 
@@ -15,7 +15,8 @@ Design history:
 
 - [Expanded dashboard concept](../Assets/mockups/01-expanded-dashboard-concept.png) - superseded, too broad for MVP.
 - [Seven-metric MVP concept](../Assets/mockups/02-seven-metric-mvp-concept.png) - superseded, still too broad for first release.
-- [PR Cycle Time first increment](../Assets/mockups/03-pr-cycle-time-first-increment.png) - current MVP direction.
+- [PR Cycle Time first increment](../Assets/mockups/03-pr-cycle-time-first-increment.png) - Phase 01 reference.
+- [PR Cycle Time and First Review](../Assets/mockups/04-pr-cycle-time-and-first-review.png) - Phase 02 reference.
 
 ## Phase Roadmap
 
@@ -47,6 +48,6 @@ Design history:
 
 ## Current Priority
 
-Start with Phase 01. The first release should include repo discovery, PR metadata sync, **local PostgreSQL** storage, and the PR Cycle Time dashboard only.
+Continue with Phase 02. The next release should add GitHub review metadata sync, First Review Time computation, review-latency exceptions, First Review trend, review team columns, and review freshness while preserving the Phase 01 PR Cycle Time behavior.
 
-Track implementation status in [Trackable roadmap checklist](trackable-roadmap.md). The detailed next-step file is [Phase 01: PR Cycle Time MVP](phases/phase-01-pr-cycle-time-mvp.md).
+Track implementation status in [Trackable roadmap checklist](trackable-roadmap.md). The detailed next-step file is [Phase 02: First Review Time](phases/phase-02-first-review-time.md).
