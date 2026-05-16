@@ -4,6 +4,7 @@ import { getDashboardDateRanges, getEnv } from '~/config/env'
 import { loadTeamMapping } from '~/config/team-mapping'
 import type { AppDb } from '~/db/client'
 import { pullRequests, repositories, syncRuns } from '~/db/schema'
+import { sortExceptionsBySeverityThenMagnitude } from '~/metrics/exception-sort'
 import { calculatePrCycleTime, type PullRequestRecord } from '~/metrics/pr-cycle-time'
 import { comparePeriods, getWeeklyMedianTrend, median } from '~/metrics/pr-cycle-time-summary'
 
@@ -92,24 +93,10 @@ function formatIso(d: Date): string {
 type TeamBreakdownRow = PrCycleTimeDashboard['teamBreakdown'][number]
 
 function sortExceptions(exceptions: PrCycleTimeException[], teamBreakdown: TeamBreakdownRow[]): void {
-  const absTrendFor = (e: PrCycleTimeException): number | null => {
+  sortExceptionsBySeverityThenMagnitude(exceptions, (e) => {
     if (e.type !== 'team_worsened') return null
     const tr = teamBreakdown.find((t) => t.team === e.team)?.trendPercent
     return tr == null ? null : Math.abs(tr)
-  }
-
-  exceptions.sort((a, b) => {
-    const sev = (s: PrCycleTimeException['severity']) => (s === 'warning' ? 1 : 0)
-    const ds = sev(b.severity) - sev(a.severity)
-    if (ds !== 0) return ds
-
-    const ta = absTrendFor(a)
-    const tb = absTrendFor(b)
-    if (ta == null && tb == null) return a.team.localeCompare(b.team)
-    if (ta == null) return 1
-    if (tb == null) return -1
-    if (tb !== ta) return tb - ta
-    return a.team.localeCompare(b.team)
   })
 }
 

@@ -580,7 +580,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
 > **Releasable**: after this phase, all First Review computations are callable as pure functions over PR + review fixtures.
 
 #### Task 5.0 — Extract shared exception sort helper
-- [ ] **File**: `src/metrics/exception-sort.ts` (new), `src/metrics/pr-cycle-time-dashboard.ts` (refactor existing `sortExceptions`)
+- [x] **File**: `src/metrics/exception-sort.ts` (new), `src/metrics/pr-cycle-time-dashboard.ts` (refactor existing `sortExceptions`)
 - **Depends on**: Task 0.1 (Task 5.0 also edits `src/metrics/pr-cycle-time-dashboard.ts`; Task 0.1's deletions must land first so the two edits do not overlap or create a broken intermediate state)
 - **Description**:
   - Create `src/metrics/exception-sort.ts` exporting a generic helper:
