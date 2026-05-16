@@ -66,10 +66,13 @@ describe.skipIf(!hasDatabaseUrl)('refresh', () => {
 
   beforeEach(() => {
     listSpy = vi.spyOn(GitHubClient.prototype, 'listPullRequests').mockResolvedValue([])
+    vi.spyOn(GitHubClient.prototype, 'listPullRequestReviews').mockResolvedValue([])
+    vi.spyOn(GitHubClient.prototype, 'listPullRequestReviewComments').mockResolvedValue([])
   })
 
   afterEach(async () => {
     listSpy.mockRestore()
+    vi.restoreAllMocks()
     // Clean shared sync tables and repositories so tests are order-independent.
     await db.delete(syncErrors)
     await db.delete(pullRequests)

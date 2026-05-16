@@ -544,7 +544,7 @@ export const pullRequestReviewComments = pgTable('pull_request_review_comments',
   - Checkpoint: `npm run test -- tests/collector/review-sync.test.ts`
 
 #### Task 4.3 — Refresh integration
-- [ ] **File**: `src/collector/refresh.ts`
+- [x] **File**: `src/collector/refresh.ts`
 - **Depends on**: Task 4.2
 - **Description**:
   - **Concurrency model (chosen: option (a) — second pass).** After Phase 01's PR-sync `runWithConcurrency` block (currently at line 175 of `src/collector/refresh.ts`) completes for **all** repos in the same invocation, run a **second** `runWithConcurrency(syncTargets, env.githubSyncConcurrency, ...)` pass that invokes `syncRepositoryReviews` for the subset of repos whose Phase 01 PR sync succeeded **in this invocation**.

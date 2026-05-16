@@ -6,6 +6,7 @@ import { GitHubClient } from '~/collector/github-client'
 import { discoverRepositories } from '~/collector/repo-discovery'
 import { upsertPullRequests } from '~/collector/pull-request-store'
 import { upsertRepositories } from '~/collector/repository-store'
+import { syncRepositoryReviews } from '~/collector/review-sync'
 import type { AppEnv } from '~/config/env'
 import { getEnv } from '~/config/env'
 import { loadTeamMapping } from '~/config/team-mapping'
@@ -22,6 +23,7 @@ export type RefreshSummary = {
   syncErrors: number
   syncWarnings: number
   status: 'success' | 'partial' | 'failed'
+  reviewSyncErrors: number
 }
 
 function buildProcessEnvFromPartial(partial?: Partial<AppEnv>): NodeJS.ProcessEnv {
@@ -96,6 +98,7 @@ export async function refreshLocalData(input?: Partial<AppEnv>): Promise<Refresh
         syncErrors: 0,
         syncWarnings: 0,
         status: 'success',
+        reviewSyncErrors: 0,
       }
     } finally {
       await db.$client.end({ timeout: 5 })
@@ -112,6 +115,7 @@ export async function refreshLocalData(input?: Partial<AppEnv>): Promise<Refresh
     syncErrors: 0,
     syncWarnings: 0,
     status: 'failed',
+    reviewSyncErrors: 0,
   }
 
   let syncRunId: string | null = null
@@ -171,6 +175,7 @@ export async function refreshLocalData(input?: Partial<AppEnv>): Promise<Refresh
 
     let prSyncSuccesses = 0
     let prSyncAttempts = 0
+    const reviewEligibleRepoIds = new Set<string>()
 
     await runWithConcurrency(syncTargets, env.githubSyncConcurrency, async (repo) => {
       prSyncAttempts += 1
@@ -210,11 +215,30 @@ export async function refreshLocalData(input?: Partial<AppEnv>): Promise<Refresh
         }
 
         prSyncSuccesses += 1
+        reviewEligibleRepoIds.add(repo.id)
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
         await insertError(repo.id, 'github_sync', msg)
       }
     })
+
+    const reviewTargets = syncTargets.filter((r) => reviewEligibleRepoIds.has(r.id))
+    if (reviewTargets.length > 0) {
+      const reviewNow = new Date()
+      await runWithConcurrency(reviewTargets, env.githubSyncConcurrency, async (repo) => {
+        const result = await syncRepositoryReviews(
+          db,
+          { client, now: reviewNow, syncRunId: syncRunId! },
+          {
+            id: repo.id,
+            owner: repo.owner,
+            repo: repo.repo,
+            lastReviewSyncedAt: repo.lastReviewSyncedAt,
+          },
+        )
+        summary.reviewSyncErrors += result.perPrErrors.length
+      })
+    }
 
     const errorRows = await db.select({ id: syncErrors.id }).from(syncErrors).where(eq(syncErrors.syncRunId, syncRunId))
     const errorRowCount = errorRows.length
