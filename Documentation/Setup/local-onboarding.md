@@ -52,7 +52,9 @@ The default `DATABASE_URL` in `.env.example` matches Compose (`postgresql://dddd
 
 Vitest integration tests read **`DATABASE_URL` from the process environment** only (the config does not inject it from `.env`). Export it in your shell, use a tool that loads `.env` into the environment, or run via **`./scripts/dev-up.sh`** / CI where the variable is set. Easiest local option: start Postgres (`npm run db:up` or `./scripts/dev-up.sh`), then `export DATABASE_URL=...` matching `.env.example` before `npm run test`.
 
-Playwright (`npm run test:e2e`) reads **`DATABASE_URL` from the environment**; `playwright.config.ts` also loads `.env` into `process.env` when `DATABASE_URL` is unset, matching local dev expectations. The e2e harness sets **`DASHBOARD_E2E_REFRESH_STUB=1`** (see `scripts/e2e-web-server.sh`) so the refresh button exercises the server path without calling GitHub; you still need Postgres for the dashboard loader.
+Playwright (`npm run test:e2e`) reads **`DATABASE_URL` from the environment**; `playwright.config.ts` also loads `.env` into `process.env` when `DATABASE_URL` is unset, matching local dev expectations. The default e2e harness sets **`DASHBOARD_E2E_REFRESH_STUB=1`** (see `scripts/e2e-web-server.sh`) so the refresh button exercises the server path without calling GitHub; you still need Postgres for the dashboard loader.
+
+For the no-mock live guard, run **`npm run test:e2e:live`**. It uses `playwright.live.config.ts` and `scripts/live-e2e-web-server.sh`, refuses `DASHBOARD_E2E_REFRESH_STUB=1`, requires real `DATABASE_URL`, `GITHUB_TOKEN`, `DASHBOARD_REPO_ROOT`, and `TEAM_MAPPING_PATH`, clicks the real Refresh button, calls GitHub, writes the configured Postgres database, and fails if the latest collector run is `failed`, if GitHub PR sync records auth/access errors such as `Not Found`, `token lacks access`, `401`, or `403`, or if there are no merged PRs in the default dashboard range. Real transient per-repo network errors may still produce a `partial` run.
 
 ## Files
 

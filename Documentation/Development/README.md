@@ -46,6 +46,7 @@ The dashboard route requires **`DATABASE_URL`** in `.env` (or the process enviro
 | `npm run test` | Run all Vitest tests once (`vitest run`). |
 | `npm run test -- tests/app/app-shell.test.tsx` | Run a single test file (example). |
 | `npm run test:e2e` | Playwright smoke tests under `tests/e2e/` (requires **`DATABASE_URL`**; Playwright also reads `.env` when unset). Uses `scripts/e2e-web-server.sh` and `DASHBOARD_E2E_REFRESH_STUB=1` so refresh does not call GitHub. Run **`npx playwright install chromium`** once after installing dependencies. |
+| `npm run test:e2e:live` | Live Playwright guard for the real GitHub sync path. Uses `playwright.live.config.ts` and `scripts/live-e2e-web-server.sh`; requires real `DATABASE_URL`, `GITHUB_TOKEN`, `DASHBOARD_REPO_ROOT`, and `TEAM_MAPPING_PATH`; no mocks or refresh stub. |
 | `npm run verify:phase01` | Phase 01 gate: `lint`, `typecheck`, `build`, Vitest with coverage, then `test:e2e`. |
 | `npm run lint` | ESLint with **zero warnings** allowed. |
 | `npm run typecheck` | TypeScript check without emit. |
@@ -63,7 +64,7 @@ For behaviour, environment variables, and when to use refresh vs GitHub import, 
 
 - Prefer **tests first** for new behaviour (see the implementation plan per task).
 - **Unit / component**: Vitest + Testing Library; shared DOM matchers are loaded from **`tests/setup.ts`**.
-- **E2E**: Playwright configuration is **`playwright.config.ts`** at the repo root; specs go under **`tests/e2e/`**. With **`DATABASE_URL`** set (export from `.env` or rely on Playwright loading `.env` when unset), `npm run test:e2e` starts the dev server via **`scripts/e2e-web-server.sh`**, applies migrations, and runs the dashboard smoke flow using a no-network refresh stub (`DASHBOARD_E2E_REFRESH_STUB`). After a fresh `npm install`, run **`npx playwright install chromium`** once so the browser binary exists.
+- **E2E**: Playwright configuration is **`playwright.config.ts`** at the repo root; specs go under **`tests/e2e/`**. With **`DATABASE_URL`** set (export from `.env` or rely on Playwright loading `.env` when unset), `npm run test:e2e` starts the dev server via **`scripts/e2e-web-server.sh`**, applies migrations, and runs the dashboard smoke flow using a no-network refresh stub (`DASHBOARD_E2E_REFRESH_STUB`). `npm run test:e2e:live` is intentionally separate: it uses the real GitHub API and real configured database/repository mapping, and fails if the latest live collector run is `failed`, if GitHub PR sync records auth/access errors, or if no merged PRs are in range. After a fresh `npm install`, run **`npx playwright install chromium`** once so the browser binary exists.
 
 ## Useful links
 
