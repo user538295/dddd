@@ -61,6 +61,7 @@ type GitHubClientOptions = {
 }
 
 const PER_PAGE = 100
+const GITHUB_API_VERSION = '2022-11-28'
 
 function trimTrailingSlash(url: string): string {
   return url.replace(/\/+$/, '')
@@ -251,6 +252,18 @@ function buildListPullsUrl(baseUrl: string, owner: string, repo: string, page: n
   return u.toString()
 }
 
+function buildGitHubHeaders(token: string | undefined): Headers {
+  const headers = new Headers({
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'dddd-pr-cycle-time-collector',
+    'X-GitHub-Api-Version': GITHUB_API_VERSION,
+  })
+  if (token !== undefined && token !== '') {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+  return headers
+}
+
 export class GitHubClient {
   private readonly token?: string
 
@@ -296,13 +309,7 @@ export class GitHubClient {
     let nextUrl: string | null = first.toString()
 
     while (nextUrl !== null) {
-      const headers = new Headers({
-        Accept: 'application/vnd.github+json',
-        'User-Agent': 'dddd-pr-cycle-time-collector',
-      })
-      if (this.token !== undefined && this.token !== '') {
-        headers.set('Authorization', `token ${this.token}`)
-      }
+      const headers = buildGitHubHeaders(this.token)
       const res = await this.fetchImpl(nextUrl, { headers })
 
       if (!res.ok) {
@@ -374,13 +381,7 @@ export class GitHubClient {
 
     for (;;) {
       const url = nextUrl ?? buildListPullsUrl(this.baseUrl, owner, repo, page)
-      const headers = new Headers({
-        Accept: 'application/vnd.github+json',
-        'User-Agent': 'dddd-pr-cycle-time-collector',
-      })
-      if (this.token !== undefined && this.token !== '') {
-        headers.set('Authorization', `token ${this.token}`)
-      }
+      const headers = buildGitHubHeaders(this.token)
 
       const res = await this.fetchImpl(url, { headers })
 
@@ -408,6 +409,14 @@ export class GitHubClient {
           throw new GitHubSyncError({
             code: 'forbidden',
             message: 'GitHub rejected the request (403 Forbidden)',
+            retryAfterSeconds,
+          })
+        }
+
+        if (res.status === 404) {
+          throw new GitHubSyncError({
+            code: 'unknown',
+            message: `GitHub repository not found or token lacks access: ${owner}/${repo}`,
             retryAfterSeconds,
           })
         }

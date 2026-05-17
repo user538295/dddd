@@ -393,7 +393,7 @@ describe('github-client', () => {
     })
   })
 
-  it('github_client_sends_auth_header_when_token_exists', async () => {
+  it('github_client_sends_bearer_auth_header_when_token_exists', async () => {
     const fetchImpl = vi.fn(async (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
       void input
       void init
@@ -409,7 +409,8 @@ describe('github-client', () => {
 
     const init = fetchImpl.mock.calls[0]![1] as RequestInit | undefined
     const headers = new Headers(init?.headers)
-    expect(headers.get('Authorization')).toBe('token ghp_testtoken')
+    expect(headers.get('Authorization')).toBe('Bearer ghp_testtoken')
+    expect(headers.get('X-GitHub-Api-Version')).toBe('2022-11-28')
   })
 
   it('github_client_omits_auth_header_without_token', async () => {
@@ -425,6 +426,27 @@ describe('github-client', () => {
     const init = fetchImpl.mock.calls[0]![1] as RequestInit | undefined
     const headers = new Headers(init?.headers)
     expect(headers.get('Authorization')).toBeNull()
+    expect(headers.get('X-GitHub-Api-Version')).toBe('2022-11-28')
+  })
+
+  it('github_client_explains_not_found_as_repo_or_token_access', async () => {
+    const fetchImpl = vi.fn(async (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+      void input
+      void init
+      return jsonResponse({ message: 'Not Found' }, { status: 404 })
+    })
+    const client = new GitHubClient({
+      token: 'github_pat_testtoken',
+      baseUrl: 'https://api.github.com',
+      fetchImpl,
+    })
+
+    await expect(client.listPullRequests({ owner: 'gde-mit', repo: 'missing-repo', state: 'all' })).rejects.toMatchObject({
+      name: 'GitHubSyncError',
+      code: 'unknown',
+      message:
+        'GitHub repository not found or token lacks access: gde-mit/missing-repo',
+    })
   })
 
   it('github_client_handles_unauthorized', async () => {

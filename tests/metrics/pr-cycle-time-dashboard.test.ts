@@ -6,7 +6,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { getDashboardDateRanges } from '~/config/env'
 import { createDb, runMigrations } from '~/db/client'
-import { pullRequests, repositories, syncRuns } from '~/db/schema'
+import { pullRequests, repositories, syncErrors, syncRuns } from '~/db/schema'
 import {
   DASHBOARD_UNASSIGNED_TEAM,
   getPrCycleTimeDashboard,
@@ -55,6 +55,7 @@ describe.skipIf(!hasDatabaseUrl)('pr-cycle-time-dashboard', () => {
   afterEach(async () => {
     vi.unstubAllEnvs()
     // Clean shared sync tables and this file's repos so tests are order-independent.
+    await db.delete(syncErrors)
     await db.delete(syncRuns)
     const repoRows = await db.select({ id: repositories.id }).from(repositories).where(eq(repositories.rootPath, testRoot))
     const ids = repoRows.map((r) => r.id)
