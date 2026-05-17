@@ -19,7 +19,6 @@ import {
 } from '~/db/schema'
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
-const hasDatabaseUrl = Boolean(databaseUrl)
 
 type ClientStub = {
   listPullRequestReviews: ReturnType<typeof vi.fn>
@@ -34,7 +33,7 @@ function makeClient(overrides: Partial<ClientStub> = {}): ClientStub {
   }
 }
 
-describe.skipIf(!hasDatabaseUrl)('review-sync integration', () => {
+describe('review-sync integration', () => {
   let db: ReturnType<typeof createDb>
 
   beforeAll(async () => {

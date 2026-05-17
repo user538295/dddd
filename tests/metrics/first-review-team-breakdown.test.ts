@@ -27,7 +27,9 @@ describe('first-review team breakdown', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]).toEqual({
       team: 'BotOnly',
+      reviewedPrs: 0,
       medianHours: null,
+      previousMedianHours: null,
       trendPercent: null,
       noReviewMergeCount: null,
     })
@@ -40,9 +42,11 @@ describe('first-review team breakdown', () => {
 
   it('team_with_qualifying_pr_has_median', () => {
     const rows = getFirstReviewTeamBreakdown({
-      teams: [team({ medianHours: 4, trendPercent: 10 })],
+      teams: [team({ currentQualifyingPrCount: 7, medianHours: 4, previousMedianHours: 3, trendPercent: 10 })],
     })
+    expect(rows[0]?.reviewedPrs).toBe(7)
     expect(rows[0]?.medianHours).toBe(4)
+    expect(rows[0]?.previousMedianHours).toBe(3)
     expect(rows[0]?.trendPercent).toBe(10)
   })
 })

@@ -78,7 +78,9 @@ export type SyncError = {
 
 export type FirstReviewTeamRow = {
   team: string
+  reviewedPrs: number
   medianHours: number | null
+  previousMedianHours: number | null
   trendPercent: number | null
   noReviewMergeCount: number | null
 }

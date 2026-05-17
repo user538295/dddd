@@ -10,7 +10,6 @@ import { createDb, runMigrations } from '~/db/client'
 import { pullRequests, repositories } from '~/db/schema'
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
-const hasDatabaseUrl = Boolean(databaseUrl)
 
 function baseCandidate(
   root: string,
@@ -32,7 +31,7 @@ function mapping(teams: TeamMappingConfig['teams'], rest: Partial<TeamMappingCon
   return { teams, ...rest }
 }
 
-describe.skipIf(!hasDatabaseUrl)('repository-store', () => {
+describe('repository-store', () => {
   let db: ReturnType<typeof createDb>
 
   beforeAll(async () => {

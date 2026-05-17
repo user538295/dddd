@@ -36,6 +36,7 @@ describe('FirstReviewSection', () => {
   it('first_review_section_visible_when_payload_has_firstReview', () => {
     render(<FirstReviewSection firstReview={fr()} />)
     expect(screen.getByTestId('phase02-section')).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 2, name: 'First Review Time' })).toBeTruthy()
   })
 
   it('within_section_layout_card_and_exceptions_side_by_side', () => {

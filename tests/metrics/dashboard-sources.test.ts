@@ -9,7 +9,6 @@ import { pullRequests, repositories, syncErrors, syncRuns } from '~/db/schema'
 import { getMergedPrsSource, getReposSource, getSyncErrorsSource } from '~/metrics/dashboard-sources'
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
-const hasDatabaseUrl = Boolean(databaseUrl)
 
 async function writeTeamMapping(dir: string, content: unknown): Promise<string> {
   const p = path.join(dir, 'team-mapping.json')
@@ -17,7 +16,7 @@ async function writeTeamMapping(dir: string, content: unknown): Promise<string> 
   return p
 }
 
-describe.skipIf(!hasDatabaseUrl)('dashboard-sources', () => {
+describe('dashboard-sources', () => {
   let db: ReturnType<typeof createDb>
   let testRoot: string
   let mappingPath: string

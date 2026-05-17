@@ -224,6 +224,45 @@
   color: var(--color-text);
 }
 
+.pr-dashboard__phase-section {
+  grid-column: 1 / -1;
+  margin-top: 34px;
+}
+
+.pr-dashboard__section-header {
+  margin: 0 0 22px 4px;
+}
+
+.pr-dashboard__section-title {
+  margin: 0 0 6px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+.pr-dashboard__section-subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.pr-dashboard__section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.pr-dashboard__section-grid + .pr-dashboard__section-grid {
+  margin-top: 24px;
+}
+
+@media (max-width: 900px) {
+  .pr-dashboard__section-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* —— Metric card —— */
 .pr-dashboard__metric-sub {
   margin: -8px 0 8px;
@@ -481,6 +520,28 @@
   color: var(--color-muted);
 }
 
+.pr-dashboard__review-pr-details {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.pr-dashboard__review-pr-details li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pr-dashboard__review-pr-title {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
 /* —— Trend chart —— */
 .pr-dashboard__chart-wrap {
   position: relative;
@@ -556,6 +617,7 @@
 
 .pr-dashboard__num {
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .pr-dashboard__median--warn {

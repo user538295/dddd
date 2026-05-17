@@ -13,7 +13,6 @@ import {
 } from '~/metrics/pr-cycle-time-dashboard'
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
-const hasDatabaseUrl = Boolean(databaseUrl)
 
 async function writeTeamMapping(dir: string, content: unknown): Promise<string> {
   const p = path.join(dir, 'team-mapping.json')
@@ -21,7 +20,7 @@ async function writeTeamMapping(dir: string, content: unknown): Promise<string> 
   return p
 }
 
-describe.skipIf(!hasDatabaseUrl)('pr-cycle-time-dashboard', () => {
+describe('pr-cycle-time-dashboard', () => {
   let db: ReturnType<typeof createDb>
   let testRoot: string
   let mappingPath: string

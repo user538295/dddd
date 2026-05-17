@@ -37,4 +37,22 @@ describe('verify:phase02 wiring', () => {
       expect(body).toContain(pattern)
     }
   })
+
+  it('phase_02_tests_always_get_database_url_and_do_not_skip_db_suites', () => {
+    const configBody = readFileSync(path.join(root, 'vitest.config.phase02.ts'), 'utf8')
+    expect(configBody).toContain('DEFAULT_TEST_DATABASE_URL')
+    expect(configBody).toContain('process.env.DATABASE_URL = DEFAULT_TEST_DATABASE_URL')
+
+    for (const file of [
+      'tests/collector/refresh-phase-02.test.ts',
+      'tests/collector/review-sync.test.ts',
+      'tests/collector/review-store.test.ts',
+      'tests/db/migrations-phase-02.test.ts',
+      'tests/fixtures/phase-02-reviews.fixture.test.ts',
+      'tests/metrics/dashboard-phase-02.test.ts',
+    ]) {
+      const body = readFileSync(path.join(root, file), 'utf8')
+      expect(body).not.toMatch(/skipIf|test\.skip|describe\.skip/)
+    }
+  })
 })

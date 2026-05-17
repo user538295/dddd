@@ -26,6 +26,7 @@ describe('FirstReviewExceptionsPanel', () => {
           ex({ team: 'B', message: 'b' }),
           ex({ team: 'C', message: 'c' }),
         ]}
+        teamBreakdown={[]}
       />,
     )
     const items = screen.getAllByRole('listitem')
@@ -34,7 +35,8 @@ describe('FirstReviewExceptionsPanel', () => {
 
   it('exceptions_panel_hidden_when_zero_qualifying_exceptions', () => {
     const { container } = render(<FirstReviewExceptionsPanel exceptions={[]} />)
-    expect(container.firstChild).toBeNull()
+    expect(container.querySelector('.pr-dashboard__card')).toBeTruthy()
+    expect(screen.getByText('None in this range')).toBeTruthy()
   })
 
   it('exceptions_panel_renders_all_three_types', () => {
@@ -45,6 +47,7 @@ describe('FirstReviewExceptionsPanel', () => {
           ex({ type: 'merge_without_review', team: 'B', message: 'merge no rev' }),
           ex({ type: 'review_baseline_pending', severity: 'info', team: 'C', message: 'baseline' }),
         ]}
+        teamBreakdown={[]}
       />,
     )
     expect(screen.getByText('worsened')).toBeTruthy()
@@ -63,11 +66,34 @@ describe('FirstReviewExceptionsPanel', () => {
             prDetails: [{ prNumber: 7, title: 'fix-bug', repo: 'org/r' }],
           }),
         ]}
+        teamBreakdown={[]}
       />,
     )
     expect(screen.getByText('fix-bug')).toBeTruthy()
     expect(screen.getByText('org/r')).toBeTruthy()
     expect(container.querySelector('img')).toBeNull()
     expect(container.textContent).not.toMatch(/author/i)
+  })
+
+  it('exceptions_panel_uses_dashboard_exception_classes_and_metrics', () => {
+    const { container } = render(
+      <FirstReviewExceptionsPanel
+        exceptions={[ex({ team: 'Chat', trendPercent: 100 })]}
+        teamBreakdown={[
+          {
+            team: 'Chat',
+            reviewedPrs: 82,
+            medianHours: 8,
+            previousMedianHours: 4,
+            trendPercent: 100,
+            noReviewMergeCount: null,
+          },
+        ]}
+      />,
+    )
+    expect(container.querySelector('.pr-dashboard__card')).toBeTruthy()
+    expect(screen.getByText('Chat review latency worsened')).toBeTruthy()
+    expect(screen.getByText('8h median')).toBeTruthy()
+    expect(screen.getByText('↑ +100%')).toBeTruthy()
   })
 })

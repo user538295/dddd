@@ -4,9 +4,8 @@ import { createDb, runMigrations } from '~/db/client'
 import { pullRequests, repositories } from '~/db/schema'
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
-const hasDatabaseUrl = Boolean(databaseUrl)
 
-describe.skipIf(!hasDatabaseUrl)('db migrations', () => {
+describe('db migrations', () => {
   let db: ReturnType<typeof createDb>
 
   beforeAll(async () => {

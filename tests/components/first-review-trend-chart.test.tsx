@@ -12,6 +12,7 @@ describe('FirstReviewTrendChart', () => {
     }))
     render(<FirstReviewTrendChart weeklyTrend={data} />)
     expect(screen.getByTestId('first-review-trend')).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 3, name: '8-week First Review trend' })).toBeTruthy()
   })
 
   it('trend_chart_renders_eight_buckets', () => {

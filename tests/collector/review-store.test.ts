@@ -17,7 +17,6 @@ import {
 } from '~/db/schema'
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
-const hasDatabaseUrl = Boolean(databaseUrl)
 
 function review(overrides: Partial<GitHubReview> & { id: number }): GitHubReview {
   return {
@@ -32,7 +31,7 @@ function comment(id: number, createdAt: Date): GitHubReviewComment {
   return { id, createdAt }
 }
 
-describe.skipIf(!hasDatabaseUrl)('review-store integration', () => {
+describe('review-store integration', () => {
   let db: ReturnType<typeof createDb>
   let pullRequestId: string
   const mergedAt = new Date('2026-04-05T12:00:00Z')

@@ -12,7 +12,6 @@ import { createDb, runMigrations } from '~/db/client'
 import { pullRequests, repositories } from '~/db/schema'
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
-const hasDatabaseUrl = Boolean(databaseUrl)
 
 function baseCandidate(root: string, name: string, overrides: Partial<RepositoryCandidate> = {}): RepositoryCandidate {
   return {
@@ -45,7 +44,7 @@ function ghPr(overrides: Partial<GitHubPullRequest> & Pick<GitHubPullRequest, 'n
   }
 }
 
-describe.skipIf(!hasDatabaseUrl)('pull-request-store integration', () => {
+describe('pull-request-store integration', () => {
   let db: ReturnType<typeof createDb>
   let repositoryId: string
 

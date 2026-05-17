@@ -35,9 +35,8 @@ describe('parseDashboardWeeksInput', () => {
 })
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
-const hasDatabaseUrl = Boolean(databaseUrl)
 
-describe.skipIf(!hasDatabaseUrl)('dashboard server integration', () => {
+describe('dashboard server integration', () => {
   let db: ReturnType<typeof createDb>
   let testRoot: string
   let mappingDir: string

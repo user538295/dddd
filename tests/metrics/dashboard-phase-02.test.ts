@@ -20,9 +20,8 @@ import {
 } from '~/db/schema'
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
-const hasDatabaseUrl = Boolean(databaseUrl)
 
-describe.skipIf(!hasDatabaseUrl)('dashboard phase 02 integration', () => {
+describe('dashboard phase 02 integration', () => {
   let db: ReturnType<typeof createDb>
   let mappingPath: string
   let repoRoot: string

@@ -34,7 +34,16 @@ describe('FirstReviewCard', () => {
 
   it('coverage_subtitle_renders_M_of_N', () => {
     render(<FirstReviewCard metric={metric()} />)
+    expect(screen.getByText('3 reviewed PRs analyzed')).toBeTruthy()
     expect(screen.getByText('Median over 3 of 5 merged PRs with a human review')).toBeTruthy()
+  })
+
+  it('first_review_card_uses_dashboard_metric_classes', () => {
+    const { container } = render(<FirstReviewCard metric={metric()} />)
+    expect(container.querySelector('.pr-dashboard__card.pr-dashboard__metric')).toBeTruthy()
+    expect(screen.getByTestId('median-first-review-time')).toHaveTextContent('5h')
+    expect(screen.getByText(/\+25%/)).toBeTruthy()
+    expect(screen.getByText('(4h)')).toBeTruthy()
   })
 
   it('bot_share_side_stat_renders', () => {

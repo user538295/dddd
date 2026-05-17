@@ -1,6 +1,89 @@
 import { expect, test } from '@playwright/test'
+import path from 'node:path'
+import { randomUUID } from 'node:crypto'
+
+import { createDb, runMigrations } from '~/db/client'
+import {
+  pullRequestReviewComments,
+  pullRequestReviews,
+  pullRequests,
+  repositories,
+  syncErrors,
+  syncRuns,
+} from '~/db/schema'
 
 test.describe.configure({ mode: 'serial' })
+
+const databaseUrl = process.env.DATABASE_URL?.trim()
+const repoRoot = process.env.DASHBOARD_REPO_ROOT ?? path.join(process.cwd(), '.tmp/e2e-empty-repo-root')
+
+test.beforeEach(async () => {
+  await runMigrations(databaseUrl)
+  const db = createDb(databaseUrl)
+  try {
+    await db.delete(syncErrors)
+    await db.delete(syncRuns)
+    await db.delete(pullRequestReviewComments)
+    await db.delete(pullRequestReviews)
+    await db.delete(pullRequests)
+    await db.delete(repositories)
+
+    const repoId = randomUUID()
+    await db.insert(repositories).values({
+      id: repoId,
+      name: 'service-api',
+      path: path.join(repoRoot, 'service-api'),
+      rootPath: repoRoot,
+      remoteUrl: 'https://github.com/gde-mit/service-api.git',
+      owner: 'gde-mit',
+      repo: 'service-api',
+      remoteIdentity: 'github:gde-mit/service-api',
+      team: 'Backend',
+      scanStatus: 'ready',
+      active: true,
+      lastScannedAt: new Date(),
+      lastPrSyncedAt: new Date(),
+    })
+
+    await db.insert(syncRuns).values({
+      id: randomUUID(),
+      kind: 'collector_refresh',
+      status: 'success',
+      startedAt: new Date(),
+      finishedAt: new Date(),
+      message: 'e2e_seed',
+      errorCount: 0,
+    })
+
+    const now = Date.now()
+    const currentMergedAt = new Date(now - 7 * 24 * 60 * 60 * 1000)
+    const previousMergedAt = new Date(now - 70 * 24 * 60 * 60 * 1000)
+    const rows = [
+      { number: 1, mergedAt: currentMergedAt, hours: 24 },
+      { number: 2, mergedAt: currentMergedAt, hours: 48 },
+      { number: 3, mergedAt: currentMergedAt, hours: 72 },
+      { number: 11, mergedAt: previousMergedAt, hours: 24 },
+      { number: 12, mergedAt: previousMergedAt, hours: 24 },
+      { number: 13, mergedAt: previousMergedAt, hours: 24 },
+    ]
+
+    await db.insert(pullRequests).values(
+      rows.map((row) => ({
+        repositoryId: repoId,
+        githubNodeId: `e2e-node-${randomUUID()}`,
+        number: row.number,
+        title: `PROJ-${row.number} seeded PR`,
+        state: 'merged',
+        openedAt: new Date(row.mergedAt.getTime() - row.hours * 60 * 60 * 1000),
+        githubUpdatedAt: row.mergedAt,
+        mergedAt: row.mergedAt,
+        url: `https://github.com/gde-mit/service-api/pull/${row.number}`,
+      })),
+    )
+  } finally {
+    await db.$client.end({ timeout: 5 })
+  }
+})
 
 test('dashboard_e2e_local_dev_server_starts', async ({ page }) => {
   await page.goto('/')
@@ -11,10 +94,7 @@ test('dashboard_e2e_local_dev_server_starts', async ({ page }) => {
 test('dashboard_e2e_shows_previous_median_when_trend_available', async ({ page }) => {
   await page.goto('/')
   const medianCard = page.getByRole('heading', { name: 'Median PR Cycle Time' }).locator('..')
-  const hasTrend = await medianCard.getByText(/[+-]\d+%/).count()
-  if (hasTrend === 0) {
-    test.skip(true, 'No trend baseline in this environment')
-  }
+  await expect(medianCard.getByText(/[+-]\d+%/)).toBeVisible()
   await expect(medianCard.locator('.pr-dashboard__trend-prev').first()).toBeVisible()
 })
 

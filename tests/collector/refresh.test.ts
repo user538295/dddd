@@ -23,7 +23,6 @@ import { pullRequests, repositories, syncErrors, syncRuns } from '~/db/schema'
 const execFileAsync = promisify(execFile)
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
-const hasDatabaseUrl = Boolean(databaseUrl)
 
 const defaultMappingJson = JSON.stringify({
   teams: [
@@ -50,7 +49,7 @@ async function initGitRepoWithOrigin(root: string, name: string, remoteUrl: stri
   return repoPath
 }
 
-describe.skipIf(!hasDatabaseUrl)('refresh', () => {
+describe('refresh', () => {
   let db: ReturnType<typeof createDb>
   let listSpy: MockInstance
 

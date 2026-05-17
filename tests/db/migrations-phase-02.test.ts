@@ -6,7 +6,6 @@ import { createDb, runMigrations } from '~/db/client'
 import { pullRequestReviews, pullRequests, repositories } from '~/db/schema'
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
-const hasDatabaseUrl = Boolean(databaseUrl)
 
 const drizzleDir = path.resolve(process.cwd(), 'drizzle')
 
@@ -20,7 +19,7 @@ describe('phase 02 migration filesystem invariants', () => {
   })
 })
 
-describe.skipIf(!hasDatabaseUrl)('phase 02 migrations', () => {
+describe('phase 02 migrations', () => {
   let db: ReturnType<typeof createDb>
 
   beforeAll(async () => {

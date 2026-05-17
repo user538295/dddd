@@ -30,8 +30,10 @@ function joinPath(points: Pt[], fromIdx: number, toIdx: number): string {
 
 export function WeeklyTrendChart({
   weeklyTrend,
+  ariaLabel = '8-week PR cycle time trend',
 }: {
   weeklyTrend: PrCycleTimeDashboard['weeklyTrend']
+  ariaLabel?: string
 }) {
   const n = weeklyTrend.length
   const innerW = VB_W - PAD_L - PAD_R
@@ -76,7 +78,7 @@ export function WeeklyTrendChart({
         viewBox={`0 0 ${VB_W} ${VB_H}`}
         preserveAspectRatio="xMidYMid meet"
         role="img"
-        aria-label="8-week PR cycle time trend"
+        aria-label={ariaLabel}
       >
         <text x={PAD_L} y={18} fill="#6b7280" fontSize="11" fontWeight="500">
           Days

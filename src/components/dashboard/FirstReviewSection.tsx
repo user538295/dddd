@@ -11,12 +11,19 @@ type Props = {
 export function FirstReviewSection({ firstReview }: Props) {
   if (firstReview === undefined) return null
   return (
-    <section data-testid="phase02-section" aria-label="First Review Time">
-      <div data-testid="phase02-row-1" className="phase02-row-1">
-        <FirstReviewCard metric={firstReview.metric} />
-        <FirstReviewExceptionsPanel exceptions={firstReview.exceptions} />
+    <section className="pr-dashboard__phase-section" data-testid="phase02-section" aria-label="First Review Time">
+      <div className="pr-dashboard__section-header">
+        <h2 className="pr-dashboard__section-title">First Review Time</h2>
+        <p className="pr-dashboard__section-subtitle">Review latency for merged PRs with submitted reviews</p>
       </div>
-      <div data-testid="phase02-row-2" className="phase02-row-2">
+      <div data-testid="phase02-row-1" className="phase02-row-1 pr-dashboard__section-grid">
+        <FirstReviewCard metric={firstReview.metric} />
+        <FirstReviewExceptionsPanel
+          exceptions={firstReview.exceptions}
+          teamBreakdown={firstReview.teamBreakdown}
+        />
+      </div>
+      <div data-testid="phase02-row-2" className="phase02-row-2 pr-dashboard__section-grid">
         <FirstReviewTrendChart weeklyTrend={firstReview.weeklyTrend} />
         <FirstReviewTeamTable rows={firstReview.teamBreakdown} />
       </div>

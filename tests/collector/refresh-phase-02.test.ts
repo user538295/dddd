@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
+import { eq } from 'drizzle-orm'
 import {
   afterAll,
   afterEach,
@@ -22,7 +23,6 @@ import { pullRequests, repositories, syncErrors, syncRuns } from '~/db/schema'
 const execFileAsync = promisify(execFile)
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
-const hasDatabaseUrl = Boolean(databaseUrl)
 
 const mappingJson = JSON.stringify({
   teams: [{ name: 'TeamA', repoPatterns: ['svc'] }],
@@ -44,7 +44,7 @@ async function initGitRepoWithOrigin(root: string, name: string, remoteUrl: stri
   return repoPath
 }
 
-describe.skipIf(!hasDatabaseUrl)('refresh phase 02 integration', () => {
+describe('refresh phase 02 integration', () => {
   let db: ReturnType<typeof createDb>
   let listSpy: MockInstance
   let reviewsSpy: MockInstance
@@ -104,7 +104,7 @@ describe.skipIf(!hasDatabaseUrl)('refresh phase 02 integration', () => {
 
       expect(reviewsSpy).toHaveBeenCalled()
       expect(commentsSpy).toHaveBeenCalled()
-      const [repoRow] = await db.select().from(repositories)
+      const [repoRow] = await db.select().from(repositories).where(eq(repositories.rootPath, root))
       expect(repoRow?.lastReviewSyncedAt).not.toBeNull()
     } finally {
       await rm(root, { recursive: true, force: true })

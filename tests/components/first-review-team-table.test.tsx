@@ -9,7 +9,9 @@ afterEach(cleanup)
 function row(o: Partial<FirstReviewTeamRow>): FirstReviewTeamRow {
   return {
     team: o.team ?? 'T',
+    reviewedPrs: o.reviewedPrs ?? 0,
     medianHours: o.medianHours === undefined ? null : o.medianHours,
+    previousMedianHours: o.previousMedianHours === undefined ? null : o.previousMedianHours,
     trendPercent: o.trendPercent === undefined ? null : o.trendPercent,
     noReviewMergeCount: o.noReviewMergeCount === undefined ? null : o.noReviewMergeCount,
   }
@@ -19,6 +21,7 @@ describe('FirstReviewTeamTable', () => {
   it('phase_02_team_column', () => {
     render(<FirstReviewTeamTable rows={[row({})]} />)
     expect(screen.getByText('Team')).toBeTruthy()
+    expect(screen.getByText('Reviewed PRs')).toBeTruthy()
     expect(screen.getByText('First Review')).toBeTruthy()
     expect(screen.getByText('Review Trend')).toBeTruthy()
     expect(screen.getByText('No-review Merges')).toBeTruthy()
@@ -50,8 +53,29 @@ describe('FirstReviewTeamTable', () => {
   it('phase02_dashboard_components_have_accessible_aria_labels_and_table_scope_headers', () => {
     const { container } = render(<FirstReviewTeamTable rows={[row({})]} />)
     const ths = container.querySelectorAll('th[scope="col"]')
-    expect(ths.length).toBe(4)
+    expect(ths.length).toBe(5)
     const tbl = container.querySelector('table')
-    expect(tbl?.getAttribute('aria-label')).toBe('First Review team breakdown')
+    expect(tbl?.getAttribute('aria-label')).toBe('Review team breakdown')
+  })
+
+  it('first_review_team_table_uses_dashboard_table_classes', () => {
+    const { container } = render(
+      <FirstReviewTeamTable
+        rows={[
+          row({
+            team: 'Chat',
+            reviewedPrs: 82,
+            medianHours: 8,
+            previousMedianHours: 4,
+            trendPercent: 100,
+            noReviewMergeCount: null,
+          }),
+        ]}
+      />,
+    )
+    expect(container.querySelector('.pr-dashboard__card .pr-dashboard__table')).toBeTruthy()
+    expect(screen.getByText('82')).toBeTruthy()
+    expect(screen.getByText('↑ +100%')).toBeTruthy()
+    expect(screen.getByText('(4h)')).toBeTruthy()
   })
 })

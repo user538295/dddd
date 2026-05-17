@@ -43,11 +43,8 @@ describe('importRepoStoragePath', () => {
 })
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
-const hasPostgresDatabaseUrl =
-  Boolean(databaseUrl) &&
-  (databaseUrl!.startsWith('postgresql://') || databaseUrl!.startsWith('postgres://'))
 
-describe.skipIf(!hasPostgresDatabaseUrl)('importGitHubRepositories', () => {
+describe('importGitHubRepositories', () => {
   let db: ReturnType<typeof createDb>
   let listSpy: MockInstance
 

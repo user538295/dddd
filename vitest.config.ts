@@ -5,10 +5,14 @@ import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const DEFAULT_TEST_DATABASE_URL = 'postgresql://dddd:dddd_local_dev@127.0.0.1:54332/dddd_dev'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, '')
   Object.assign(process.env, env)
+  if (!process.env.DATABASE_URL?.trim()) {
+    process.env.DATABASE_URL = DEFAULT_TEST_DATABASE_URL
+  }
 
   return {
     plugins: [react()],
