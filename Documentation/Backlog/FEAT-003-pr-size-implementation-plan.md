@@ -630,7 +630,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/components/PrSizeTeamTable.test.tsx`
 
 #### Task 8.5 — PrSizeSection component and PrCycleTimeDashboard wiring
-- [ ] **Files**: `src/components/dashboard/PrSizeSection.tsx`, `src/components/dashboard/PrCycleTimeDashboard.tsx`
+- [x] **Files**: `src/components/dashboard/PrSizeSection.tsx`, `src/components/dashboard/PrCycleTimeDashboard.tsx`
 - **Depends on**: Task 8.2, Task 8.3, Task 8.4
 - **Description**:
   - `PrSizeSection({ prSize }: { prSize: PrSize | undefined })` — returns `null` when `prSize === undefined` (hidden-until-data, same pattern as `FirstReviewSection`).
