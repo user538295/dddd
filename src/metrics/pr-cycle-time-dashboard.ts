@@ -30,6 +30,10 @@ import {
 } from '~/metrics/first-review-time'
 import { calculatePrCycleTime, type PullRequestRecord } from '~/metrics/pr-cycle-time'
 import { comparePeriods, getWeeklyMedianTrend, median } from '~/metrics/pr-cycle-time-summary'
+import { buildPrSizeExceptions } from '~/metrics/pr-size-exceptions'
+import { computePrSizeMetric, getPrSizeWeeklyTrend } from '~/metrics/pr-size-metric'
+import { getPrSizeTeamBreakdown } from '~/metrics/pr-size-team-breakdown'
+import type { PrSizeRecord } from '~/metrics/pr-size-types'
 
 export type PrCycleTimeDashboardInput = {
   db: AppDb
@@ -200,6 +204,16 @@ function mergedInPrevious(pr: PullRequestRecord, previousFrom: Date, currentFrom
   return m >= previousFrom.getTime() && m < currentFrom.getTime()
 }
 
+function mergedInCurrentSize(p: PrSizeRecord, from: Date, to: Date): boolean {
+  const m = p.mergedAt.getTime()
+  return m >= from.getTime() && m <= to.getTime()
+}
+
+function mergedInPreviousSize(p: PrSizeRecord, previousFrom: Date, currentFrom: Date): boolean {
+  const m = p.mergedAt.getTime()
+  return m >= previousFrom.getTime() && m < currentFrom.getTime()
+}
+
 function cycleHoursForMerged(pr: PullRequestRecord): number | null {
   const c = calculatePrCycleTime(pr)
   return c?.cycleTimeHours ?? null
@@ -240,7 +254,29 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
       ? []
       : await input.db.select().from(pullRequests).where(inArray(pullRequests.repositoryId, metricsRepoIds))
 
-  const prs = prRows.map(rowToPr)
+  const repoById = new Map(metricsRepos.map((r) => [r.id, r]))
+  const prs: PullRequestRecord[] = []
+  const sizePrs: PrSizeRecord[] = []
+  for (const row of prRows) {
+    prs.push(rowToPr(row))
+    if (row.mergedAt == null) continue
+    const repo = repoById.get(row.repositoryId)
+    const repoFullName =
+      repo?.owner && repo.repo ? `${repo.owner}/${repo.repo}` : (repo?.name ?? '')
+    sizePrs.push({
+      id: row.id,
+      number: row.number,
+      title: row.title,
+      url: row.url,
+      repositoryId: row.repositoryId,
+      repoFullName,
+      team: repo?.team ?? null,
+      mergedAt: row.mergedAt,
+      additions: row.additions,
+      deletions: row.deletions,
+      changedFiles: row.changedFiles,
+    })
+  }
 
   const currentMerged = prs.filter((p) => mergedInCurrent(p, current.from, current.to))
   const previousMerged = prs.filter((p) => mergedInPrevious(p, previous.from, current.from))
@@ -381,6 +417,26 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
   sortExceptions(exceptions, teamBreakdown)
   const limited = exceptions.slice(0, 3)
 
+  const currentSizePrs = sizePrs.filter((p) => mergedInCurrentSize(p, current.from, current.to))
+  const priorSizePrs = sizePrs.filter((p) => mergedInPreviousSize(p, previous.from, current.from))
+  const prSizeMetric = computePrSizeMetric(currentSizePrs, priorSizePrs)
+  const currentTeamPrs = new Map<string, PrSizeRecord[]>()
+  for (const p of currentSizePrs) {
+    if (p.team === null) continue
+    const list = currentTeamPrs.get(p.team) ?? []
+    list.push(p)
+    currentTeamPrs.set(p.team, list)
+  }
+  const prSizeOptional: PrSize | undefined =
+    prSizeMetric.qualifyingPrCount > 0
+      ? {
+          metric: prSizeMetric,
+          exceptions: buildPrSizeExceptions(currentTeamPrs),
+          weeklyTrend: getPrSizeWeeklyTrend(sizePrs, weeks, now),
+          teamBreakdown: getPrSizeTeamBreakdown(sizePrs, current, previous),
+        }
+      : undefined
+
   const phase01: PrCycleTimeDashboard = {
     range: {
       from: formatIso(current.from),
@@ -410,12 +466,12 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
   if (syncedRepos.length === 0) {
     return {
       ...phase01,
+      ...(prSizeOptional ? { prSize: prSizeOptional } : {}),
       reviewMetricsPending: { hint: 'Review metrics will appear after the next refresh' },
     }
   }
 
   const syncedRepoIds = new Set(syncedRepos.map((r) => r.id))
-  const repoById = new Map(metricsRepos.map((r) => [r.id, r]))
   const mergedPrsInSyncedRepos = prs.filter(
     (p) => p.mergedAt !== null && syncedRepoIds.has(p.repositoryId),
   )
@@ -598,6 +654,7 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
 
   return {
     ...phase01,
+    ...(prSizeOptional ? { prSize: prSizeOptional } : {}),
     firstReview,
     reviewFreshness: {
       oldestReviewSyncAt: formatIso(new Date(oldestReviewSyncMs)),

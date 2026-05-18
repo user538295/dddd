@@ -542,7 +542,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/metrics/dashboard-types-phase-03.test.ts`
 
 #### Task 7.2 — getPrCycleTimeDashboard: extend Phase 01 query and populate prSize
-- [ ] **File**: `src/metrics/pr-cycle-time-dashboard.ts`
+- [x] **File**: `src/metrics/pr-cycle-time-dashboard.ts`
 - **Depends on**: Task 7.1, Task 6.1, Task 6.2, Task 6.3
 - **Description**:
   - Extend the existing `pullRequests` + `repositories` query to also select `additions`, `deletions`, `changedFiles`, `title`, `url` from `pullRequests`. These columns are already present on `$inferSelect` after the migration.
