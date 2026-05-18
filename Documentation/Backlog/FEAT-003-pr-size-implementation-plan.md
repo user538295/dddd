@@ -227,7 +227,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/db/pr-size-migration.test.ts`
 
 #### Task 1.4 — GitHubPullRequest type: add mergeCommitSha field
-- [ ] **File**: `src/collector/github-client.ts`
+- [x] **File**: `src/collector/github-client.ts`
 - **Depends on**: nothing
 - **Description**:
   - Add `mergeCommitSha: string | null` to `GitHubPullRequest` type.

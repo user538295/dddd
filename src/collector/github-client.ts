@@ -7,6 +7,7 @@ export type GitHubPullRequest = {
   openedAt: Date
   updatedAt: Date
   mergedAt: Date | null
+  mergeCommitSha: string | null
   url: string
 }
 
@@ -100,6 +101,7 @@ function normalizePullRequest(raw: Record<string, unknown>): GitHubPullRequest {
   const createdAt = raw.created_at
   const updatedAt = raw.updated_at
   const mergedAt = raw.merged_at
+  const mergeCommitSha = raw.merge_commit_sha
   const htmlUrl = raw.html_url
 
   if (typeof nodeId !== 'string' || nodeId.length === 0) {
@@ -139,6 +141,16 @@ function normalizePullRequest(raw: Record<string, unknown>): GitHubPullRequest {
     merged = m
   }
 
+  let mergeSha: string | null = null
+  if (mergeCommitSha !== null && mergeCommitSha !== undefined) {
+    if (typeof mergeCommitSha !== 'string') {
+      throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request has invalid merge_commit_sha' })
+    }
+    if (mergeCommitSha.length > 0) {
+      mergeSha = mergeCommitSha
+    }
+  }
+
   return {
     githubNodeId: nodeId,
     number,
@@ -148,6 +160,7 @@ function normalizePullRequest(raw: Record<string, unknown>): GitHubPullRequest {
     openedAt,
     updatedAt: updated,
     mergedAt: merged,
+    mergeCommitSha: mergeSha,
     url: htmlUrl,
   }
 }

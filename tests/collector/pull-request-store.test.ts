@@ -40,6 +40,7 @@ function ghPr(overrides: Partial<GitHubPullRequest> & Pick<GitHubPullRequest, 'n
     openedAt: opened,
     updatedAt: overrides.updatedAt ?? opened,
     mergedAt: overrides.mergedAt ?? null,
+    mergeCommitSha: overrides.mergeCommitSha ?? null,
     url: overrides.url ?? `https://github.com/gde-mit/example/pull/${overrides.number}`,
   }
 }

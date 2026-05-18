@@ -78,6 +78,7 @@ describe('importGitHubRepositories', () => {
         openedAt: opened,
         updatedAt: updated,
         mergedAt: new Date('2024-01-02T12:00:00.000Z'),
+        mergeCommitSha: null,
         url: 'https://github.com/gde-mit/sample/pull/7',
       },
     ])

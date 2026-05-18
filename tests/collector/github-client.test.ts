@@ -57,6 +57,7 @@ describe('github-client', () => {
       openedAt: new Date('2024-01-10T12:00:00Z'),
       updatedAt: new Date('2024-01-12T15:30:00Z'),
       mergedAt: new Date('2024-01-12T15:00:00Z'),
+      mergeCommitSha: null,
       url: 'https://github.com/o/r/pull/42',
     })
 

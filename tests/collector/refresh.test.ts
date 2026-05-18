@@ -94,6 +94,7 @@ describe('refresh', () => {
           openedAt: new Date('2024-01-01T00:00:00.000Z'),
           updatedAt: new Date('2024-01-02T00:00:00.000Z'),
           mergedAt: new Date('2024-01-02T00:00:00.000Z'),
+          mergeCommitSha: null,
           url: 'https://github.com/gde-mit/svc/pull/1',
         },
       ])
@@ -272,6 +273,7 @@ describe('refresh', () => {
           openedAt: new Date('2024-02-02T00:00:00.000Z'),
           updatedAt: new Date('2024-02-02T00:00:00.000Z'),
           mergedAt: new Date('2024-02-01T00:00:00.000Z'),
+          mergeCommitSha: null,
           url: 'https://github.com/gde-mit/life/pull/9',
         },
       ])
@@ -305,6 +307,7 @@ describe('refresh', () => {
           openedAt: new Date('2024-03-01T00:00:00.000Z'),
           updatedAt: u,
           mergedAt: new Date('2024-03-02T00:00:00.000Z'),
+          mergeCommitSha: null,
           url: 'https://github.com/gde-mit/cur/pull/1',
         },
       ])
@@ -337,6 +340,7 @@ describe('refresh', () => {
           openedAt: new Date('2024-04-01T00:00:00.000Z'),
           updatedAt: stopAt,
           mergedAt: new Date('2024-04-02T00:00:00.000Z'),
+          mergeCommitSha: null,
           url: 'https://github.com/gde-mit/stop/pull/1',
         },
       ])
