@@ -183,7 +183,7 @@ export type PrSizeRecord = {
 > **Releasable**: after Task 1.5 — the collector can persist size data; no UI yet.
 
 #### Task 1.1 — math.ts: shared median utility
-- [ ] **File**: `src/metrics/math.ts`
+- [x] **File**: `src/metrics/math.ts`
 - **Depends on**: nothing
 - **Description**:
   - Define `median(values: number[]): number | null` (sort ascending, return middle or average of two middles; `null` on empty array). This is the same implementation currently in `pr-cycle-time-summary.ts`.
