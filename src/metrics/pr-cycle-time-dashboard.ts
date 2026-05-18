@@ -101,6 +101,42 @@ export type ReviewMetricsPending = {
   hint: string
 }
 
+export type PrSizeMetric = {
+  medianLines: number | null
+  medianChangedFiles: number | null
+  previousMedianLines: number | null
+  trendPercent: number | null
+  baselineStatus: 'available' | 'pending'
+  qualifyingPrCount: number
+}
+
+export type PrSizeException = {
+  type: 'oversized_pr_pattern'
+  severity: 'warning'
+  team: string
+  message: string
+  flaggedPrCount: number
+  totalPrCount: number
+}
+
+export type PrSizeTeamRow = {
+  team: string
+  prCount: number
+  medianLines: number | null
+  trend: '↑' | '↓' | '→' | '—'
+  largestPrTitle: string
+  largestPrRepo: string
+  largestPrUrl: string
+  largestPrLines: number
+}
+
+export type PrSize = {
+  metric: PrSizeMetric
+  exceptions: PrSizeException[]
+  weeklyTrend: Array<{ weekStart: string; medianLines: number | null }>
+  teamBreakdown: PrSizeTeamRow[]
+}
+
 export type PrCycleTimeDashboard = {
   range: { from: string; to: string; weeks: number }
   metric: {
@@ -130,6 +166,7 @@ export type PrCycleTimeDashboard = {
   firstReview?: FirstReview
   reviewFreshness?: ReviewFreshness
   reviewMetricsPending?: ReviewMetricsPending
+  prSize?: PrSize
 }
 
 const MS_PER_HOUR = 1000 * 60 * 60

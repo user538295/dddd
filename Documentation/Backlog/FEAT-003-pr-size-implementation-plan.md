@@ -529,7 +529,7 @@ export type PrSizeRecord = {
 > **Releasable**: after Task 7.2 — the API returns `prSize` data when available.
 
 #### Task 7.1 — Add PrSize output types to pr-cycle-time-dashboard.ts
-- [ ] **File**: `src/metrics/pr-cycle-time-dashboard.ts`
+- [x] **File**: `src/metrics/pr-cycle-time-dashboard.ts`
 - **Depends on**: Task 6.3
 - **Description**:
   - Add types `PrSizeMetric`, `PrSizeException`, `PrSizeTeamRow`, `PrSize` as shown in the Architecture section.
