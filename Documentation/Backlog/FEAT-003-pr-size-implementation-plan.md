@@ -671,7 +671,7 @@ export type PrSizeRecord = {
 - **Checkpoint**: `npm run verify:phase03`
 
 #### Task 9.2 — Playwright E2E tests
-- [ ] **File**: `tests/e2e/phase03-pr-size.spec.ts`
+- [x] **File**: `tests/e2e/phase03-pr-size.spec.ts`
 - **Depends on**: Task 9.1
 - **Description**:
   - All tests tagged `@phase03`.
