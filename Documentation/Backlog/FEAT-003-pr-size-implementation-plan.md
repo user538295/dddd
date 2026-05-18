@@ -279,7 +279,7 @@ export type PrSizeRecord = {
 > **Releasable**: after Task 3.3 — all git primitives and strategy detection are callable.
 
 #### Task 3.1 — Merge strategy detector
-- [ ] **File**: `src/collector/pr-size-sync.ts`
+- [x] **File**: `src/collector/pr-size-sync.ts`
 - **Depends on**: nothing
 - **Description**:
   - `detectMergeStrategy(sha: string, repoPath: string, prNumber: number): Promise<'merge' | 'squash' | 'rebase'>`.
