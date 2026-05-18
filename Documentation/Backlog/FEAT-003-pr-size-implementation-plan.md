@@ -615,7 +615,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/components/PrSizeTrendChart.test.tsx`
 
 #### Task 8.4 — PrSizeTeamTable component
-- [ ] **File**: `src/components/dashboard/PrSizeTeamTable.tsx`
+- [x] **File**: `src/components/dashboard/PrSizeTeamTable.tsx`
 - **Depends on**: Task 8.1
 - **Description**:
   - Props: `{ rows: PrSizeTeamRow[] }`.
