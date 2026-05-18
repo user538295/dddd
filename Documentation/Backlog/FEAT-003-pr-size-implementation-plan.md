@@ -1,7 +1,7 @@
 # FEAT-003 — PR Size
 **Purpose**: Add Phase 03 PR Size visibility (Median PR Size, oversized-PR exceptions, 8-week trend, team breakdown) without changing Phase 01 or Phase 02 surfaces.
 **Audience**: Head of Engineering, FEAT-003 implementation agent, engineers maintaining the dashboard.
-**Status**: To Do
+**Status**: Done
 
 ---
 
@@ -690,7 +690,7 @@ export type PrSizeRecord = {
 ### Phase 10 — Final Verification & Documentation
 
 #### Task 10.1 — Final verification & documentation update
-- [ ] **File**: N/A (agent task)
+- [x] **File**: N/A (agent task)
 - **Depends on**: all prior tasks
 - **Description**:
   - Spawn an agent to discover all documentation in the project (READMEs, phase docs, roadmap, `Documentation/`) and update every file whose content is affected by this plan. At minimum: mark Phase 03 acceptance criteria checkboxes in `phase-03-pr-size.md`; update `trackable-roadmap.md`; update `Documentation/README.md` if it references phases.

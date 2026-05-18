@@ -1,7 +1,11 @@
 # Phase 03: PR Size
 
-Status: Draft
-Last updated: 2026-05-16
+Status: Implemented
+Last updated: 2026-05-18
+
+Implementation plan: [FEAT-003 — PR Size](FEAT-003-pr-size-implementation-plan.md)
+
+Depends on: [Phase 02: First Review Time](../Completed/phase-02-first-review-time.md) complete (`npm run verify:phase02`).
 
 UI reference: [PR Cycle Time, First Review, and PR Size](../../Assets/mockups/05-pr-cycle-time-first-review-and-pr-size.png).
 
@@ -39,7 +43,25 @@ Required data:
 - File count per PR.
 - Repository and team mapping.
 
-## Acceptance Criteria
+## Acceptance criteria checklist
+
+Verified by **FEAT-003** Task 10.1 (`npm run verify:phase03 && npm run verify:phase02 && npm run verify:phase01`).
+
+- [x] PR Size section appears only after size data is collected (`prSize` omitted when no sized PRs).
+- [x] Metric card shows median `additions + deletions` for non-null PRs in the 8-week window; shows `baseline pending` when fewer than 3 ISO weeks of size data (raw median still shown); shows period-over-period trend vs. the prior 8 weeks when enough data exists.
+- [x] Oversized PR exceptions flag teams with ≥ 3 sized PRs where ≥ 50% exceed 2× team median; sorted by ratio descending; capped at 3; panel hidden when empty.
+- [x] 8-week PR Size trend chart uses median lines per ISO week; null weeks are gaps, not zeros; chart renders regardless of `baselineStatus`.
+- [x] Size team breakdown lists teams with ≥ 1 sized PR (columns: Team, PRs merged, Median size, Trend, Largest PR); sorted by median descending; no author names.
+- [x] Size sync computes merge/squash via `git diff <sha>^1 <sha> --shortstat`; rebase via GitHub PR detail API; `changedFiles` from shortstat or API.
+- [x] PRs without size data are excluded from medians (never shown as zero).
+- [x] Backfill writes found SHAs to `merge_commit_sha` so future refreshes skip grep.
+- [x] Phase 01 and Phase 02 surfaces unchanged (`npm run verify:phase01` and `npm run verify:phase02` pass).
+- [x] `npm run verify:phase03` passes (lint, typecheck, coverage ≥ 85% on Phase 03 sources, all `@phase03` E2E tests green).
+- [x] The UI does not rank or shame individual authors.
+
+## Acceptance Criteria (reference)
+
+Product intent (tracked completion in checklist above):
 
 - PR Size appears only after size data is collected.
 - Oversized PR exceptions are deterministic.

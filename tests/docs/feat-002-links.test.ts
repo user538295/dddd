@@ -22,11 +22,11 @@ describe('FEAT-002 documentation links', () => {
     expect(phase02Section!).toMatch(/FEAT-002-first-review-time-implementation-plan\.md/)
   })
 
-  it('docs_readme_next_step_points_at_phase_03', () => {
+  it('docs_readme_next_step_documents_phase_02_complete', () => {
     const body = readDoc('Documentation/README.md')
     const nextStep = body.split('## Next Step')[1]
     expect(nextStep, 'README contains Next Step section').toBeDefined()
-    expect(nextStep!).toMatch(/phase-03-pr-size\.md/)
-    expect(nextStep!).toMatch(/FEAT-002-first-review-time-implementation-plan\.md/)
+    expect(nextStep!).toMatch(/Phase 03 \(PR Size\) is implemented/)
+    expect(nextStep!).toMatch(/FEAT-002-first-review-time-implementation-plan\.md|phase-02-first-review-time\.md/)
   })
 })

@@ -1,7 +1,7 @@
 # Data Driven Decision Dashboard Roadmap
 
 Status: Draft
-Last updated: 2026-05-16
+Last updated: 2026-05-18
 
 ## Strategy
 
@@ -62,6 +62,6 @@ When a new mockup is generated, implement it by preserving the existing sections
 
 ## Current Priority
 
-Continue with Phase 03. The next release should add PR size metadata sync, median PR Size computation, a PR Size section below First Review Time, oversized PR exceptions, PR Size trend, a separate size team breakdown, and size freshness while preserving the Phase 01 and Phase 02 sections above it.
+Continue with Phase 04. The next release should add Jira API configuration, issue and status-history sync, PR-to-issue linking, and Jira-backed flow metrics (WIP, throughput, cycle time, missing-key hygiene) while preserving the Phase 01–03 sections above them.
 
-Track implementation status in [Trackable roadmap checklist](trackable-roadmap.md). The detailed next-step file is [Phase 03: PR Size](../Backlog/phase-03-pr-size.md).
+Track implementation status in [Trackable roadmap checklist](trackable-roadmap.md). The detailed next-step file is [Phase 04: Jira Flow Metrics](../Backlog/phase-04-jira-flow-metrics.md).

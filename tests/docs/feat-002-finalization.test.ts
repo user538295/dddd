@@ -21,7 +21,7 @@ describe('FEAT-002 finalization docs', () => {
   it('docs_readme_next_step_post_phase_02_updated', () => {
     const body = read('Documentation/README.md')
     const nextStep = body.split('## Next Step')[1] ?? ''
-    expect(nextStep).toMatch(/Phase 02 \(First Review Time\) is implemented/)
-    expect(nextStep).toMatch(/Phase 03/)
+    expect(nextStep).toMatch(/Phase 03 \(PR Size\) is implemented/)
+    expect(nextStep).toMatch(/Phase 04/)
   })
 })

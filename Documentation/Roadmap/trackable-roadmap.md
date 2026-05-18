@@ -1,7 +1,7 @@
 # Trackable Roadmap Checklist
 
 Status: Active
-Last updated: 2026-05-16
+Last updated: 2026-05-18
 
 ## How To Use This File
 
@@ -17,13 +17,15 @@ This is the execution checklist for humans and LLM agents.
 
 ## Current Next Step
 
-Next step: **Phase 03: PR Size**
+Next step: **Phase 04: Jira Flow Metrics**
 
-Detailed file: [phase-03-pr-size.md](../Backlog/phase-03-pr-size.md)
+Detailed file: [phase-04-jira-flow-metrics.md](../Backlog/phase-04-jira-flow-metrics.md)
 
 Phase 01 (complete): [phase-01-pr-cycle-time-mvp.md](../Completed/phase-01-pr-cycle-time-mvp.md) — implementation plan [FEAT-001-pr-cycle-time-mvp-implementation-plan.md](../Completed/FEAT-001-pr-cycle-time-mvp-implementation-plan.md).
 
 Phase 02 (implemented): [phase-02-first-review-time.md](../Completed/phase-02-first-review-time.md) — implementation plan [FEAT-002-first-review-time-implementation-plan.md](../Completed/FEAT-002-first-review-time-implementation-plan.md).
+
+Phase 03 (implemented): [phase-03-pr-size.md](../Backlog/phase-03-pr-size.md) — implementation plan [FEAT-003-pr-size-implementation-plan.md](../Backlog/FEAT-003-pr-size-implementation-plan.md).
 
 Current UI reference: [PR Cycle Time, First Review, and PR Size](../Assets/mockups/05-pr-cycle-time-first-review-and-pr-size.png)
 
@@ -85,24 +87,26 @@ Goal: add review-latency visibility after PR Cycle Time is working.
 - [x] Show review metadata freshness and review sync errors.
 - [x] Verify PR Cycle Time behavior remains unchanged.
 
-## Phase 03: PR Size
+## Phase 03: PR Size (Implemented)
 
 Detailed file: [phase-03-pr-size.md](../Backlog/phase-03-pr-size.md)
+
+Implementation plan: [FEAT-003-pr-size-implementation-plan.md](../Backlog/FEAT-003-pr-size-implementation-plan.md)
 
 UI reference: [PR Cycle Time, First Review, and PR Size](../Assets/mockups/05-pr-cycle-time-first-review-and-pr-size.png)
 
 Goal: detect oversized PR patterns.
 
-- [ ] Sync changed-line and file-count metadata per PR.
-- [ ] Store PR size metadata locally.
-- [ ] Compute median PR size.
-- [ ] Add PR Size section below First Review Time.
-- [ ] Add PR Size metric card.
-- [ ] Add oversized PR exceptions.
-- [ ] Add separate Size team breakdown.
-- [ ] Add PR Size weekly trend.
-- [ ] Show size metadata freshness.
-- [ ] Verify the UI does not rank or shame individual authors.
+- [x] Sync changed-line and file-count metadata per PR.
+- [x] Store PR size metadata locally.
+- [x] Compute median PR size.
+- [x] Add PR Size section below First Review Time.
+- [x] Add PR Size metric card.
+- [x] Add oversized PR exceptions.
+- [x] Add separate Size team breakdown.
+- [x] Add PR Size weekly trend.
+- [x] Show size metadata freshness.
+- [x] Verify the UI does not rank or shame individual authors.
 
 ## Phase 04: Jira Flow Metrics
 

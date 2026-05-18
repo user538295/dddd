@@ -8,7 +8,7 @@ The current product direction is documented under `Documentation/`:
 
 - Start with `Documentation/README.md`.
 - Track work in `Documentation/Roadmap/trackable-roadmap.md`.
-- Follow the active next-step phase in `Documentation/Backlog/phase-03-pr-size.md`.
+- Follow the active next-step phase in `Documentation/Backlog/phase-04-jira-flow-metrics.md`.
 - Use completed phase implementation plans in `Documentation/Completed/` as historical references only.
 
 ## MCP And Tool Overrides
@@ -33,12 +33,11 @@ The current product direction is documented under `Documentation/`:
 
 ## Current Next Step
 
-The active next step is Phase 03: PR Size.
+The active next step is Phase 04: Jira Flow Metrics.
 
 Current source of truth:
 
-- `Documentation/Backlog/phase-03-pr-size.md`
-- `Documentation/Backlog/FEAT-003-pr-size-implementation-plan.md`
+- `Documentation/Backlog/phase-04-jira-flow-metrics.md`
 
 Completed references:
 
@@ -46,3 +45,5 @@ Completed references:
 - FEAT-001 implementation plan: `Documentation/Completed/FEAT-001-pr-cycle-time-mvp-implementation-plan.md`
 - Phase 02: `Documentation/Completed/phase-02-first-review-time.md`
 - FEAT-002 implementation plan: `Documentation/Completed/FEAT-002-first-review-time-implementation-plan.md`
+- Phase 03: `Documentation/Backlog/phase-03-pr-size.md`
+- FEAT-003 implementation plan: `Documentation/Backlog/FEAT-003-pr-size-implementation-plan.md`

@@ -37,14 +37,16 @@ The first release shows one metric only: PR Cycle Time.
 
 ## Next Step
 
-Phase 02 (First Review Time) is implemented (see [FEAT-002-first-review-time-implementation-plan.md](Completed/FEAT-002-first-review-time-implementation-plan.md)). Next step: [Phase 03: PR Size](Backlog/phase-03-pr-size.md).
+Phase 03 (PR Size) is implemented (see [FEAT-003-pr-size-implementation-plan.md](Backlog/FEAT-003-pr-size-implementation-plan.md)). Next step: [Phase 04: Jira Flow Metrics](Backlog/phase-04-jira-flow-metrics.md).
 
 Current one-page UI reference:
 
 ![PR Cycle Time, First Review, and PR Size](Assets/mockups/05-pr-cycle-time-first-review-and-pr-size.png)
 
-Completed phase: [Phase 01: PR Cycle Time MVP](Completed/phase-01-pr-cycle-time-mvp.md).
+Completed phases:
 
-Detailed implementation plan: [FEAT-001 — PR Cycle Time MVP](Completed/FEAT-001-pr-cycle-time-mvp-implementation-plan.md).
+- [Phase 01: PR Cycle Time MVP](Completed/phase-01-pr-cycle-time-mvp.md) — [FEAT-001](Completed/FEAT-001-pr-cycle-time-mvp-implementation-plan.md)
+- [Phase 02: First Review Time](Completed/phase-02-first-review-time.md) — [FEAT-002](Completed/FEAT-002-first-review-time-implementation-plan.md)
+- [Phase 03: PR Size](Backlog/phase-03-pr-size.md) — [FEAT-003](Backlog/FEAT-003-pr-size-implementation-plan.md)
 
 Track progress in [Trackable roadmap checklist](Roadmap/trackable-roadmap.md).
