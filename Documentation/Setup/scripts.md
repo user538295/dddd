@@ -59,6 +59,7 @@ npm run db:import-github -- --help
 | Variable | Role |
 | -------- | ---- |
 | `DATABASE_URL` | Required. Must be a **`postgresql://`** or **`postgres://`** URI (see local onboarding). |
+| `TEST_DATABASE_URL` | Optional for fixture-backed Playwright E2E; defaults to the local `dddd_test` database so tests do not overwrite `dddd_dev`. |
 | `GITHUB_TOKEN` | Optional for public repositories; recommended for rate limits and private repos. |
 | `GITHUB_API_BASE_URL` | Optional; default `https://api.github.com`. |
 | `DASHBOARD_INITIAL_SYNC_FROM` | Optional; lower bound for the **first** full PR fetch for a repository row that has never synced PRs. |
@@ -79,6 +80,7 @@ Output: JSON summary with `reposTouched`, `prsSeen`, `prsMerged`, `prsOpen`, and
 | First-time local DB + migrations | `./scripts/dev-up.sh` or `npm run stack:up` |
 | Stop local Compose Postgres | `./scripts/dev-down.sh` or `npm run stack:down` |
 | Apply migrations only | `npm run db:migrate` (with `DATABASE_URL` set) |
+| Create the configured database if missing | `npm run db:ensure` (with `DATABASE_URL` set) |
 | Sync from clones under `DASHBOARD_REPO_ROOT` | `npm run collector:refresh` |
 | Load or update PRs for explicit GitHub repos | `npm run db:import-github -- owner/repo [...]` |
 

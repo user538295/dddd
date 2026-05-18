@@ -9,6 +9,8 @@ export default tseslint.config(
     ignores: [
       'dist',
       '.output',
+      'test-results',
+      'playwright-report',
       '**/routeTree.gen.ts',
       'vitest.config.ts',
       'drizzle.config.ts',

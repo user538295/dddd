@@ -1,28 +1,13 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, devices } from '@playwright/test'
-import { loadEnv } from 'vite'
+
+import { loadLocalEnv } from './scripts/local-env'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.join(__dirname, '.')
 
-const fromFiles = loadEnv(process.env.NODE_ENV ?? 'development', repoRoot, '')
-delete process.env.NO_COLOR
-for (const key of [
-  'DATABASE_URL',
-  'GITHUB_TOKEN',
-  'DASHBOARD_REPO_ROOT',
-  'TEAM_MAPPING_PATH',
-  'GITHUB_API_BASE_URL',
-  'GITHUB_SYNC_OWNER',
-  'DASHBOARD_DEFAULT_RANGE_WEEKS',
-  'DASHBOARD_INITIAL_SYNC_FROM',
-  'GITHUB_SYNC_CONCURRENCY',
-]) {
-  if (process.env[key] === undefined && fromFiles[key]) {
-    process.env[key] = fromFiles[key]
-  }
-}
+loadLocalEnv({ preferDotenvKeys: ['GITHUB_TOKEN'] })
 
 const required = ['DATABASE_URL', 'GITHUB_TOKEN', 'DASHBOARD_REPO_ROOT', 'TEAM_MAPPING_PATH']
 const missing = required.filter((key) => !process.env[key]?.trim())

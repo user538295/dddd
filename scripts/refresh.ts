@@ -1,4 +1,7 @@
 import { refreshLocalData } from '../src/collector/refresh'
+import { loadLocalEnv } from './local-env'
+
+loadLocalEnv({ preferDotenvKeys: ['GITHUB_TOKEN'] })
 
 refreshLocalData()
   .then((summary) => {

@@ -52,9 +52,9 @@ The default `DATABASE_URL` in `.env.example` matches Compose (`postgresql://dddd
 
 Vitest integration tests read **`DATABASE_URL` from the process environment** only (the config does not inject it from `.env`). Export it in your shell, use a tool that loads `.env` into the environment, or run via **`./scripts/dev-up.sh`** / CI where the variable is set. Easiest local option: start Postgres (`npm run db:up` or `./scripts/dev-up.sh`), then `export DATABASE_URL=...` matching `.env.example` before `npm run test`.
 
-Playwright (`npm run test:e2e`) reads **`DATABASE_URL` from the environment**; `playwright.config.ts` also loads `.env` into `process.env` when `DATABASE_URL` is unset, matching local dev expectations. The default e2e harness sets **`DASHBOARD_E2E_REFRESH_STUB=1`** (see `scripts/e2e-web-server.sh`) so the refresh button exercises the server path without calling GitHub; you still need Postgres for the dashboard loader.
+Playwright fixture E2E (`npm run test:e2e`) does **not** use the live dashboard database. It reads **`TEST_DATABASE_URL`** when set and otherwise defaults to `postgresql://dddd:dddd_local_dev@127.0.0.1:54332/dddd_test`. The harness creates that database if missing, applies migrations, and sets **`DASHBOARD_E2E_REFRESH_STUB=1`** (see `scripts/e2e-web-server.sh`) so the refresh button exercises the server path without calling GitHub.
 
-For the no-mock live guard, run **`npm run test:e2e:live`**. It uses `playwright.live.config.ts` and `scripts/live-e2e-web-server.sh`, refuses `DASHBOARD_E2E_REFRESH_STUB=1`, requires real `DATABASE_URL`, `GITHUB_TOKEN`, `DASHBOARD_REPO_ROOT`, and `TEAM_MAPPING_PATH`, clicks the real Refresh button, calls GitHub, writes the configured Postgres database, and fails if the latest collector run is `failed`, if GitHub PR sync records auth/access errors such as `Not Found`, `token lacks access`, `401`, or `403`, or if there are no merged PRs in the default dashboard range. Real transient per-repo network errors may still produce a `partial` run.
+For the no-mock live guards, run **`npm run test:e2e:live`** or **`npm run test:e2e:live:current`**. They refuse `DASHBOARD_E2E_REFRESH_STUB=1`, require real `DATABASE_URL`, `GITHUB_TOKEN`, `DASHBOARD_REPO_ROOT`, and `TEAM_MAPPING_PATH`, call GitHub, write the configured live Postgres database, and fail if the latest collector run is `failed`, if GitHub PR sync records auth/access errors such as `Not Found`, `token lacks access`, `401`, or `403`, or if there are no merged PRs in the default dashboard range. Real transient per-repo network errors may still produce a `partial` run.
 
 ## Files
 
@@ -72,6 +72,7 @@ For the no-mock live guard, run **`npm run test:e2e:live`**. It uses `playwright
 ```env
 DASHBOARD_REPO_ROOT=/Users/manczg/Documents/work/development
 DATABASE_URL=postgresql://dddd:dddd_local_dev@127.0.0.1:54332/dddd_dev
+TEST_DATABASE_URL=postgresql://dddd:dddd_local_dev@127.0.0.1:54332/dddd_test
 TEAM_MAPPING_PATH=./config/team-mapping.json
 GITHUB_API_BASE_URL=https://api.github.com
 GITHUB_TOKEN=

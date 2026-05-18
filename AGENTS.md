@@ -8,7 +8,8 @@ The current product direction is documented under `Documentation/`:
 
 - Start with `Documentation/README.md`.
 - Track work in `Documentation/Roadmap/trackable-roadmap.md`.
-- Follow the detailed current implementation plan in `Documentation/Roadmap/phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md`.
+- Follow the active next-step phase in `Documentation/Backlog/phase-03-pr-size.md`.
+- Use completed phase implementation plans in `Documentation/Completed/` as historical references only.
 
 ## MCP And Tool Overrides
 
@@ -23,15 +24,25 @@ The current product direction is documented under `Documentation/`:
 - Keep the MVP small and incremental.
 - Show only metrics whose data is collected, stored, and computed.
 - Do not add placeholder UI for future metrics.
-- Do not implement Jira, AI recommendations, PR Size, First Review Time, cloud deployment, or auth during Phase 01 unless the roadmap is explicitly updated first.
+- Preserve the one-page scrolling dashboard: PR Cycle Time first, First Review Time second, PR Size third.
+- Do not add a metric section until its data is collected, stored, and computed.
+- Do not implement Jira, AI recommendations, cloud deployment, auth, or later quality metrics unless the roadmap is explicitly updated first.
+- Do not rank, shame, or expose individual authors in metric exception surfaces.
 - Maintain TDD: write or update tests before implementation.
 - Keep each roadmap task independently trackable.
 
 ## Current Next Step
 
-The active phase is Phase 01: PR Cycle Time MVP.
+The active next step is Phase 03: PR Size.
 
-Detailed plan:
+Current source of truth:
 
-`Documentation/Roadmap/phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md`
+- `Documentation/Backlog/phase-03-pr-size.md`
+- `Documentation/Backlog/FEAT-003-pr-size-implementation-plan.md`
 
+Completed references:
+
+- Phase 01: `Documentation/Completed/phase-01-pr-cycle-time-mvp.md`
+- FEAT-001 implementation plan: `Documentation/Completed/FEAT-001-pr-cycle-time-mvp-implementation-plan.md`
+- Phase 02: `Documentation/Completed/phase-02-first-review-time.md`
+- FEAT-002 implementation plan: `Documentation/Completed/FEAT-002-first-review-time-implementation-plan.md`

@@ -14,9 +14,9 @@ test.beforeEach(async () => {
   await runMigrations(databaseUrl)
   const db = createDb(databaseUrl)
   try {
-    await resetPhase02Reviews(db)
     await db.delete(syncErrors)
     await db.delete(syncRuns)
+    await resetPhase02Reviews(db)
     await seedPhase02Reviews(db, { repoRoot })
   } finally {
     await db.$client.end({ timeout: 5 })
