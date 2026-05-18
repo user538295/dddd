@@ -589,7 +589,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/components/PrSizeCard.test.tsx`
 
 #### Task 8.2 — PrSizeExceptionsPanel component
-- [ ] **File**: `src/components/dashboard/PrSizeExceptionsPanel.tsx`
+- [x] **File**: `src/components/dashboard/PrSizeExceptionsPanel.tsx`
 - **Depends on**: Task 8.1
 - **Description**:
   - Props: `{ exceptions: PrSizeException[] }`.
