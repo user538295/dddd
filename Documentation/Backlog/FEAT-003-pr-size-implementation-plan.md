@@ -603,7 +603,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/components/PrSizeExceptionsPanel.test.tsx`
 
 #### Task 8.3 — PrSizeTrendChart component
-- [ ] **File**: `src/components/dashboard/PrSizeTrendChart.tsx`
+- [x] **File**: `src/components/dashboard/PrSizeTrendChart.tsx`
 - **Depends on**: Task 8.1
 - **Description**:
   - Props: `{ weeklyTrend: Array<{ weekStart: string; medianLines: number | null }> }`.

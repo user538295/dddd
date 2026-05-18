@@ -1,5 +1,9 @@
 import type { PrCycleTimeDashboard } from '~/metrics/pr-cycle-time-dashboard'
 
+export type WeeklyTrendHoursPoint = { weekStart: string; medianHours: number | null }
+export type WeeklyTrendLinesPoint = { weekStart: string; medianLines: number | null }
+export type WeeklyTrendPoint = WeeklyTrendHoursPoint | WeeklyTrendLinesPoint
+
 const VB_W = 560
 const VB_H = 220
 const PAD_L = 48
@@ -17,7 +21,16 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n))
 }
 
-type Pt = { i: number; x: number; y: number; days: number }
+type Pt = { i: number; x: number; y: number; value: number }
+
+function isLinesPoint(point: WeeklyTrendPoint): point is WeeklyTrendLinesPoint {
+  return 'medianLines' in point
+}
+
+function chartValue(point: WeeklyTrendPoint): number | null {
+  if (isLinesPoint(point)) return point.medianLines
+  return point.medianHours == null ? null : point.medianHours / 24
+}
 
 function joinPath(points: Pt[], fromIdx: number, toIdx: number): string {
   let d = ''
@@ -31,26 +44,29 @@ function joinPath(points: Pt[], fromIdx: number, toIdx: number): string {
 export function WeeklyTrendChart({
   weeklyTrend,
   ariaLabel = '8-week PR cycle time trend',
+  yAxisLabel = 'Days',
 }: {
-  weeklyTrend: PrCycleTimeDashboard['weeklyTrend']
+  weeklyTrend: PrCycleTimeDashboard['weeklyTrend'] | WeeklyTrendLinesPoint[]
   ariaLabel?: string
+  yAxisLabel?: string
 }) {
+  const linesMode = weeklyTrend.length > 0 && isLinesPoint(weeklyTrend[0]!)
   const n = weeklyTrend.length
   const innerW = VB_W - PAD_L - PAD_R
   const innerH = VB_H - PAD_T - PAD_B
 
-  const dayValues = weeklyTrend.map((p) => (p.medianHours == null ? null : p.medianHours / 24))
-  const numeric = dayValues.filter((v): v is number => v != null && Number.isFinite(v))
-  const maxDays = clamp(Math.ceil(Math.max(5, ...numeric, 0.1) * 10) / 10, 1, 99)
+  const chartValues = weeklyTrend.map((p) => chartValue(p))
+  const numeric = chartValues.filter((v): v is number => v != null && Number.isFinite(v))
+  const maxValue = clamp(Math.ceil(Math.max(5, ...numeric, 0.1) * 10) / 10, 1, 99)
 
   const xAt = (i: number) => PAD_L + (n <= 1 ? innerW / 2 : (i / Math.max(1, n - 1)) * innerW)
-  const yAt = (days: number) => PAD_T + (1 - days / maxDays) * innerH
+  const yAt = (value: number) => PAD_T + (1 - value / maxValue) * innerH
 
   const pts: Pt[] = []
   for (let i = 0; i < n; i++) {
-    const d = dayValues[i]
-    if (d != null && Number.isFinite(d)) {
-      pts.push({ i, x: xAt(i), y: yAt(d), days: d })
+    const value = chartValues[i]
+    if (value != null && Number.isFinite(value)) {
+      pts.push({ i, x: xAt(i), y: yAt(value), value })
     }
   }
 
@@ -68,8 +84,10 @@ export function WeeklyTrendChart({
     pathOrange = ''
   }
 
-  const topTick = Math.max(5, Math.ceil(maxDays))
+  const topTick = Math.max(5, Math.ceil(maxValue))
   const yTicks = Array.from({ length: topTick + 1 }, (_, i) => i)
+
+  const formatPointLabel = (value: number) => (linesMode ? String(Math.round(value)) : value.toFixed(1))
 
   return (
     <div className="pr-dashboard__chart-wrap">
@@ -81,7 +99,7 @@ export function WeeklyTrendChart({
         aria-label={ariaLabel}
       >
         <text x={PAD_L} y={18} fill="#6b7280" fontSize="11" fontWeight="500">
-          Days
+          {yAxisLabel}
         </text>
 
         {yTicks.map((t) => {
@@ -137,7 +155,7 @@ export function WeeklyTrendChart({
                 fontWeight="600"
                 textAnchor="middle"
               >
-                {p.days.toFixed(1)}
+                {formatPointLabel(p.value)}
               </text>
             </g>
           )
