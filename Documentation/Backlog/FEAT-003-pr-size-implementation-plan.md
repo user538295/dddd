@@ -198,7 +198,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/metrics/math.test.ts`
 
 #### Task 1.2 — pr-size-types.ts: PrSizeRecord
-- [ ] **File**: `src/metrics/pr-size-types.ts`
+- [x] **File**: `src/metrics/pr-size-types.ts`
 - **Depends on**: nothing
 - **Description**:
   - Define and export `PrSizeRecord` as shown in the Architecture section.
