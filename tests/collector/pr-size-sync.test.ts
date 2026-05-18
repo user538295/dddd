@@ -4,6 +4,7 @@ import {
   __setGitExecForTests,
   detectMergeStrategy,
   fetchRepo,
+  findCommitForPr,
   GitOpError,
   type GitExecFn,
   isAncestorOfDefaultBranch,
@@ -414,5 +415,175 @@ describe('isAncestorOfDefaultBranch', () => {
       ancestor: false,
       warning: 'could not verify ancestry; SHA skipped',
     })
+  })
+})
+
+describe('findCommitForPr', () => {
+  const repoPath = '/tmp/repo'
+  const prNumber = 42
+  const mergedAt = new Date('2024-06-15T12:00:00.000Z')
+
+  beforeEach(() => {
+    __setGitExecForTests(null)
+  })
+
+  afterEach(() => {
+    __setGitExecForTests(null)
+  })
+
+  function formatLogLine(sha: string, commitTimeSec: number, subject: string): string {
+    return `${sha}\0${commitTimeSec}\0${subject}`
+  }
+
+  function expectDateBounds(gitArgs: readonly string[]): void {
+    const sinceArg = gitArgs.find((arg) => arg.startsWith('--since='))
+    const untilArg = gitArgs.find((arg) => arg.startsWith('--until='))
+    expect(sinceArg).toBe('--since=2024-05-16T12:00:00.000Z')
+    expect(untilArg).toBe('--until=2024-06-16T12:00:00.000Z')
+  }
+
+  it('find_commit_returns_merge_commit_sha', async () => {
+    const mergeSha = 'merge-sha-111'
+    __setGitExecForTests(
+      createGitMock((gitArgs) => {
+        if (gitArgs[0] === 'log' && gitArgs.includes(`--grep=pull request #${prNumber}`)) {
+          expectDateBounds(gitArgs)
+          return `${formatLogLine(mergeSha, mergedAt.getTime() / 1000, 'Merge pull request #42 from org/feature-branch')}\n`
+        }
+        if (gitArgs[0] === 'merge-base') {
+          return ''
+        }
+        throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+      }),
+    )
+
+    await expect(findCommitForPr(prNumber, mergedAt, repoPath)).resolves.toBe(mergeSha)
+  })
+
+  it('find_commit_body_mention_excluded', async () => {
+    __setGitExecForTests(
+      createGitMock((gitArgs) => {
+        if (gitArgs[0] === 'log' && gitArgs.includes(`--grep=pull request #${prNumber}`)) {
+          return `${formatLogLine('bad-merge-sha', mergedAt.getTime() / 1000, 'Merge branch main\n\nSee pull request #42 for details')}\n`
+        }
+        if (gitArgs[0] === 'log' && gitArgs.includes('--fixed-strings')) {
+          return ''
+        }
+        throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+      }),
+    )
+
+    await expect(findCommitForPr(prNumber, mergedAt, repoPath)).resolves.toBeNull()
+  })
+
+  it('find_commit_falls_through_to_squash_pass', async () => {
+    const squashSha = 'squash-sha-222'
+    __setGitExecForTests(
+      createGitMock((gitArgs) => {
+        if (gitArgs[0] === 'log' && gitArgs.includes(`--grep=pull request #${prNumber}`)) {
+          return ''
+        }
+        if (gitArgs[0] === 'log' && gitArgs.includes('--fixed-strings')) {
+          return `${formatLogLine(squashSha, mergedAt.getTime() / 1000, 'feat: ship widget (#42)')}\n`
+        }
+        if (gitArgs[0] === 'merge-base') {
+          return ''
+        }
+        throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+      }),
+    )
+
+    await expect(findCommitForPr(prNumber, mergedAt, repoPath)).resolves.toBe(squashSha)
+  })
+
+  it('find_commit_squash_body_mention_excluded', async () => {
+    __setGitExecForTests(
+      createGitMock((gitArgs) => {
+        if (gitArgs[0] === 'log' && gitArgs.includes(`--grep=pull request #${prNumber}`)) {
+          return ''
+        }
+        if (gitArgs[0] === 'log' && gitArgs.includes('--fixed-strings')) {
+          return `${formatLogLine('squash-bad-sha', mergedAt.getTime() / 1000, 'feat: (#42) mentioned but not at end')}\n`
+        }
+        throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+      }),
+    )
+
+    await expect(findCommitForPr(prNumber, mergedAt, repoPath)).resolves.toBeNull()
+  })
+
+  it('find_commit_picks_closest_to_merged_at', async () => {
+    const closerSha = 'merge-closer'
+    const fartherSha = 'merge-farther'
+    const mergedAtSec = mergedAt.getTime() / 1000
+    __setGitExecForTests(
+      createGitMock((gitArgs) => {
+        if (gitArgs[0] === 'log' && gitArgs.includes(`--grep=pull request #${prNumber}`)) {
+          return [
+            formatLogLine(
+              fartherSha,
+              mergedAtSec - 86_400,
+              'Merge pull request #42 from org/far-branch',
+            ),
+            formatLogLine(
+              closerSha,
+              mergedAtSec - 3_600,
+              'Merge pull request #42 from org/near-branch',
+            ),
+          ].join('\n')
+        }
+        if (gitArgs[0] === 'merge-base') {
+          return ''
+        }
+        throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+      }),
+    )
+
+    await expect(findCommitForPr(prNumber, mergedAt, repoPath)).resolves.toBe(closerSha)
+  })
+
+  it('find_commit_returns_null_when_no_match', async () => {
+    __setGitExecForTests(
+      createGitMock((gitArgs) => {
+        if (gitArgs[0] === 'log') {
+          return ''
+        }
+        throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+      }),
+    )
+
+    await expect(findCommitForPr(prNumber, mergedAt, repoPath)).resolves.toBeNull()
+  })
+
+  it('find_commit_non_ancestor_rejected', async () => {
+    const mergeSha = 'merge-not-on-default'
+    __setGitExecForTests(async (_repoPath, gitArgs) => {
+      if (gitArgs[0] === 'log' && gitArgs.includes(`--grep=pull request #${prNumber}`)) {
+        return `${formatLogLine(mergeSha, mergedAt.getTime() / 1000, 'Merge pull request #42 from org/feature-branch')}\n`
+      }
+      if (gitArgs[0] === 'log' && gitArgs.includes('--fixed-strings')) {
+        return ''
+      }
+      if (gitArgs[0] === 'merge-base' && gitArgs[2] === mergeSha) {
+        throwGitExitCode(1)
+      }
+      throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+    })
+
+    await expect(findCommitForPr(prNumber, mergedAt, repoPath)).resolves.toBeNull()
+  })
+
+  it('find_commit_returns_null_when_commit_outside_date_window', async () => {
+    __setGitExecForTests(
+      createGitMock((gitArgs) => {
+        if (gitArgs[0] === 'log') {
+          expectDateBounds(gitArgs)
+          return ''
+        }
+        throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+      }),
+    )
+
+    await expect(findCommitForPr(prNumber, mergedAt, repoPath)).resolves.toBeNull()
   })
 })

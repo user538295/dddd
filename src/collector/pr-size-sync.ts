@@ -184,3 +184,141 @@ export async function isAncestorOfDefaultBranch(
 
   return { ancestor: false, warning: 'could not verify ancestry; SHA skipped' }
 }
+
+const GIT_LOG_TIMEOUT_MS = 30_000
+
+type GitLogCandidate = {
+  sha: string
+  subject: string
+  commitTimeMs: number
+}
+
+function gitLogDateBounds(mergedAt: Date): { since: string; until: string } {
+  const since = new Date(mergedAt)
+  since.setUTCDate(since.getUTCDate() - 30)
+  const until = new Date(mergedAt)
+  until.setUTCDate(until.getUTCDate() + 1)
+  return {
+    since: since.toISOString(),
+    until: until.toISOString(),
+  }
+}
+
+function parseGitLogCandidates(output: string): GitLogCandidate[] {
+  const candidates: GitLogCandidate[] = []
+  for (const line of output.split('\n')) {
+    const trimmed = line.trim()
+    if (trimmed === '') {
+      continue
+    }
+    const parts = trimmed.split('\0')
+    if (parts.length < 2) {
+      continue
+    }
+    const sha = parts[0] ?? ''
+    if (sha === '') {
+      continue
+    }
+    if (parts.length >= 3) {
+      const commitTimeSec = Number(parts[1])
+      const subject = parts.slice(2).join('\0')
+      if (!Number.isFinite(commitTimeSec)) {
+        continue
+      }
+      candidates.push({ sha, subject, commitTimeMs: commitTimeSec * 1000 })
+      continue
+    }
+    candidates.push({ sha, subject: parts[1] ?? '', commitTimeMs: 0 })
+  }
+  return candidates
+}
+
+function firstSubjectLine(subject: string): string {
+  return subject.split('\n')[0] ?? ''
+}
+
+function pickClosestToMergedAt(candidates: GitLogCandidate[], mergedAt: Date): string {
+  const mergedAtMs = mergedAt.getTime()
+  let best = candidates[0]!
+  let bestDistance = Math.abs(best.commitTimeMs - mergedAtMs)
+  for (let index = 1; index < candidates.length; index += 1) {
+    const candidate = candidates[index]!
+    const distance = Math.abs(candidate.commitTimeMs - mergedAtMs)
+    if (distance < bestDistance) {
+      best = candidate
+      bestDistance = distance
+    }
+  }
+  return best.sha
+}
+
+async function runGitLogPass(
+  repoPath: string,
+  mergedAt: Date,
+  extraArgs: readonly string[],
+): Promise<GitLogCandidate[]> {
+  const { since, until } = gitLogDateBounds(mergedAt)
+  const output = await runGit(
+    repoPath,
+    [
+      'log',
+      '--all',
+      '--format=%H%x00%ct%x00%s',
+      `--since=${since}`,
+      `--until=${until}`,
+      ...extraArgs,
+    ],
+    GIT_LOG_TIMEOUT_MS,
+  )
+  return parseGitLogCandidates(output)
+}
+
+async function filterAncestorsAndPickClosest(
+  candidates: GitLogCandidate[],
+  repoPath: string,
+  mergedAt: Date,
+): Promise<string | null> {
+  const ancestors: GitLogCandidate[] = []
+  for (const candidate of candidates) {
+    const { ancestor } = await isAncestorOfDefaultBranch(candidate.sha, repoPath)
+    if (ancestor) {
+      ancestors.push(candidate)
+    }
+  }
+  if (ancestors.length === 0) {
+    return null
+  }
+  if (ancestors.length === 1) {
+    return ancestors[0]!.sha
+  }
+  return pickClosestToMergedAt(ancestors, mergedAt)
+}
+
+export async function findCommitForPr(
+  prNumber: number,
+  mergedAt: Date,
+  repoPath: string,
+): Promise<string | null> {
+  const mergeSubjectPattern = new RegExp(`^Merge pull request #${prNumber} from `)
+  const squashSuffix = `(#${prNumber})`
+
+  const pass1Raw = await runGitLogPass(repoPath, mergedAt, [
+    `--grep=pull request #${prNumber}`,
+  ])
+  const pass1Filtered = pass1Raw.filter((entry) =>
+    mergeSubjectPattern.test(firstSubjectLine(entry.subject)),
+  )
+  const pass1Result = await filterAncestorsAndPickClosest(pass1Filtered, repoPath, mergedAt)
+  if (pass1Result !== null) {
+    return pass1Result
+  }
+
+  const pass2Raw = await runGitLogPass(repoPath, mergedAt, [
+    '--fixed-strings',
+    `--grep=(#${prNumber})`,
+  ])
+  const pass2Filtered = pass2Raw.filter((entry) =>
+    firstSubjectLine(entry.subject).endsWith(squashSuffix),
+  )
+  return filterAncestorsAndPickClosest(pass2Filtered, repoPath, mergedAt)
+}

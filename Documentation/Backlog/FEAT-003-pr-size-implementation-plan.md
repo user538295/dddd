@@ -352,7 +352,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/collector/pr-size-sync.test.ts`
 
 #### Task 4.2 — git log grep backfill searcher
-- [ ] **File**: `src/collector/pr-size-sync.ts`
+- [x] **File**: `src/collector/pr-size-sync.ts`
 - **Depends on**: Task 4.1
 - **Description**:
   - `findCommitForPr(prNumber: number, mergedAt: Date, repoPath: string): Promise<string | null>`.
