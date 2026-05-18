@@ -210,7 +210,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/metrics/pr-size-types.test.ts`
 
 #### Task 1.3 — Schema migration: add size columns to pull_requests
-- [ ] **File**: `src/db/schema.ts` + generated migration
+- [x] **File**: `src/db/schema.ts` + generated migration
 - **Depends on**: nothing
 - **Description**:
   - Add to `pullRequests` in `src/db/schema.ts`:

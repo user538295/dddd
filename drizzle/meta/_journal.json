@@ -15,6 +15,13 @@
       "when": 1778931622892,
       "tag": "0001_rapid_starjammers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779132255197,
+      "tag": "0002_cooing_microbe",
+      "breakpoints": true
     }
   ]
 }

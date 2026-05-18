@@ -51,8 +51,8 @@ describe('phase 02 db schema additions', () => {
     expect(cols.lastReviewSyncedAt.getSQLType().toLowerCase()).toContain('time zone')
   })
 
-  it('schema_pull_requests_unchanged_phase01_columns', () => {
-    const expected = new Set([
+  it('schema_pull_requests_retains_phase01_columns', () => {
+    const phase01 = [
       'id',
       'repositoryId',
       'githubNodeId',
@@ -67,8 +67,10 @@ describe('phase 02 db schema additions', () => {
       'missingJiraKey',
       'createdAt',
       'updatedAt',
-    ])
+    ]
     const actual = new Set(Object.keys(getTableColumns(pullRequests)))
-    expect(actual).toEqual(expected)
+    for (const col of phase01) {
+      expect(actual.has(col), `missing phase01 column ${col}`).toBe(true)
+    }
   })
 })

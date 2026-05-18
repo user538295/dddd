@@ -10,12 +10,10 @@ const databaseUrl = process.env.DATABASE_URL?.trim()
 const drizzleDir = path.resolve(process.cwd(), 'drizzle')
 
 describe('phase 02 migration filesystem invariants', () => {
-  it('migration_single_file_no_second_migration', () => {
+  it('migration_includes_phase02_file', () => {
     const files = readdirSync(drizzleDir).filter((f) => /^\d{4}_.*\.sql$/.test(f))
     const phase02 = files.filter((f) => f.startsWith('0001_'))
-    const stray = files.filter((f) => f.startsWith('0002_'))
     expect(phase02.length, `expected exactly one 0001_*.sql migration, got: ${files.join(', ')}`).toBe(1)
-    expect(stray.length, `phase 02 must ship exactly one migration; found extras: ${stray.join(', ')}`).toBe(0)
   })
 })
 
