@@ -165,6 +165,28 @@ function normalizePullRequest(raw: Record<string, unknown>): GitHubPullRequest {
   }
 }
 
+function normalizePullRequestDetail(raw: Record<string, unknown>): {
+  additions: number
+  deletions: number
+  changedFiles: number
+} {
+  const additions = raw.additions
+  const deletions = raw.deletions
+  const changedFiles = raw.changed_files
+
+  if (typeof additions !== 'number' || !Number.isFinite(additions)) {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request detail missing additions' })
+  }
+  if (typeof deletions !== 'number' || !Number.isFinite(deletions)) {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request detail missing deletions' })
+  }
+  if (typeof changedFiles !== 'number' || !Number.isFinite(changedFiles)) {
+    throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request detail missing changed_files' })
+  }
+
+  return { additions, deletions, changedFiles }
+}
+
 const REVIEW_STATES: ReadonlySet<GitHubReviewState> = new Set([
   'APPROVED',
   'CHANGES_REQUESTED',
@@ -308,6 +330,57 @@ export class GitHubClient {
       normalizeReviewComment,
     )
     return items
+  }
+
+  async getPullRequestDetail(input: {
+    owner: string
+    repo: string
+    pullNumber: number
+  }): Promise<{ additions: number; deletions: number; changedFiles: number }> {
+    const root = trimTrailingSlash(this.baseUrl)
+    const url = `${root}/repos/${encodeURIComponent(input.owner)}/${encodeURIComponent(input.repo)}/pulls/${input.pullNumber}`
+    const headers = buildGitHubHeaders(this.token)
+    const res = await this.fetchImpl(url, { headers })
+
+    if (!res.ok) {
+      const body = await readJsonBody(res)
+      const retryAfterSeconds = parseRetryAfterSeconds(res)
+      if (res.status === 401) {
+        throw new GitHubSyncError({
+          code: 'unauthorized',
+          message: 'GitHub rejected the request (401 Unauthorized)',
+          retryAfterSeconds,
+        })
+      }
+      if (isRateLimitedResponse(res, body)) {
+        throw new GitHubSyncError({
+          code: 'rate_limited',
+          message: 'GitHub rate limit exceeded',
+          retryAfterSeconds,
+        })
+      }
+      if (res.status === 403) {
+        throw new GitHubSyncError({
+          code: 'forbidden',
+          message: 'GitHub rejected the request (403 Forbidden)',
+          retryAfterSeconds,
+        })
+      }
+      const msg =
+        typeof body === 'object' &&
+        body !== null &&
+        'message' in body &&
+        typeof (body as { message: unknown }).message === 'string'
+          ? (body as { message: string }).message
+          : `GitHub request failed with status ${res.status}`
+      throw new GitHubSyncError({ code: 'unknown', message: msg, retryAfterSeconds })
+    }
+
+    const body = await readJsonBody(res)
+    if (typeof body !== 'object' || body === null) {
+      throw new GitHubSyncError({ code: 'unknown', message: 'GitHub pull request detail response is not an object' })
+    }
+    return normalizePullRequestDetail(body as Record<string, unknown>)
   }
 
   private async paginatedGet<T>(

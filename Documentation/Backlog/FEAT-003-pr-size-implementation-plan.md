@@ -259,7 +259,7 @@ export type PrSizeRecord = {
 > **Releasable**: after Task 2.1 — the rebase fallback API call is callable.
 
 #### Task 2.1 — GitHub client: getPullRequestDetail method
-- [ ] **File**: `src/collector/github-client.ts`
+- [x] **File**: `src/collector/github-client.ts`
 - **Depends on**: Task 1.4
 - **Description**:
   - Add `getPullRequestDetail(input: { owner: string; repo: string; pullNumber: number }): Promise<{ additions: number; deletions: number; changedFiles: number }>` to `GitHubClient`.
