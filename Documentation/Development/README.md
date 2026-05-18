@@ -3,7 +3,7 @@
 Status: Draft  
 Last updated: 2026-05-14
 
-This document is for engineers working on the **Data Driven Decision Dashboard** codebase. Product direction and phased scope live under [Documentation/README.md](../README.md) and the [FEAT-001 implementation plan](../Roadmap/phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md).
+This document is for engineers working on the **Data Driven Decision Dashboard** codebase. Product direction and phased scope live under [Documentation/README.md](../README.md) and the [FEAT-001 implementation plan](../Completed/FEAT-001-pr-cycle-time-mvp-implementation-plan.md).
 
 ## Prerequisites
 

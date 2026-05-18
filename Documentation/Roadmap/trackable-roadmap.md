@@ -19,17 +19,17 @@ This is the execution checklist for humans and LLM agents.
 
 Next step: **Phase 03: PR Size**
 
-Detailed file: [phase-03-pr-size.md](phases/phase-03-pr-size.md)
+Detailed file: [phase-03-pr-size.md](../Backlog/phase-03-pr-size.md)
 
-Phase 01 (complete): [phase-01-pr-cycle-time-mvp.md](phases/phase-01-pr-cycle-time-mvp.md) — implementation plan [FEAT-001-pr-cycle-time-mvp-implementation-plan.md](phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md).
+Phase 01 (complete): [phase-01-pr-cycle-time-mvp.md](../Completed/phase-01-pr-cycle-time-mvp.md) — implementation plan [FEAT-001-pr-cycle-time-mvp-implementation-plan.md](../Completed/FEAT-001-pr-cycle-time-mvp-implementation-plan.md).
 
-Phase 02 (implemented): [phase-02-first-review-time.md](phases/phase-02-first-review-time.md) — implementation plan [FEAT-002-first-review-time-implementation-plan.md](phases/FEAT-002-first-review-time-implementation-plan.md).
+Phase 02 (implemented): [phase-02-first-review-time.md](../Completed/phase-02-first-review-time.md) — implementation plan [FEAT-002-first-review-time-implementation-plan.md](../Completed/FEAT-002-first-review-time-implementation-plan.md).
 
 Current UI reference: [PR Cycle Time, First Review, and PR Size](../Assets/mockups/05-pr-cycle-time-first-review-and-pr-size.png)
 
 ## Phase 00: Product Refinement And UI
 
-Detailed file: [phase-00-product-refinement-and-ui.md](phases/phase-00-product-refinement-and-ui.md)
+Detailed file: [phase-00-product-refinement-and-ui.md](../Completed/phase-00-product-refinement-and-ui.md)
 
 - [x] Save product brief.
 - [x] Save roadmap.
@@ -41,9 +41,9 @@ Detailed file: [phase-00-product-refinement-and-ui.md](phases/phase-00-product-r
 
 ## Phase 01: PR Cycle Time MVP
 
-Detailed file: [phase-01-pr-cycle-time-mvp.md](phases/phase-01-pr-cycle-time-mvp.md)
+Detailed file: [phase-01-pr-cycle-time-mvp.md](../Completed/phase-01-pr-cycle-time-mvp.md)
 
-Implementation plan: [FEAT-001-pr-cycle-time-mvp-implementation-plan.md](phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md)
+Implementation plan: [FEAT-001-pr-cycle-time-mvp-implementation-plan.md](../Completed/FEAT-001-pr-cycle-time-mvp-implementation-plan.md)
 
 Goal: release the first local dashboard with one metric: PR Cycle Time.
 
@@ -66,28 +66,28 @@ Goal: release the first local dashboard with one metric: PR Cycle Time.
 
 ## Phase 02: First Review Time (Implemented)
 
-Detailed file: [phase-02-first-review-time.md](phases/phase-02-first-review-time.md)
+Detailed file: [phase-02-first-review-time.md](../Completed/phase-02-first-review-time.md)
 
-Implementation plan: [FEAT-002-first-review-time-implementation-plan.md](phases/FEAT-002-first-review-time-implementation-plan.md)
+Implementation plan: [FEAT-002-first-review-time-implementation-plan.md](../Completed/FEAT-002-first-review-time-implementation-plan.md)
 
 UI reference: [PR Cycle Time and First Review](../Assets/mockups/04-pr-cycle-time-and-first-review.png)
 
 Goal: add review-latency visibility after PR Cycle Time is working.
 
-- [ ] Sync GitHub review event metadata.
-- [ ] Store first review timestamp per PR.
-- [ ] Compute First Review Time.
-- [ ] Add scroll-below-Phase-01 First Review Time section.
-- [ ] Add First Review metric card.
-- [ ] Add review-latency exceptions.
-- [ ] Add separate Review team breakdown.
-- [ ] Add First Review weekly trend.
-- [ ] Show review metadata freshness and review sync errors.
-- [ ] Verify PR Cycle Time behavior remains unchanged.
+- [x] Sync GitHub review event metadata.
+- [x] Store first review timestamp per PR.
+- [x] Compute First Review Time.
+- [x] Add scroll-below-Phase-01 First Review Time section.
+- [x] Add First Review metric card.
+- [x] Add review-latency exceptions.
+- [x] Add separate Review team breakdown.
+- [x] Add First Review weekly trend.
+- [x] Show review metadata freshness and review sync errors.
+- [x] Verify PR Cycle Time behavior remains unchanged.
 
 ## Phase 03: PR Size
 
-Detailed file: [phase-03-pr-size.md](phases/phase-03-pr-size.md)
+Detailed file: [phase-03-pr-size.md](../Backlog/phase-03-pr-size.md)
 
 UI reference: [PR Cycle Time, First Review, and PR Size](../Assets/mockups/05-pr-cycle-time-first-review-and-pr-size.png)
 
@@ -106,7 +106,7 @@ Goal: detect oversized PR patterns.
 
 ## Phase 04: Jira Flow Metrics
 
-Detailed file: [phase-04-jira-flow-metrics.md](phases/phase-04-jira-flow-metrics.md)
+Detailed file: [phase-04-jira-flow-metrics.md](../Backlog/phase-04-jira-flow-metrics.md)
 
 Goal: add Jira-backed flow metrics after GitHub PR metrics are stable.
 
@@ -123,7 +123,7 @@ Goal: add Jira-backed flow metrics after GitHub PR metrics are stable.
 
 ## Phase 05: Quality And Cloud Readiness
 
-Detailed file: [phase-05-quality-and-cloud-readiness.md](phases/phase-05-quality-and-cloud-readiness.md)
+Detailed file: [phase-05-quality-and-cloud-readiness.md](../Backlog/phase-05-quality-and-cloud-readiness.md)
 
 Goal: add quality signals and prepare the cloud path after the local dashboard is useful.
 

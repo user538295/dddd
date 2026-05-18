@@ -53,15 +53,15 @@ When a new mockup is generated, implement it by preserving the existing sections
 
 ## Phase Links
 
-- [Phase 00: Product refinement and UI](phases/phase-00-product-refinement-and-ui.md)
-- [Phase 01: PR Cycle Time MVP](phases/phase-01-pr-cycle-time-mvp.md)
-- [Phase 02: First Review Time](phases/phase-02-first-review-time.md)
-- [Phase 03: PR Size](phases/phase-03-pr-size.md)
-- [Phase 04: Jira Flow Metrics](phases/phase-04-jira-flow-metrics.md)
-- [Phase 05: Quality and Cloud Readiness](phases/phase-05-quality-and-cloud-readiness.md)
+- [Phase 00: Product refinement and UI](../Completed/phase-00-product-refinement-and-ui.md)
+- [Phase 01: PR Cycle Time MVP](../Completed/phase-01-pr-cycle-time-mvp.md)
+- [Phase 02: First Review Time](../Completed/phase-02-first-review-time.md)
+- [Phase 03: PR Size](../Backlog/phase-03-pr-size.md)
+- [Phase 04: Jira Flow Metrics](../Backlog/phase-04-jira-flow-metrics.md)
+- [Phase 05: Quality and Cloud Readiness](../Backlog/phase-05-quality-and-cloud-readiness.md)
 
 ## Current Priority
 
 Continue with Phase 03. The next release should add PR size metadata sync, median PR Size computation, a PR Size section below First Review Time, oversized PR exceptions, PR Size trend, a separate size team breakdown, and size freshness while preserving the Phase 01 and Phase 02 sections above it.
 
-Track implementation status in [Trackable roadmap checklist](trackable-roadmap.md). The detailed next-step file is [Phase 03: PR Size](phases/phase-03-pr-size.md).
+Track implementation status in [Trackable roadmap checklist](trackable-roadmap.md). The detailed next-step file is [Phase 03: PR Size](../Backlog/phase-03-pr-size.md).

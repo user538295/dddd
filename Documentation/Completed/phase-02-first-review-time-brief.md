@@ -1,6 +1,6 @@
 # Feature Brief: Phase 02 — First Review Time
 
-Source spec: [phase-02-first-review-time.md](../Roadmap/phases/phase-02-first-review-time.md)
+Source spec: [phase-02-first-review-time.md](phase-02-first-review-time.md)
 Mockup: [04-pr-cycle-time-and-first-review.png](../Assets/mockups/04-pr-cycle-time-and-first-review.png)
 Refined: 2026-05-16
 
@@ -28,7 +28,7 @@ These terms are the source of truth where this brief and the spec disagree.
 
 ## Overrides to the locked spec
 
-This brief intentionally overrides parts of [phase-02-first-review-time.md](../Roadmap/phases/phase-02-first-review-time.md). FEAT-002 must implement the brief's version where they conflict:
+This brief intentionally overrides parts of [phase-02-first-review-time.md](phase-02-first-review-time.md). FEAT-002 must implement the brief's version where they conflict:
 
 | Spec rule (overridden) | Brief replacement | Reason |
 |---|---|---|
