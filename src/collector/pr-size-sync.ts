@@ -69,3 +69,48 @@ export async function detectMergeStrategy(
 
   return 'rebase'
 }
+
+function parseGitDiffShortstat(output: string): {
+  additions: number
+  deletions: number
+  changedFiles: number
+} {
+  const trimmed = output.trim()
+  if (trimmed === '') {
+    return { additions: 0, deletions: 0, changedFiles: 0 }
+  }
+
+  const filesMatch = trimmed.match(/(\d+) files? changed/)
+  const insertionsMatch = trimmed.match(/(\d+) insertions?\(\+\)/)
+  const deletionsMatch = trimmed.match(/(\d+) deletions?\(-\)/)
+
+  return {
+    changedFiles: filesMatch ? Number(filesMatch[1]) : 0,
+    additions: insertionsMatch ? Number(insertionsMatch[1]) : 0,
+    deletions: deletionsMatch ? Number(deletionsMatch[1]) : 0,
+  }
+}
+
+export async function runGitDiffShortstat(
+  sha: string,
+  repoPath: string,
+): Promise<{ additions: number; deletions: number; changedFiles: number }> {
+  try {
+    const output = await runGit(repoPath, ['diff', `${sha}^1`, sha, '--shortstat'], 30_000)
+    return parseGitDiffShortstat(output)
+  } catch (error) {
+    if (error instanceof GitOpError) {
+      const message = error.message
+      if (
+        message.includes('Invalid revision') ||
+        message.includes('unknown revision') ||
+        message.includes('bad revision')
+      ) {
+        throw new GitOpError(`git diff failed: root commit or missing parent for ${sha}`, {
+          cause: error,
+        })
+      }
+    }
+    throw error
+  }
+}

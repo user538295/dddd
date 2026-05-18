@@ -297,7 +297,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/collector/pr-size-sync.test.ts`
 
 #### Task 3.2 — git diff --shortstat runner
-- [ ] **File**: `src/collector/pr-size-sync.ts`
+- [x] **File**: `src/collector/pr-size-sync.ts`
 - **Depends on**: Task 3.1
 - **Description**:
   - `runGitDiffShortstat(sha: string, repoPath: string): Promise<{ additions: number; deletions: number; changedFiles: number }>`.
