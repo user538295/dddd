@@ -471,7 +471,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/metrics/pr-size-metric.test.ts`
 
 #### Task 6.2 — PrSizeExceptions computation
-- [ ] **File**: `src/metrics/pr-size-exceptions.ts`
+- [x] **File**: `src/metrics/pr-size-exceptions.ts`
 - **Depends on**: Task 1.1, Task 1.2
 - **Description**:
   - Imports `median` from `~/metrics/math`.
