@@ -10,7 +10,7 @@ function readDoc(rel: string): string {
 
 describe('FEAT-002 documentation links', () => {
   it('docs_phase_02_links_feat_002', () => {
-    const body = readDoc('Documentation/Roadmap/phases/phase-02-first-review-time.md')
+    const body = readDoc('Documentation/Completed/phase-02-first-review-time.md')
     expect(body).toMatch(/FEAT-002-first-review-time-implementation-plan\.md/)
     expect(body).not.toMatch(/FEAT-002.*\(to be authored before coding starts/)
   })
@@ -22,10 +22,11 @@ describe('FEAT-002 documentation links', () => {
     expect(phase02Section!).toMatch(/FEAT-002-first-review-time-implementation-plan\.md/)
   })
 
-  it('docs_readme_next_step_points_at_feat_002', () => {
+  it('docs_readme_next_step_points_at_phase_03', () => {
     const body = readDoc('Documentation/README.md')
     const nextStep = body.split('## Next Step')[1]
     expect(nextStep, 'README contains Next Step section').toBeDefined()
+    expect(nextStep!).toMatch(/phase-03-pr-size\.md/)
     expect(nextStep!).toMatch(/FEAT-002-first-review-time-implementation-plan\.md/)
   })
 })

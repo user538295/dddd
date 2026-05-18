@@ -25,6 +25,10 @@ function pr(overrides: Partial<PullRequestRecord> = {}): PullRequestRecord {
     missingJiraKey: false,
     createdAt: new Date('2026-01-01T09:00:00.000Z'),
     updatedAt: new Date('2026-01-01T09:00:00.000Z'),
+    additions: null,
+    deletions: null,
+    changedFiles: null,
+    mergeCommitSha: null,
     ...overrides,
   }
 }

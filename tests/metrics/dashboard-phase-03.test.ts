@@ -10,7 +10,7 @@ import { upsertRepositories } from '~/collector/repository-store'
 import type { TeamMappingConfig } from '~/config/team-mapping'
 import { getDashboardDateRanges } from '~/config/env'
 import { createDb, runMigrations } from '~/db/client'
-import { pullRequests, repositories } from '~/db/schema'
+import { pullRequests, repositories, syncErrors } from '~/db/schema'
 import { getPrCycleTimeDashboard } from '~/metrics/pr-cycle-time-dashboard'
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
@@ -32,6 +32,7 @@ describe('dashboard phase 03 integration', () => {
   })
 
   beforeEach(async () => {
+    await db.delete(syncErrors)
     await db.delete(pullRequests)
     await db.delete(repositories)
 
@@ -192,7 +193,6 @@ describe('dashboard phase 03 integration', () => {
   it('dashboard_phase01_shape_unchanged', async () => {
     const repo = await makeRepo()
     const mergedAt = currentMergedAt(10)
-    const openedAt = new Date(mergedAt.getTime() - 48 * 60 * 60 * 1000)
     for (const [n, cycleHours] of [
       [1, 24],
       [2, 48],

@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 
-import type { FirstReview, PrCycleTimeDashboard, PrSize } from '~/metrics/pr-cycle-time-dashboard'
+import type {
+  FirstReview,
+  PrCycleTimeDashboard as PrCycleTimeDashboardData,
+  PrSize,
+} from '~/metrics/pr-cycle-time-dashboard'
 import { PrCycleTimeDashboard } from '~/components/dashboard/PrCycleTimeDashboard'
 import { PrSizeSection } from '~/components/dashboard/PrSizeSection'
 
@@ -47,7 +51,7 @@ function firstReview(): FirstReview {
   }
 }
 
-function dashboard(overrides: Partial<PrCycleTimeDashboard> = {}): PrCycleTimeDashboard {
+function dashboard(overrides: Partial<PrCycleTimeDashboardData> = {}): PrCycleTimeDashboardData {
   const weeklyTrend = Array.from({ length: 8 }, (_, i) => ({
     weekStart: `2026-0${1 + i}-01`,
     medianHours: i % 2 === 0 ? 24 : null,

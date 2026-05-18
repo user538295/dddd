@@ -10,7 +10,7 @@ function readDoc(rel: string): string {
 
 describe('documentation links and phase 01 status', () => {
   it('docs_link_phase_01_plan', () => {
-    const body = readDoc('Documentation/Roadmap/phases/phase-01-pr-cycle-time-mvp.md')
+    const body = readDoc('Documentation/Completed/phase-01-pr-cycle-time-mvp.md')
     expect(body).toMatch(/FEAT-001-pr-cycle-time-mvp-implementation-plan\.md/)
   })
 
@@ -25,7 +25,7 @@ describe('documentation links and phase 01 status', () => {
   })
 
   it('docs_phase_01_completion_requires_acceptance_criteria', () => {
-    const body = readDoc('Documentation/Roadmap/phases/phase-01-pr-cycle-time-mvp.md')
+    const body = readDoc('Documentation/Completed/phase-01-pr-cycle-time-mvp.md')
     const after = body.split('## Acceptance criteria checklist')[1]
     expect(after, 'phase-01 must include acceptance criteria checklist heading').toBeDefined()
     const section = after!.split('## Mockup alignment')[0]!
@@ -33,13 +33,13 @@ describe('documentation links and phase 01 status', () => {
   })
 
   it('docs_record_mockup_alignment_status', () => {
-    const body = readDoc('Documentation/Roadmap/phases/phase-01-pr-cycle-time-mvp.md')
+    const body = readDoc('Documentation/Completed/phase-01-pr-cycle-time-mvp.md')
     expect(body).toMatch(/## Mockup alignment/)
   })
 })
 
 describe('phase 02 first review time spec', () => {
-  const phase02 = 'Documentation/Roadmap/phases/phase-02-first-review-time.md'
+  const phase02 = 'Documentation/Completed/phase-02-first-review-time.md'
 
   it('docs_phase_02_defines_metric_locks', () => {
     const body = readDoc(phase02)
@@ -99,7 +99,7 @@ describe('one-page metric layout rule', () => {
   })
 
   it('docs_phase_03_appends_pr_size_below_first_review', () => {
-    const body = readDoc('Documentation/Roadmap/phases/phase-03-pr-size.md')
+    const body = readDoc('Documentation/Backlog/phase-03-pr-size.md')
     expect(body).toMatch(/PR Size.*section below the First Review Time section/s)
     expect(body).toMatch(/PR Cycle Time remains first/)
     expect(body).toMatch(/First Review Time remains second/)

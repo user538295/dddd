@@ -7,7 +7,7 @@ const read = (rel: string) => readFileSync(path.join(root, rel), 'utf8')
 
 describe('FEAT-002 finalization docs', () => {
   it('docs_phase_02_checklist_updated', () => {
-    const body = read('Documentation/Roadmap/phases/phase-02-first-review-time.md')
+    const body = read('Documentation/Completed/phase-02-first-review-time.md')
     const section = body.split('## Acceptance criteria checklist')[1]?.split('##')[0] ?? ''
     expect(section).not.toMatch(/- \[ \]/)
     expect(section).toMatch(/- \[x\]/)

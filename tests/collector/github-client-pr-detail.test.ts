@@ -25,8 +25,10 @@ describe('github-client pr detail', () => {
 
     expect(out).toEqual({ additions: 120, deletions: 45, changedFiles: 8 })
     expect(fetchImpl).toHaveBeenCalledTimes(1)
-    const [url] = fetchImpl.mock.calls[0] ?? []
-    expect(url).toBe('https://api.github.com/repos/o/r/pulls/42')
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'https://api.github.com/repos/o/r/pulls/42',
+      expect.objectContaining({ headers: expect.any(Object) }),
+    )
   })
 
   it('get_pr_detail_throws_sync_error_on_missing_additions', async () => {

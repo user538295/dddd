@@ -16,6 +16,7 @@ import {
 } from 'vitest'
 
 import { GitHubClient } from '~/collector/github-client'
+import * as prSizeSync from '~/collector/pr-size-sync'
 import { refreshLocalData } from '~/collector/refresh'
 import { createDb, runMigrations } from '~/db/client'
 import { pullRequests, repositories, syncErrors, syncRuns } from '~/db/schema'
@@ -66,6 +67,11 @@ describe('refresh phase 02 integration', () => {
     commentsSpy = vi
       .spyOn(GitHubClient.prototype, 'listPullRequestReviewComments')
       .mockResolvedValue([])
+    vi.spyOn(prSizeSync, 'syncRepositoryPrSizes').mockResolvedValue({
+      ok: 0,
+      skipped: 0,
+      failed: 0,
+    })
   })
 
   afterEach(async () => {

@@ -62,7 +62,6 @@ describe('refresh size sync integration', () => {
   let db: ReturnType<typeof createDb>
   let listSpy: MockInstance
   let reviewsSpy: MockInstance
-  let commentsSpy: MockInstance
   let sizeSyncSpy: MockInstance
   let reviewSyncSpy: MockInstance
 
@@ -79,9 +78,7 @@ describe('refresh size sync integration', () => {
   beforeEach(() => {
     listSpy = vi.spyOn(GitHubClient.prototype, 'listPullRequests').mockResolvedValue([])
     reviewsSpy = vi.spyOn(GitHubClient.prototype, 'listPullRequestReviews').mockResolvedValue([])
-    commentsSpy = vi
-      .spyOn(GitHubClient.prototype, 'listPullRequestReviewComments')
-      .mockResolvedValue([])
+    vi.spyOn(GitHubClient.prototype, 'listPullRequestReviewComments').mockResolvedValue([])
     reviewSyncSpy = vi.spyOn(reviewSync, 'syncRepositoryReviews').mockResolvedValue({
       status: 'success',
       perPrErrors: [],

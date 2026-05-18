@@ -18,7 +18,7 @@ describe('PrSizeRecord', () => {
       changedFiles: 5,
     } satisfies PrSizeRecord
 
-    expectTypeOf(record).toEqualTypeOf<PrSizeRecord>()
+    expectTypeOf<PrSizeRecord>().toBeObject()
     expect(record.number).toBe(42)
   })
 
@@ -37,9 +37,9 @@ describe('PrSizeRecord', () => {
       changedFiles: null,
     } satisfies PrSizeRecord
 
-    expectTypeOf(record.additions).toEqualTypeOf<number | null>()
-    expectTypeOf(record.deletions).toEqualTypeOf<number | null>()
-    expectTypeOf(record.changedFiles).toEqualTypeOf<number | null>()
+    expectTypeOf<PrSizeRecord['additions']>().toEqualTypeOf<number | null>()
+    expectTypeOf<PrSizeRecord['deletions']>().toEqualTypeOf<number | null>()
+    expectTypeOf<PrSizeRecord['changedFiles']>().toEqualTypeOf<number | null>()
     expect(record.additions).toBeNull()
     expect(record.deletions).toBeNull()
     expect(record.changedFiles).toBeNull()

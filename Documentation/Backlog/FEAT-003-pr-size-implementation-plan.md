@@ -652,7 +652,7 @@ export type PrSizeRecord = {
 > **Releasable**: after Task 9.2 — full verification gate passes.
 
 #### Task 9.1 — vitest.config.phase03.ts and verify:phase03 npm script
-- [ ] **Files**: `vitest.config.phase03.ts`, `package.json`
+- [x] **Files**: `vitest.config.phase03.ts`, `package.json`
 - **Depends on**: Task 8.5
 - **Description**:
   - Create `vitest.config.phase03.ts` mirroring `vitest.config.phase02.ts`. Coverage `include`:
