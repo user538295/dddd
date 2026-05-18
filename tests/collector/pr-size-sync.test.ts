@@ -6,6 +6,7 @@ import {
   fetchRepo,
   GitOpError,
   type GitExecFn,
+  isAncestorOfDefaultBranch,
   runGitDiffShortstat,
 } from '~/collector/pr-size-sync'
 
@@ -304,6 +305,114 @@ describe('fetchRepo', () => {
     await expect(fetchRepo(repoPath)).resolves.toEqual({
       ok: false,
       reason: 'git fetch failed: Command timed out',
+    })
+  })
+})
+
+function throwGitExitCode(code: number): never {
+  const error = new Error(`git exit ${code}`) as Error & { code: number }
+  error.code = code
+  throw error
+}
+
+function throwRefUnavailable(): never {
+  throw new GitOpError('fatal: Not a valid object name origin/HEAD')
+}
+
+describe('isAncestorOfDefaultBranch', () => {
+  const repoPath = '/tmp/repo'
+  const sha = 'abc123def456'
+
+  beforeEach(() => {
+    __setGitExecForTests(null)
+  })
+
+  afterEach(() => {
+    __setGitExecForTests(null)
+  })
+
+  it('ancestor_check_returns_true_when_exit_0', async () => {
+    __setGitExecForTests(
+      createGitMock((gitArgs) => {
+        if (
+          gitArgs[0] === 'merge-base' &&
+          gitArgs[1] === '--is-ancestor' &&
+          gitArgs[2] === sha &&
+          gitArgs[3] === 'origin/HEAD'
+        ) {
+          return ''
+        }
+        throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+      }),
+    )
+
+    await expect(isAncestorOfDefaultBranch(sha, repoPath)).resolves.toEqual({
+      ancestor: true,
+    })
+  })
+
+  it('ancestor_check_returns_false_when_exit_1', async () => {
+    __setGitExecForTests(async (_repoPath, gitArgs) => {
+      if (gitArgs[0] === 'merge-base' && gitArgs[3] === 'origin/HEAD') {
+        throwGitExitCode(1)
+      }
+      throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+    })
+
+    await expect(isAncestorOfDefaultBranch(sha, repoPath)).resolves.toEqual({
+      ancestor: false,
+    })
+  })
+
+  it('ancestor_check_falls_back_to_origin_main', async () => {
+    __setGitExecForTests(async (_repoPath, gitArgs) => {
+      if (gitArgs[0] !== 'merge-base') {
+        throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+      }
+      if (gitArgs[3] === 'origin/HEAD') {
+        throwRefUnavailable()
+      }
+      if (gitArgs[3] === 'origin/main') {
+        return ''
+      }
+      throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+    })
+
+    await expect(isAncestorOfDefaultBranch(sha, repoPath)).resolves.toEqual({
+      ancestor: true,
+    })
+  })
+
+  it('ancestor_check_falls_back_to_origin_master', async () => {
+    __setGitExecForTests(async (_repoPath, gitArgs) => {
+      if (gitArgs[0] !== 'merge-base') {
+        throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+      }
+      if (gitArgs[3] === 'origin/HEAD' || gitArgs[3] === 'origin/main') {
+        throwRefUnavailable()
+      }
+      if (gitArgs[3] === 'origin/master') {
+        return ''
+      }
+      throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+    })
+
+    await expect(isAncestorOfDefaultBranch(sha, repoPath)).resolves.toEqual({
+      ancestor: true,
+    })
+  })
+
+  it('ancestor_check_rejects_when_all_remotes_fail', async () => {
+    __setGitExecForTests(async (_repoPath, gitArgs) => {
+      if (gitArgs[0] === 'merge-base') {
+        throwRefUnavailable()
+      }
+      throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+    })
+
+    await expect(isAncestorOfDefaultBranch(sha, repoPath)).resolves.toEqual({
+      ancestor: false,
+      warning: 'could not verify ancestry; SHA skipped',
     })
   })
 })

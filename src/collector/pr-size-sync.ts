@@ -126,3 +126,61 @@ export async function fetchRepo(
     return { ok: false, reason }
   }
 }
+
+const DEFAULT_BRANCH_REFS = ['origin/HEAD', 'origin/main', 'origin/master'] as const
+
+type MergeBaseAncestorResult = 'ancestor' | 'not-ancestor' | 'unavailable'
+
+function gitExitCode(error: unknown): number | undefined {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const code = (error as { code: unknown }).code
+    if (typeof code === 'number') {
+      return code
+    }
+  }
+  return undefined
+}
+
+async function tryMergeBaseIsAncestor(
+  sha: string,
+  repoPath: string,
+  ref: string,
+): Promise<MergeBaseAncestorResult> {
+  const gitArgs = ['merge-base', '--is-ancestor', sha, ref] as const
+  const timeoutMs = 10_000
+
+  try {
+    if (gitExecOverride) {
+      await gitExecOverride(repoPath, gitArgs, timeoutMs)
+    } else {
+      await execFile('git', ['-C', repoPath, ...gitArgs], {
+        encoding: 'utf8',
+        env: { ...process.env, LC_ALL: 'C' },
+        timeout: timeoutMs,
+      })
+    }
+    return 'ancestor'
+  } catch (error) {
+    if (gitExitCode(error) === 1) {
+      return 'not-ancestor'
+    }
+    return 'unavailable'
+  }
+}
+
+export async function isAncestorOfDefaultBranch(
+  sha: string,
+  repoPath: string,
+): Promise<{ ancestor: boolean; warning?: string }> {
+  for (const ref of DEFAULT_BRANCH_REFS) {
+    const result = await tryMergeBaseIsAncestor(sha, repoPath, ref)
+    if (result === 'ancestor') {
+      return { ancestor: true }
+    }
+    if (result === 'not-ancestor') {
+      return { ancestor: false }
+    }
+  }
+
+  return { ancestor: false, warning: 'could not verify ancestry; SHA skipped' }
+}

@@ -336,7 +336,7 @@ export type PrSizeRecord = {
 > **Releasable**: after Task 4.2 — backfill for PRs without `mergeCommitSha` is callable.
 
 #### Task 4.1 — Ancestor check helper
-- [ ] **File**: `src/collector/pr-size-sync.ts`
+- [x] **File**: `src/collector/pr-size-sync.ts`
 - **Depends on**: nothing (independent git primitive)
 - **Description**:
   - `isAncestorOfDefaultBranch(sha: string, repoPath: string): Promise<{ ancestor: boolean; warning?: string }>`.
