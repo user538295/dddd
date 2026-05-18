@@ -6,6 +6,7 @@ export type TrendComparisonProps = {
   trendPercent: number | null
   previousMedianHours: number | null
   baselinePendingLabel?: string
+  formatPreviousMedian?: (value: number | null) => string
   className?: string
   size?: 'metric' | 'table'
 }
@@ -21,6 +22,7 @@ export function TrendComparison({
   trendPercent,
   previousMedianHours,
   baselinePendingLabel = '— baseline pending',
+  formatPreviousMedian,
   className,
   size = 'table',
 }: TrendComparisonProps): ReactNode {
@@ -32,7 +34,9 @@ export function TrendComparison({
   const up = trendPercent > 0
   const arrow = up ? '↑' : '↓'
   const sign = trendPercent > 0 ? '+' : ''
-  const prevLabel = formatPreviousMedianReference(previousMedianHours)
+  const prevLabel =
+    formatPreviousMedian?.(previousMedianHours) ??
+    formatPreviousMedianReference(previousMedianHours)
 
   if (size === 'metric') {
     return (

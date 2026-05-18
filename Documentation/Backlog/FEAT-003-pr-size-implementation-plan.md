@@ -571,7 +571,7 @@ export type PrSizeRecord = {
 > **Releasable**: after Task 8.5 — the PR Size section is visible in the browser.
 
 #### Task 8.1 — PrSizeCard component
-- [ ] **File**: `src/components/dashboard/PrSizeCard.tsx`
+- [x] **File**: `src/components/dashboard/PrSizeCard.tsx`
 - **Depends on**: Task 7.2
 - **Description**:
   - Props: `{ metric: PrSizeMetric }`.
