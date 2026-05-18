@@ -114,3 +114,15 @@ export async function runGitDiffShortstat(
     throw error
   }
 }
+
+export async function fetchRepo(
+  repoPath: string,
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  try {
+    await runGit(repoPath, ['fetch', '--quiet'], 120_000)
+    return { ok: true }
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error)
+    return { ok: false, reason }
+  }
+}

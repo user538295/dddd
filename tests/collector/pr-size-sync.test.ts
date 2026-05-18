@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   __setGitExecForTests,
   detectMergeStrategy,
+  fetchRepo,
   GitOpError,
   type GitExecFn,
   runGitDiffShortstat,
@@ -249,6 +250,60 @@ describe('runGitDiffShortstat', () => {
     await expect(runGitDiffShortstat(sha, repoPath)).rejects.toMatchObject({
       name: 'GitOpError',
       message: expect.stringContaining('root commit'),
+    })
+  })
+})
+
+describe('fetchRepo', () => {
+  const repoPath = '/tmp/repo'
+
+  beforeEach(() => {
+    __setGitExecForTests(null)
+  })
+
+  afterEach(() => {
+    __setGitExecForTests(null)
+  })
+
+  it('fetch_repo_returns_ok_on_success', async () => {
+    __setGitExecForTests(
+      createGitMock((gitArgs) => {
+        if (gitArgs[0] === 'fetch') {
+          return ''
+        }
+        throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+      }),
+    )
+
+    await expect(fetchRepo(repoPath)).resolves.toEqual({ ok: true })
+  })
+
+  it('fetch_repo_returns_error_on_non_zero', async () => {
+    __setGitExecForTests(async (_repoPath, gitArgs) => {
+      if (gitArgs[0] === 'fetch') {
+        throw new GitOpError('git fetch failed: fatal: could not read from remote')
+      }
+      throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+    })
+
+    await expect(fetchRepo(repoPath)).resolves.toEqual({
+      ok: false,
+      reason: 'git fetch failed: fatal: could not read from remote',
+    })
+  })
+
+  it('fetch_repo_returns_error_on_timeout', async () => {
+    __setGitExecForTests(async (_repoPath, gitArgs, timeoutMs) => {
+      if (gitArgs[0] === 'fetch') {
+        expect(timeoutMs).toBe(120_000)
+        throw new GitOpError('git fetch failed: Command timed out')
+      }
+      throw new Error(`unexpected git command: ${gitArgs.join(' ')}`)
+    })
+
+    await expect(fetchRepo(repoPath)).resolves.toEqual({
+      ok: false,
+      reason: 'git fetch failed: Command timed out',
     })
   })
 })

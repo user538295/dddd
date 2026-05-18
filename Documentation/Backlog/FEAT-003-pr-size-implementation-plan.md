@@ -318,7 +318,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/collector/pr-size-sync.test.ts`
 
 #### Task 3.3 — git fetch helper
-- [ ] **File**: `src/collector/pr-size-sync.ts`
+- [x] **File**: `src/collector/pr-size-sync.ts`
 - **Depends on**: Task 3.2
 - **Description**:
   - `fetchRepo(repoPath: string): Promise<{ ok: true } | { ok: false; reason: string }>`.
