@@ -240,7 +240,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/collector/github-client-pr-size.test.ts`
 
 #### Task 1.5 — upsertPullRequests: persist mergeCommitSha
-- [ ] **File**: `src/collector/pull-request-store.ts`
+- [x] **File**: `src/collector/pull-request-store.ts`
 - **Depends on**: Task 1.3, Task 1.4
 - **Description**:
   - Write `mergeCommitSha` to `merge_commit_sha` on both insert and update paths.
