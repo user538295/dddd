@@ -6,6 +6,7 @@ import { GitHubClient } from '~/collector/github-client'
 import { discoverRepositories } from '~/collector/repo-discovery'
 import { upsertPullRequests } from '~/collector/pull-request-store'
 import { upsertRepositories } from '~/collector/repository-store'
+import { isPrSizeSyncPartial, syncRepositoryPrSizes } from '~/collector/pr-size-sync'
 import { syncRepositoryReviews } from '~/collector/review-sync'
 import type { AppEnv } from '~/config/env'
 import { getEnv } from '~/config/env'
@@ -24,6 +25,7 @@ export type RefreshSummary = {
   syncWarnings: number
   status: 'success' | 'partial' | 'failed'
   reviewSyncErrors: number
+  sizeSyncErrors: number
 }
 
 function buildProcessEnvFromPartial(partial?: Partial<AppEnv>): NodeJS.ProcessEnv {
@@ -99,6 +101,7 @@ export async function refreshLocalData(input?: Partial<AppEnv>): Promise<Refresh
         syncWarnings: 0,
         status: 'success',
         reviewSyncErrors: 0,
+        sizeSyncErrors: 0,
       }
     } finally {
       await db.$client.end({ timeout: 5 })
@@ -116,6 +119,7 @@ export async function refreshLocalData(input?: Partial<AppEnv>): Promise<Refresh
     syncWarnings: 0,
     status: 'failed',
     reviewSyncErrors: 0,
+    sizeSyncErrors: 0,
   }
 
   let syncRunId: string | null = null
@@ -175,6 +179,7 @@ export async function refreshLocalData(input?: Partial<AppEnv>): Promise<Refresh
 
     let prSyncSuccesses = 0
     let prSyncAttempts = 0
+    let sizeSyncPartial = false
     const reviewEligibleRepoIds = new Set<string>()
 
     await runWithConcurrency(syncTargets, env.githubSyncConcurrency, async (repo) => {
@@ -240,6 +245,25 @@ export async function refreshLocalData(input?: Partial<AppEnv>): Promise<Refresh
       })
     }
 
+    const sizeTargets = syncTargets.filter((r) => reviewEligibleRepoIds.has(r.id))
+    if (sizeTargets.length > 0) {
+      await runWithConcurrency(sizeTargets, env.githubSyncConcurrency, async (repo) => {
+        const counts = await syncRepositoryPrSizes({
+          db,
+          repoPath: repo.path,
+          repositoryId: repo.id,
+          owner: repo.owner!,
+          repo: repo.repo!,
+          syncRunId: syncRunId!,
+          githubClient: client,
+        })
+        summary.sizeSyncErrors += counts.failed
+        if (isPrSizeSyncPartial(counts)) {
+          sizeSyncPartial = true
+        }
+      })
+    }
+
     const errorRows = await db.select({ id: syncErrors.id }).from(syncErrors).where(eq(syncErrors.syncRunId, syncRunId))
     const errorRowCount = errorRows.length
     summary.syncErrors = errorRowCount
@@ -251,6 +275,8 @@ export async function refreshLocalData(input?: Partial<AppEnv>): Promise<Refresh
       runStatus = 'partial'
     } else if (errorRowCount > 0) {
       runStatus = 'failed'
+    } else if (sizeSyncPartial) {
+      runStatus = 'partial'
     } else {
       runStatus = 'success'
     }

@@ -418,7 +418,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/collector/pr-size-sync-integration.test.ts`
 
 #### Task 5.3 — Wire size sync into refresh.ts
-- [ ] **File**: `src/collector/refresh.ts`
+- [x] **File**: `src/collector/refresh.ts`
 - **Depends on**: Task 5.2
 - **Description**:
   - After the Phase 02 review sync pass, add a third `runWithConcurrency` pass over repos that succeeded Phase 01 PR sync in this invocation.
