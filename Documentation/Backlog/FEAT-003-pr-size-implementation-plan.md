@@ -439,7 +439,7 @@ export type PrSizeRecord = {
 > **Releasable**: after Task 6.3 — all metric computations are callable.
 
 #### Task 6.1 — PrSizeMetric computation
-- [ ] **File**: `src/metrics/pr-size-metric.ts`
+- [x] **File**: `src/metrics/pr-size-metric.ts`
 - **Depends on**: Task 1.1, Task 1.2
 - **Description**:
   - Imports `median` from `~/metrics/math`.
