@@ -1,7 +1,31 @@
 import { execFile as execFileCb } from 'node:child_process'
 import { promisify } from 'node:util'
 
+import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm'
+
+import type { GitHubClient } from '~/collector/github-client'
+import { GitHubSyncError } from '~/collector/github-client'
+import { updatePrSize } from '~/collector/pr-size-store'
+import type { AppDb } from '~/db/client'
+import { pullRequests, syncErrors } from '~/db/schema'
+
 const execFile = promisify(execFileCb)
+
+const PARTIAL_FAILURE_RATIO = 0.1
+
+export type PrSizeSyncCounts = {
+  ok: number
+  skipped: number
+  failed: number
+}
+
+export function isPrSizeSyncPartial(counts: PrSizeSyncCounts): boolean {
+  const total = counts.ok + counts.skipped + counts.failed
+  if (total === 0) {
+    return false
+  }
+  return counts.failed / total >= PARTIAL_FAILURE_RATIO
+}
 
 export class GitOpError extends Error {
   override readonly name = 'GitOpError'
@@ -18,10 +42,28 @@ export type GitExecFn = (
 ) => Promise<string>
 
 let gitExecOverride: GitExecFn | null = null
+let fetchRepoOverride: typeof fetchRepo | null = null
+let detectMergeStrategyOverride: typeof detectMergeStrategy | null = null
+let findCommitForPrOverride: typeof findCommitForPr | null = null
 
 /** @internal Test hook — do not use in production code. */
 export function __setGitExecForTests(fn: GitExecFn | null): void {
   gitExecOverride = fn
+}
+
+/** @internal Test hook — do not use in production code. */
+export function __setFetchRepoForTests(fn: typeof fetchRepo | null): void {
+  fetchRepoOverride = fn
+}
+
+/** @internal Test hook — do not use in production code. */
+export function __setDetectMergeStrategyForTests(fn: typeof detectMergeStrategy | null): void {
+  detectMergeStrategyOverride = fn
+}
+
+/** @internal Test hook — do not use in production code. */
+export function __setFindCommitForPrForTests(fn: typeof findCommitForPr | null): void {
+  findCommitForPrOverride = fn
 }
 
 async function runGit(repoPath: string, gitArgs: readonly string[], timeoutMs: number): Promise<string> {
@@ -321,4 +363,135 @@ export async function findCommitForPr(
     firstSubjectLine(entry.subject).endsWith(squashSuffix),
   )
   return filterAncestorsAndPickClosest(pass2Filtered, repoPath, mergedAt)
+}
+
+function pendingSizePrWhere(repositoryId: string) {
+  return and(
+    eq(pullRequests.repositoryId, repositoryId),
+    isNotNull(pullRequests.mergedAt),
+    isNull(pullRequests.additions),
+  )
+}
+
+async function logSizeSyncError(
+  db: AppDb,
+  input: { syncRunId: string; repositoryId: string; source: string; message: string },
+): Promise<void> {
+  await db.insert(syncErrors).values({
+    syncRunId: input.syncRunId,
+    repositoryId: input.repositoryId,
+    source: input.source,
+    message: input.message,
+  })
+}
+
+async function computeSizeForPr(
+  sha: string,
+  prNumber: number,
+  repoPath: string,
+  owner: string,
+  repo: string,
+  githubClient: GitHubClient,
+): Promise<{ additions: number; deletions: number; changedFiles: number }> {
+  const detect = detectMergeStrategyOverride ?? detectMergeStrategy
+  const strategy = await detect(sha, repoPath, prNumber)
+  if (strategy === 'rebase') {
+    return githubClient.getPullRequestDetail({ owner, repo, pullNumber: prNumber })
+  }
+  return runGitDiffShortstat(sha, repoPath)
+}
+
+export async function syncRepositoryPrSizes(input: {
+  db: AppDb
+  repoPath: string
+  repositoryId: string
+  owner: string
+  repo: string
+  syncRunId: string
+  githubClient: GitHubClient
+}): Promise<PrSizeSyncCounts> {
+  const counts: PrSizeSyncCounts = { ok: 0, skipped: 0, failed: 0 }
+
+  const pendingWhere = pendingSizePrWhere(input.repositoryId)
+
+  const fetch = fetchRepoOverride ?? fetchRepo
+  const fetchResult = await fetch(input.repoPath)
+  if (!fetchResult.ok) {
+    const pendingRows = await input.db
+      .select({ id: pullRequests.id })
+      .from(pullRequests)
+      .where(pendingWhere)
+    await logSizeSyncError(input.db, {
+      syncRunId: input.syncRunId,
+      repositoryId: input.repositoryId,
+      source: 'git-fetch-failed',
+      message: fetchResult.reason,
+    })
+    return { ok: 0, skipped: pendingRows.length, failed: 0 }
+  }
+
+  const rows = await input.db
+    .select({
+      id: pullRequests.id,
+      number: pullRequests.number,
+      mergedAt: pullRequests.mergedAt,
+      mergeCommitSha: pullRequests.mergeCommitSha,
+    })
+    .from(pullRequests)
+    .where(pendingWhere)
+    .orderBy(asc(pullRequests.number))
+
+  for (const pr of rows) {
+    if (pr.mergedAt === null) {
+      continue
+    }
+
+    let sha = pr.mergeCommitSha
+    let backfilledSha: string | undefined
+
+    if (sha === null) {
+      const findCommit = findCommitForPrOverride ?? findCommitForPr
+      const found = await findCommit(pr.number, pr.mergedAt, input.repoPath)
+      if (found === null) {
+        counts.skipped += 1
+        continue
+      }
+      sha = found
+      backfilledSha = found
+    }
+
+    try {
+      const size = await computeSizeForPr(
+        sha,
+        pr.number,
+        input.repoPath,
+        input.owner,
+        input.repo,
+        input.githubClient,
+      )
+      await updatePrSize(input.db, pr.id, {
+        additions: size.additions,
+        deletions: size.deletions,
+        changedFiles: size.changedFiles,
+        ...(backfilledSha !== undefined ? { mergeCommitSha: backfilledSha } : {}),
+      })
+      counts.ok += 1
+    } catch (error) {
+      const message =
+        error instanceof GitHubSyncError || error instanceof GitOpError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : String(error)
+      await logSizeSyncError(input.db, {
+        syncRunId: input.syncRunId,
+        repositoryId: input.repositoryId,
+        source: 'git-diff-failed',
+        message,
+      })
+      counts.failed += 1
+    }
+  }
+
+  return counts
 }

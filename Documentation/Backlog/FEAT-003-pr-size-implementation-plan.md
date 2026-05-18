@@ -393,7 +393,7 @@ export type PrSizeRecord = {
   - Checkpoint: `vitest run tests/collector/pr-size-store.test.ts`
 
 #### Task 5.2 — syncRepositoryPrSizes orchestrator
-- [ ] **File**: `src/collector/pr-size-sync.ts`
+- [x] **File**: `src/collector/pr-size-sync.ts`
 - **Depends on**: Task 3.3, Task 4.2, Task 5.1
 - **Description**:
   - `syncRepositoryPrSizes(input: { db: AppDb; repoPath: string; repositoryId: string; owner: string; repo: string; syncRunId: string; githubClient: GitHubClient }): Promise<{ ok: number; skipped: number; failed: number }>`.
