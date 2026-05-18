@@ -378,7 +378,7 @@ export type PrSizeRecord = {
 > **Releasable**: after Task 5.2 — Refresh button triggers size computation end-to-end.
 
 #### Task 5.1 — pr-size-store: updatePrSize
-- [ ] **File**: `src/collector/pr-size-store.ts`
+- [x] **File**: `src/collector/pr-size-store.ts`
 - **Depends on**: Task 1.3
 - **Description**:
   - `updatePrSize(db: AppDb, pullRequestId: string, size: { additions: number; deletions: number; changedFiles: number; mergeCommitSha?: string }): Promise<void>`.
