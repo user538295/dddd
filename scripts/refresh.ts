@@ -1,7 +1,8 @@
 import { refreshLocalData } from '../src/collector/refresh'
-import { loadLocalEnv } from './local-env'
+import { clearE2eRefreshStubUnlessAllowed, loadLocalEnv, LOCAL_ENV_KEYS } from './local-env'
 
-loadLocalEnv({ preferDotenvKeys: ['GITHUB_TOKEN'] })
+loadLocalEnv({ preferDotenvKeys: LOCAL_ENV_KEYS })
+clearE2eRefreshStubUnlessAllowed()
 
 refreshLocalData()
   .then((summary) => {

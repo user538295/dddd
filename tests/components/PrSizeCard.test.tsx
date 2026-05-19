@@ -24,14 +24,14 @@ describe('PrSizeCard', () => {
     expect(screen.getByText(/312/)).toBeTruthy()
   })
 
-  it('renders_across_n_files_secondary_line', () => {
+  it('renders_median_files_changed_line', () => {
     render(<PrSizeCard metric={metric({ medianChangedFiles: 5 })} />)
-    expect(screen.getByText('across 5 files')).toBeTruthy()
+    expect(screen.getByText('Median files changed: 5')).toBeTruthy()
   })
 
-  it('omits_secondary_line_when_changed_files_null', () => {
+  it('omits_median_files_line_when_changed_files_null', () => {
     render(<PrSizeCard metric={metric({ medianChangedFiles: null })} />)
-    expect(screen.queryByText(/across \d+ files/)).toBeNull()
+    expect(screen.queryByText(/Median files changed/)).toBeNull()
   })
 
   it('shows_baseline_pending_when_pending', () => {

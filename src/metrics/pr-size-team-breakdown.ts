@@ -5,6 +5,9 @@ export type PrSizeTeamRow = {
   team: string
   prCount: number
   medianLines: number | null
+  medianChangedFiles: number | null
+  previousMedianLines: number | null
+  trendPercent: number | null
   trend: '↑' | '↓' | '→' | '—'
   largestPrTitle: string
   largestPrRepo: string
@@ -16,6 +19,10 @@ function hasSize(p: PrSizeRecord): boolean {
   return p.additions !== null && p.deletions !== null
 }
 
+function hasChangedFiles(p: PrSizeRecord): boolean {
+  return p.changedFiles !== null
+}
+
 function prLines(p: PrSizeRecord): number {
   return p.additions! + p.deletions!
 }
@@ -23,6 +30,17 @@ function prLines(p: PrSizeRecord): number {
 function inWindow(pr: PrSizeRecord, window: { from: Date; to: Date }): boolean {
   const m = pr.mergedAt.getTime()
   return m >= window.from.getTime() && m <= window.to.getTime()
+}
+
+function computeTrendPercent(
+  currentMedian: number | null,
+  priorMedian: number | null,
+  currentSizedCount: number,
+  priorSizedCount: number,
+): number | null {
+  if (currentSizedCount < 3 || priorSizedCount < 3) return null
+  if (currentMedian === null || priorMedian === null || priorMedian === 0) return null
+  return Math.round(((currentMedian - priorMedian) / priorMedian) * 1000) / 10
 }
 
 function computeTrend(
@@ -59,6 +77,17 @@ export function getPrSizeTeamBreakdown(
     const priorSized = teamPrs.filter((p) => inWindow(p, priorWindow) && hasSize(p))
     const medianLines = median(currentSized.map(prLines))
     const priorMedianLines = median(priorSized.map(prLines))
+    const withChangedFiles = currentSized.filter(hasChangedFiles)
+    const medianChangedFiles =
+      withChangedFiles.length > 0
+        ? median(withChangedFiles.map((p) => p.changedFiles!))
+        : null
+    const trendPercent = computeTrendPercent(
+      medianLines,
+      priorMedianLines,
+      currentSized.length,
+      priorSized.length,
+    )
 
     let largest = currentSized[0]!
     let largestLines = prLines(largest)
@@ -74,6 +103,9 @@ export function getPrSizeTeamBreakdown(
       team,
       prCount: currentSized.length,
       medianLines,
+      medianChangedFiles,
+      previousMedianLines: priorMedianLines,
+      trendPercent,
       trend: computeTrend(medianLines, priorMedianLines, currentSized.length, priorSized.length),
       largestPrTitle: largest.title,
       largestPrRepo: largest.repoFullName,

@@ -428,6 +428,12 @@
   color: var(--color-muted);
 }
 
+.pr-dashboard__metric-files {
+  margin: 10px 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
 .pr-dashboard__baseline {
   margin: 12px 0 0;
   font-size: 0.8125rem;

@@ -11,6 +11,9 @@ function row(o: Partial<PrSizeTeamRow> = {}): PrSizeTeamRow {
     team: o.team ?? 'Platform',
     prCount: o.prCount ?? 4,
     medianLines: o.medianLines === undefined ? 200 : o.medianLines,
+    medianChangedFiles: o.medianChangedFiles === undefined ? 7 : o.medianChangedFiles,
+    previousMedianLines: o.previousMedianLines === undefined ? 150 : o.previousMedianLines,
+    trendPercent: o.trendPercent === undefined ? 33.3 : o.trendPercent,
     trend: o.trend ?? '↑',
     largestPrTitle: o.largestPrTitle ?? 'Big refactor',
     largestPrRepo: o.largestPrRepo ?? 'org/repo',
@@ -23,48 +26,31 @@ describe('PrSizeTeamTable', () => {
   it('renders_all_columns', () => {
     render(<PrSizeTeamTable rows={[row()]} />)
     expect(screen.getByText('Team')).toBeTruthy()
-    expect(screen.getByText('PRs merged')).toBeTruthy()
-    expect(screen.getByText('Median size (lines)')).toBeTruthy()
-    expect(screen.getByText('Trend')).toBeTruthy()
-    expect(screen.getByText('Largest PR')).toBeTruthy()
+    expect(screen.getByText('Merged PRs')).toBeTruthy()
+    expect(screen.getByText('Median Size')).toBeTruthy()
+    expect(screen.getByText('Median Files')).toBeTruthy()
+    expect(screen.getByText('Size Trend')).toBeTruthy()
     expect(screen.getByText('Platform')).toBeTruthy()
     expect(screen.getByText('4')).toBeTruthy()
     expect(screen.getByText('200 lines')).toBeTruthy()
-    expect(screen.getByText('Big refactor')).toBeTruthy()
-    expect(screen.getByText(/org\/repo/)).toBeTruthy()
+    expect(screen.getByText('7')).toBeTruthy()
   })
 
   it('trend_arrows_rendered_correctly', () => {
     render(
       <PrSizeTeamTable
         rows={[
-          row({ team: 'Up', trend: '↑' }),
-          row({ team: 'Down', trend: '↓' }),
-          row({ team: 'Flat', trend: '→' }),
-          row({ team: 'Dash', trend: '—' }),
+          row({ team: 'Up', trendPercent: 20, previousMedianLines: 100 }),
+          row({ team: 'Down', trendPercent: -15, previousMedianLines: 100 }),
+          row({ team: 'Flat', trendPercent: 5, previousMedianLines: 100 }),
+          row({ team: 'Dash', trendPercent: null, previousMedianLines: null }),
         ]}
       />,
     )
-    expect(screen.getByText('↑')).toBeTruthy()
-    expect(screen.getByText('↓')).toBeTruthy()
-    expect(screen.getByText('→')).toBeTruthy()
+    expect(screen.getByText(/\+20%/)).toBeTruthy()
+    expect(screen.getByText(/-15%/)).toBeTruthy()
+    expect(screen.getByText(/\+5%/)).toBeTruthy()
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1)
-  })
-
-  it('largest_pr_is_a_link', () => {
-    render(
-      <PrSizeTeamTable
-        rows={[
-          row({
-            largestPrTitle: 'Big refactor',
-            largestPrRepo: 'org/repo',
-            largestPrUrl: 'https://github.com/org/repo/pull/1',
-          }),
-        ]}
-      />,
-    )
-    const link = screen.getByRole('link', { name: /Big refactor/i })
-    expect(link.getAttribute('href')).toBe('https://github.com/org/repo/pull/1')
   })
 
   it('no_author_names_in_output', () => {
@@ -79,5 +65,11 @@ describe('PrSizeTeamTable', () => {
       />,
     )
     expect(container.textContent).not.toMatch(/author/i)
+    expect(screen.queryByRole('link')).toBeNull()
+  })
+
+  it('no_largest_pr_column_in_table', () => {
+    render(<PrSizeTeamTable rows={[row()]} />)
+    expect(screen.queryByText('Largest PR')).toBeNull()
   })
 })

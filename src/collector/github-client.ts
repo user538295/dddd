@@ -63,6 +63,7 @@ type GitHubClientOptions = {
 
 const PER_PAGE = 100
 const GITHUB_API_VERSION = '2022-11-28'
+const GITHUB_REQUEST_TIMEOUT_MS = 30_000
 
 function trimTrailingSlash(url: string): string {
   return url.replace(/\/+$/, '')
@@ -299,6 +300,28 @@ function buildGitHubHeaders(token: string | undefined): Headers {
   return headers
 }
 
+async function fetchGitHub(
+  fetchImpl: typeof fetch,
+  input: Parameters<typeof fetch>[0],
+  init: RequestInit,
+): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), GITHUB_REQUEST_TIMEOUT_MS)
+  try {
+    return await fetchImpl(input, { ...init, signal: controller.signal })
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new GitHubSyncError({
+        code: 'unknown',
+        message: `GitHub request timed out after ${GITHUB_REQUEST_TIMEOUT_MS}ms`,
+      })
+    }
+    throw err
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 export class GitHubClient {
   private readonly token?: string
 
@@ -340,7 +363,7 @@ export class GitHubClient {
     const root = trimTrailingSlash(this.baseUrl)
     const url = `${root}/repos/${encodeURIComponent(input.owner)}/${encodeURIComponent(input.repo)}/pulls/${input.pullNumber}`
     const headers = buildGitHubHeaders(this.token)
-    const res = await this.fetchImpl(url, { headers })
+    const res = await fetchGitHub(this.fetchImpl, url, { headers })
 
     if (!res.ok) {
       const body = await readJsonBody(res)
@@ -396,7 +419,7 @@ export class GitHubClient {
 
     while (nextUrl !== null) {
       const headers = buildGitHubHeaders(this.token)
-      const res = await this.fetchImpl(nextUrl, { headers })
+      const res = await fetchGitHub(this.fetchImpl, nextUrl, { headers })
 
       if (!res.ok) {
         const body = await readJsonBody(res)
@@ -469,7 +492,7 @@ export class GitHubClient {
       const url = nextUrl ?? buildListPullsUrl(this.baseUrl, owner, repo, page)
       const headers = buildGitHubHeaders(this.token)
 
-      const res = await this.fetchImpl(url, { headers })
+      const res = await fetchGitHub(this.fetchImpl, url, { headers })
 
       if (!res.ok) {
         const body = await readJsonBody(res)

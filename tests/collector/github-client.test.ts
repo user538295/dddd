@@ -365,6 +365,26 @@ describe('github-client', () => {
     })
   })
 
+  it('github_client_times_out_hung_requests', async () => {
+    vi.useFakeTimers()
+    const fetchImpl = vi.fn((_input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+      })
+    })
+    const client = new GitHubClient({ baseUrl: 'https://api.github.com', fetchImpl })
+
+    const pending = expect(client.listPullRequests({ owner: 'o', repo: 'r', state: 'all' })).rejects.toMatchObject({
+      name: 'GitHubSyncError',
+      code: 'unknown',
+      message: 'GitHub request timed out after 30000ms',
+    })
+    await vi.advanceTimersByTimeAsync(30_000)
+
+    await pending
+    vi.useRealTimers()
+  })
+
   it('github_client_rejects_cross_origin_pagination_link', async () => {
     const pr = {
       node_id: 'X',

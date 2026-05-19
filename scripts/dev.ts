@@ -1,9 +1,10 @@
 import { spawn } from 'node:child_process'
 import path from 'node:path'
 
-import { loadLocalEnv } from './local-env'
+import { clearE2eRefreshStubUnlessAllowed, loadLocalEnv, LOCAL_ENV_KEYS } from './local-env'
 
-loadLocalEnv({ preferDotenvKeys: ['GITHUB_TOKEN'] })
+loadLocalEnv({ preferDotenvKeys: LOCAL_ENV_KEYS })
+clearE2eRefreshStubUnlessAllowed()
 
 const viteBin = path.join(process.cwd(), 'node_modules', '.bin', 'vite')
 const child = spawn(viteBin, ['dev', ...process.argv.slice(2)], {

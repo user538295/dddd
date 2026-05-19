@@ -25,29 +25,26 @@ describe('PrSizeExceptionsPanel', () => {
   })
 
   it('panel_shows_team_and_description', () => {
-    render(
-      <PrSizeExceptionsPanel
-        exceptions={[ex({ team: 'platform', message: '2 of 4 PRs exceed 2× team median' })]}
-      />,
-    )
-    expect(screen.getByText('platform')).toBeTruthy()
-    expect(screen.getByText('2 of 4 PRs exceed 2× team median')).toBeTruthy()
+    render(<PrSizeExceptionsPanel exceptions={[ex({ team: 'platform' })]} />)
+    expect(screen.getByText('platform oversized PRs')).toBeTruthy()
+    expect(screen.getByText('2 PRs above team median')).toBeTruthy()
+    expect(screen.getByText('Split large work before review starts')).toBeTruthy()
   })
 
   it('panel_shows_multiple_exceptions', () => {
     render(
       <PrSizeExceptionsPanel
         exceptions={[
-          ex({ team: 'alpha', message: '2 of 4 PRs exceed 2× team median' }),
-          ex({ team: 'beta', message: '3 of 5 PRs exceed 2× team median' }),
-          ex({ team: 'gamma', message: '2 of 3 PRs exceed 2× team median' }),
+          ex({ team: 'alpha' }),
+          ex({ team: 'beta', flaggedPrCount: 3 }),
+          ex({ team: 'gamma', flaggedPrCount: 2 }),
         ]}
       />,
     )
     const items = screen.getAllByRole('listitem')
     expect(items).toHaveLength(3)
-    expect(screen.getByText('alpha')).toBeTruthy()
-    expect(screen.getByText('beta')).toBeTruthy()
-    expect(screen.getByText('gamma')).toBeTruthy()
+    expect(screen.getByText('alpha oversized PRs')).toBeTruthy()
+    expect(screen.getByText('beta oversized PRs')).toBeTruthy()
+    expect(screen.getByText('gamma oversized PRs')).toBeTruthy()
   })
 })

@@ -10,7 +10,7 @@ type Props = {
 export function PrSizeTrendChart({ weeklyTrend }: Props) {
   return (
     <section className="pr-dashboard__card" data-testid="pr-size-trend" aria-label="8-week PR size trend">
-      <h3 className="pr-dashboard__card-title">8-week PR size trend</h3>
+      <h3 className="pr-dashboard__card-title">8-week PR Size trend</h3>
       <CardHowToRead>
         Weekly median lines changed (additions plus deletions) for PRs merged in each week. Weeks with no
         qualifying PRs appear as gaps.
@@ -18,7 +18,7 @@ export function PrSizeTrendChart({ weeklyTrend }: Props) {
       <WeeklyTrendChart
         weeklyTrend={weeklyTrend}
         ariaLabel="8-week PR size trend"
-        yAxisLabel="Median lines changed"
+        yAxisLabel="Lines"
       />
       <ol data-testid="pr-size-weekly-trend-list" className="pr-dashboard__sr-only">
         {weeklyTrend.map((p) => (

@@ -127,6 +127,9 @@ export type PrSizeTeamRow = {
   team: string
   prCount: number
   medianLines: number | null
+  medianChangedFiles: number | null
+  previousMedianLines: number | null
+  trendPercent: number | null
   trend: '↑' | '↓' | '→' | '—'
   largestPrTitle: string
   largestPrRepo: string

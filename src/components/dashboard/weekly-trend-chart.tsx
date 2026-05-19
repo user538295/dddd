@@ -21,6 +21,31 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n))
 }
 
+function niceStep(rawStep: number): number {
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep))
+  const normalized = rawStep / magnitude
+  if (normalized <= 1) return magnitude
+  if (normalized <= 2) return 2 * magnitude
+  if (normalized <= 3) return 3 * magnitude
+  if (normalized <= 5) return 5 * magnitude
+  return 10 * magnitude
+}
+
+function buildAxis(maxNumeric: number, linesMode: boolean): { maxValue: number; ticks: number[] } {
+  if (!linesMode && maxNumeric <= 8) {
+    const maxValue = clamp(Math.ceil(Math.max(5, maxNumeric) * 10) / 10, 1, 99)
+    const topTick = Math.max(5, Math.ceil(maxValue))
+    return { maxValue, ticks: Array.from({ length: topTick + 1 }, (_, i) => i) }
+  }
+
+  const minTop = linesMode ? 10 : 5
+  const paddedMax = Math.max(minTop, maxNumeric)
+  const step = niceStep(paddedMax / 4)
+  const maxValue = Math.ceil(paddedMax / step) * step
+  const tickCount = Math.round(maxValue / step) + 1
+  return { maxValue, ticks: Array.from({ length: tickCount }, (_, i) => i * step) }
+}
+
 type Pt = { i: number; x: number; y: number; value: number }
 
 function isLinesPoint(point: WeeklyTrendPoint): point is WeeklyTrendLinesPoint {
@@ -57,7 +82,7 @@ export function WeeklyTrendChart({
 
   const chartValues = weeklyTrend.map((p) => chartValue(p))
   const numeric = chartValues.filter((v): v is number => v != null && Number.isFinite(v))
-  const maxValue = clamp(Math.ceil(Math.max(5, ...numeric, 0.1) * 10) / 10, 1, 99)
+  const { maxValue, ticks: yTicks } = buildAxis(Math.max(...numeric, 0.1), linesMode)
 
   const xAt = (i: number) => PAD_L + (n <= 1 ? innerW / 2 : (i / Math.max(1, n - 1)) * innerW)
   const yAt = (value: number) => PAD_T + (1 - value / maxValue) * innerH
@@ -84,10 +109,8 @@ export function WeeklyTrendChart({
     pathOrange = ''
   }
 
-  const topTick = Math.max(5, Math.ceil(maxValue))
-  const yTicks = Array.from({ length: topTick + 1 }, (_, i) => i)
-
   const formatPointLabel = (value: number) => (linesMode ? String(Math.round(value)) : value.toFixed(1))
+  const formatTickLabel = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1))
 
   return (
     <div className="pr-dashboard__chart-wrap">
@@ -108,7 +131,7 @@ export function WeeklyTrendChart({
             <g key={t}>
               <line x1={PAD_L} y1={yy} x2={VB_W - PAD_R} y2={yy} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="3 4" />
               <text x={PAD_L - 8} y={yy + 4} fill="#9ca3af" fontSize="10" textAnchor="end">
-                {t}
+                {formatTickLabel(t)}
               </text>
             </g>
           )

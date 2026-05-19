@@ -1,4 +1,5 @@
 import type { PrSizeMetric } from '~/metrics/pr-cycle-time-dashboard'
+import { CardHowToRead } from '~/components/dashboard/card-how-to-read'
 import { TrendComparison } from '~/components/dashboard/trend-comparison'
 
 type Props = {
@@ -26,6 +27,11 @@ export function PrSizeCard({ metric }: Props) {
       aria-label="Median PR Size"
     >
       <h3 className="pr-dashboard__card-title">Median PR Size</h3>
+      <p className="pr-dashboard__metric-sub">Lines changed per merged PR</p>
+      <CardHowToRead>
+        Total lines added and deleted per merged pull request (additions plus deletions). A rising median often
+        means teams are shipping larger changes that are harder to review in one pass.
+      </CardHowToRead>
       <div className="pr-dashboard__metric-row">
         <p className="pr-dashboard__metric-value" data-testid="median-pr-size">
           {formatMedianLines(metric.medianLines)}
@@ -42,15 +48,31 @@ export function PrSizeCard({ metric }: Props) {
           </div>
         ) : null}
       </div>
-      {metric.medianChangedFiles !== null ? (
-        <p className="pr-dashboard__metric-sub">across {metric.medianChangedFiles} files</p>
-      ) : null}
       {isBaselinePending ? <p className="pr-dashboard__baseline">Baseline pending</p> : null}
       <div className="pr-dashboard__metric-footer">
-        <span>
-          Across {metric.qualifyingPrCount} PR{metric.qualifyingPrCount === 1 ? '' : 's'}
+        <IconMeasured />
+        <span data-testid="pr-size-merged-count">
+          {metric.qualifyingPrCount} merged PR{metric.qualifyingPrCount === 1 ? '' : 's'} measured
         </span>
       </div>
+      {metric.medianChangedFiles !== null ? (
+        <p className="pr-dashboard__metric-files" data-testid="median-files-changed">
+          Median files changed: {metric.medianChangedFiles}
+        </p>
+      ) : null}
     </section>
+  )
+}
+
+function IconMeasured() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <path
+        d="M4 3.5h10a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1v-9a1 1 0 011-1z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+      />
+      <path d="M6 7h6M6 10h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
   )
 }

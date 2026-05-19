@@ -14,7 +14,7 @@ export function PrSizeSection({ prSize }: Props) {
     <section className="pr-dashboard__phase-section" data-testid="phase03-section" aria-label="PR Size">
       <div className="pr-dashboard__section-header">
         <h2 className="pr-dashboard__section-title">PR Size</h2>
-        <p className="pr-dashboard__section-subtitle">Median lines changed per merged PR</p>
+        <p className="pr-dashboard__section-subtitle">Oversized pull request patterns for merged PRs</p>
       </div>
       <div data-testid="phase03-row-1" className="phase03-row-1 pr-dashboard__section-grid">
         <PrSizeCard metric={prSize.metric} />
