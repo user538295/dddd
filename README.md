@@ -9,15 +9,14 @@ Local-first engineering dashboard for leadership. Phase 01 ships a single metric
 - **[Scripts and CLI](Documentation/Setup/scripts.md)** — stack scripts, migrations, collector refresh, and GitHub import.
 - **[Developer guide](Documentation/Development/README.md)** — stack, scripts, and how to run tests and builds.
 
-## Quick start (app shell)
+## Quick start
 
-Requires a recent **Node.js** (20+). From the repository root:
+Requires a recent **Node.js** (20+) and **Docker** (Compose v2). From the repository root:
 
 ```bash
-npm install
-npm run dev
+./scripts/dev.sh
 ```
 
-Open **http://localhost:3000**. The Phase 01 scaffold shows the **Engineering Decision Dashboard** title; metrics and sync behavior are added per the [implementation plan](Documentation/Roadmap/phases/FEAT-001-pr-cycle-time-mvp-implementation-plan.md).
+Starts Postgres, applies migrations, and launches the Vite dev server. **Ctrl+C** stops the frontend and tears down Postgres. Open **http://localhost:3000**.
 
-Full MVP setup (database, GitHub token, team mapping) is in [Local onboarding](Documentation/Setup/local-onboarding.md).
+Full setup (GitHub token, team mapping) is in [Local onboarding](Documentation/Setup/local-onboarding.md).

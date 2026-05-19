@@ -13,6 +13,7 @@ Prerequisites for database and GitHub commands are covered in **[Local onboardin
 
 | Script | Command | What it does |
 | ------ | ------- | ------------ |
+| **Full dev session** | `./scripts/dev.sh` | Runs `dev-up.sh`, then starts the Vite dev server (`npm run dev`). Blocks the terminal. Pressing **Ctrl+C** stops the frontend and automatically runs `dev-down.sh` to tear down Postgres. |
 | Local stack bootstrap | `./scripts/dev-up.sh` | Same as `npm run stack:up`: runs `npm install`, creates `.env` from `.env.example` if missing, sources `.env`, starts Postgres via Docker Compose (`--wait` until healthy), runs `npm run db:migrate`. Does **not** start the Vite dev server. |
 | Stop Compose Postgres | `./scripts/dev-down.sh` | Same as `npm run stack:down`: runs `docker compose down`. The named volume keeps database data until you remove it manually (see script output). |
 
@@ -77,7 +78,8 @@ Output: JSON summary with `reposTouched`, `prsSeen`, `prsMerged`, `prsOpen`, and
 
 | Goal | Command |
 | ---- | ------- |
-| First-time local DB + migrations | `./scripts/dev-up.sh` or `npm run stack:up` |
+| Start full dev session (DB + frontend, one command) | `./scripts/dev.sh` |
+| First-time local DB + migrations only | `./scripts/dev-up.sh` or `npm run stack:up` |
 | Stop local Compose Postgres | `./scripts/dev-down.sh` or `npm run stack:down` |
 | Apply migrations only | `npm run db:migrate` (with `DATABASE_URL` set) |
 | Create the configured database if missing | `npm run db:ensure` (with `DATABASE_URL` set) |

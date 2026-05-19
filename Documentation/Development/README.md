@@ -28,10 +28,10 @@ Application source lives under **`src/`** (routes, router, generated `routeTree.
 ```bash
 git clone <repository-url>
 cd dddd
-npm install
+./scripts/dev.sh   # starts Postgres + Vite dev server; Ctrl+C stops both
 ```
 
-For a local database with **Docker**: `./scripts/dev-up.sh` (same as `npm run stack:up`), then `npm run dev`. For Homebrew or other Postgres setups, see [Local onboarding](../Setup/local-onboarding.md).
+`dev.sh` runs `npm install`, creates `.env` from `.env.example` if missing, starts Postgres via Docker Compose, applies migrations, then launches the Vite dev server. For Homebrew or other Postgres setups, see [Local onboarding](../Setup/local-onboarding.md).
 
 Copy `config/team-mapping.example.json` → `config/team-mapping.json` when you work on discovery or sync features that need team mapping.
 

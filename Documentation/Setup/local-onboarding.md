@@ -24,12 +24,11 @@ Phase 01 stores dashboard and sync data in **PostgreSQL** on your machine (or in
 ### Quick path: Docker Compose (recommended)
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or another engine with Compose v2).
-2. From the repository root: **`./scripts/dev-up.sh`** (runs `npm install`, creates `.env` from `.env.example` if missing, starts Postgres, runs migrations) — or manually: `npm run db:up`, copy `.env.example` → `.env`, then `npm run db:migrate`.
-3. Start the app: `npm run dev`.
+2. From the repository root: **`./scripts/dev.sh`** — starts Postgres (via `dev-up.sh`: `npm install`, creates `.env` from `.env.example` if missing, migrations) then launches the Vite dev server. **Ctrl+C** stops the frontend and tears down Postgres automatically.
 
 The default `DATABASE_URL` in `.env.example` matches Compose (`postgresql://dddd:dddd_local_dev@127.0.0.1:54332/dddd_dev`). **Change the Compose password** in `docker-compose.yml` and `.env` if anything beyond localhost can reach host port **54332**.
 
-4. Stop Postgres when finished: **`./scripts/dev-down.sh`** (or `npm run stack:down`). The container stops; data stays in the Docker volume until you remove it (see script output for the volume name).
+If you prefer to manage the dev server separately: run `./scripts/dev-up.sh` (or `npm run stack:up`) to bring up the stack, then `npm run dev` in a second terminal. Stop Postgres with `./scripts/dev-down.sh` (or `npm run stack:down`) when done.
 
 ### Manual install (Homebrew, Postgres.app, or your own server)
 
@@ -61,7 +60,8 @@ For the no-mock live guards, run **`npm run test:e2e:live`** or **`npm run test:
 - `.env.example` is the tracked template with default values.
 - `.env` is the local editable file and is gitignored.
 - `docker-compose.yml` defines the optional local Postgres service used by `npm run db:up` and **`./scripts/dev-up.sh`**.
-- **`scripts/dev-up.sh`** / **`scripts/dev-down.sh`** — bring the local DB stack up or down (see [PostgreSQL](#postgresql-required)).
+- **`scripts/dev.sh`** — one-command dev session: starts DB stack then frontend; Ctrl+C stops both.
+- **`scripts/dev-up.sh`** / **`scripts/dev-down.sh`** — bring the local DB stack up or down independently (see [PostgreSQL](#postgresql-required)).
 - **[Scripts and CLI commands](scripts.md)** — `npm run` wrappers, `collector:refresh`, and `db:import-github`.
 - `config/team-mapping.example.json` is the tracked repository/team selection template.
 - `config/team-mapping.json` is the local editable config and is gitignored.
