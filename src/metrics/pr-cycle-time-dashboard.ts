@@ -47,6 +47,9 @@ export type PrCycleTimeException = {
   team: string
   message: string
   count?: number
+  teamMedianHours?: number
+  averageOpenPrAgeHours?: number
+  percentOverTeamMedian?: number
 }
 
 export type FirstReviewMetric = {
@@ -406,12 +409,18 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
       })
       const tooOldCount = tooOldPrs.length
       if (tooOldCount > 0) {
+        const tooOldAges = tooOldPrs.map((p) => (now.getTime() - p.openedAt.getTime()) / MS_PER_HOUR)
+        const averageOpenPrAgeHours = tooOldAges.reduce((sum, age) => sum + age, 0) / tooOldAges.length
         exceptions.push({
           type: 'long_open_prs',
           severity: 'warning',
           team: row.team,
           message: `${row.team} has open pull requests older than the team's current median cycle time.`,
           count: tooOldCount,
+          teamMedianHours: teamMedian,
+          averageOpenPrAgeHours,
+          percentOverTeamMedian:
+            teamMedian > 0 ? ((averageOpenPrAgeHours - teamMedian) / teamMedian) * 100 : undefined,
         })
       }
     }

@@ -31,6 +31,16 @@ function formatTrendPercent(value: number | null): string {
   return `${sign}${value.toFixed(0)}%`
 }
 
+function formatExceptionHours(hours: number | null | undefined): string {
+  if (hours == null || Number.isNaN(hours)) {
+    return '—'
+  }
+  if (hours < 1) {
+    return `${(Math.round(hours * 1000) / 1000).toString()}h`
+  }
+  return `${(Math.round(hours * 10) / 10).toString()}h`
+}
+
 function formatSyncedAgo(iso: string | null, nowMs: number): string {
   if (!iso) return 'never'
   const t = new Date(iso).getTime()
@@ -113,11 +123,14 @@ function exceptionMetric(e: PrCycleTimeException, teams: TeamRow[]): string {
     case 'team_worsened': {
       const r = teams.find((x) => x.team === e.team)
       if (r?.medianHours == null) return '—'
-      return `${(r.medianHours / 24).toFixed(1)}d median`
+      return `${formatExceptionHours(r.medianHours)} median`
     }
     case 'long_open_prs':
       if (e.count == null) return 'PRs older than team median'
-      return `${e.count} ${e.count === 1 ? 'PR' : 'PRs'} older than team median`
+      if (e.teamMedianHours == null) {
+        return `${e.count} ${e.count === 1 ? 'PR' : 'PRs'} older than team median`
+      }
+      return `${e.count} ${e.count === 1 ? 'PR' : 'PRs'} older than ${formatExceptionHours(e.teamMedianHours)} team median`
     case 'baseline_pending':
       return 'Not enough prior-period data'
     default:
@@ -128,8 +141,11 @@ function exceptionMetric(e: PrCycleTimeException, teams: TeamRow[]): string {
 function exceptionRecommendation(e: PrCycleTimeException): string {
   switch (e.type) {
     case 'team_worsened':
-      return 'Review long-running PRs before planning next sprint'
+      return 'Compare against previous-period cycle time'
     case 'long_open_prs':
+      if (e.averageOpenPrAgeHours != null && e.percentOverTeamMedian != null) {
+        return `Average open age ${formatExceptionHours(e.averageOpenPrAgeHours)} (${formatTrendPercent(e.percentOverTeamMedian)} over median)`
+      }
       return 'Split or unblock stale reviews'
     case 'baseline_pending':
       return 'Collect one more weekly refresh'

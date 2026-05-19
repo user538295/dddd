@@ -402,10 +402,19 @@ describe('pr-cycle-time-dashboard', () => {
       openedAt: new Date(now.getTime() - 200 * 3600000),
       mergedAt: null,
     })
+    await insertPr(rid, {
+      number: 3,
+      state: 'open',
+      openedAt: new Date(now.getTime() - 100 * 3600000),
+      mergedAt: null,
+    })
     const d = await getPrCycleTimeDashboard({ db, now, weeks: 8 })
     const ex = d.exceptions.find((e) => e.type === 'long_open_prs' && e.team === 'Alpha')
     expect(ex).toBeTruthy()
-    expect(ex?.count).toBe(1)
+    expect(ex?.count).toBe(2)
+    expect(ex?.teamMedianHours).toBe(5)
+    expect(ex?.averageOpenPrAgeHours).toBe(150)
+    expect(ex?.percentOverTeamMedian).toBe(2900)
   })
 
   it('exceptions_suppress_long_open_prs_without_team_median', async () => {

@@ -320,13 +320,47 @@ describe.sequential('PrCycleTimeDashboard', () => {
               team: 'Alpha',
               message: 'Alpha has open pull requests older than the team median cycle time.',
               count: 6,
+              teamMedianHours: 36,
+              averageOpenPrAgeHours: 54,
+              percentOverTeamMedian: 50,
             },
           ],
         })}
       />,
     )
 
-    expect(screen.getByText('6 PRs older than team median')).toBeInTheDocument()
+    expect(screen.getByText('6 PRs older than 36h team median')).toBeInTheDocument()
+    expect(screen.getByText('Average open age 54h (+50% over median)')).toBeInTheDocument()
+  })
+
+  it('dashboard_renders_worsened_exception_median_in_hours', () => {
+    render(
+      <PrCycleTimeDashboard
+        data={baseDashboard({
+          exceptions: [
+            {
+              type: 'team_worsened',
+              severity: 'warning',
+              team: 'Alpha',
+              message: 'Alpha median PR cycle time worsened by at least 25% versus the previous period.',
+            },
+          ],
+          teamBreakdown: [
+            {
+              team: 'Alpha',
+              mergedPrs: 4,
+              medianHours: 0.077,
+              previousMedianHours: 0.036,
+              trendPercent: 114,
+              longestOpenPrHours: null,
+            },
+          ],
+        })}
+      />,
+    )
+
+    expect(screen.getByText('0.077h median')).toBeInTheDocument()
+    expect(screen.getByText('Compare against previous-period cycle time')).toBeInTheDocument()
   })
 
   it('dashboard_does_not_show_future_metrics', () => {
