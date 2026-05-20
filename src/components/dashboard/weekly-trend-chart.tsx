@@ -1,4 +1,10 @@
 import type { PrCycleTimeDashboard } from '~/metrics/pr-cycle-time-dashboard'
+import {
+  durationScaleFor,
+  formatScaledDurationChartValue,
+  selectDurationUnit,
+} from '~/components/dashboard/duration-trend-scale'
+import type { DurationScale } from '~/components/dashboard/duration-trend-scale'
 
 export type WeeklyTrendHoursPoint = { weekStart: string; medianHours: number | null }
 export type WeeklyTrendLinesPoint = { weekStart: string; medianLines: number | null }
@@ -52,9 +58,9 @@ function isLinesPoint(point: WeeklyTrendPoint): point is WeeklyTrendLinesPoint {
   return 'medianLines' in point
 }
 
-function chartValue(point: WeeklyTrendPoint): number | null {
+function chartValue(point: WeeklyTrendPoint, durationScale: DurationScale): number | null {
   if (isLinesPoint(point)) return point.medianLines
-  return point.medianHours == null ? null : point.medianHours / 24
+  return point.medianHours == null ? null : durationScale.valueFromHours(point.medianHours)
 }
 
 function joinPath(points: Pt[], fromIdx: number, toIdx: number): string {
@@ -70,17 +76,25 @@ export function WeeklyTrendChart({
   weeklyTrend,
   ariaLabel = '8-week PR cycle time trend',
   yAxisLabel = 'Days',
+  valueMode = 'duration',
 }: {
   weeklyTrend: PrCycleTimeDashboard['weeklyTrend'] | WeeklyTrendLinesPoint[]
   ariaLabel?: string
   yAxisLabel?: string
+  valueMode?: 'duration' | 'lines'
 }) {
-  const linesMode = weeklyTrend.length > 0 && isLinesPoint(weeklyTrend[0]!)
+  const linesMode = valueMode === 'lines'
   const n = weeklyTrend.length
   const innerW = VB_W - PAD_L - PAD_R
   const innerH = VB_H - PAD_T - PAD_B
 
-  const chartValues = weeklyTrend.map((p) => chartValue(p))
+  const durationHours = linesMode
+    ? []
+    : weeklyTrend
+        .map((p) => (isLinesPoint(p) ? null : p.medianHours))
+        .filter((v): v is number => v != null && Number.isFinite(v))
+  const durationScale = durationScaleFor(selectDurationUnit(durationHours.length > 0 ? Math.max(...durationHours) : null))
+  const chartValues = weeklyTrend.map((p) => chartValue(p, durationScale))
   const numeric = chartValues.filter((v): v is number => v != null && Number.isFinite(v))
   const { maxValue, ticks: yTicks } = buildAxis(Math.max(...numeric, 0.1), linesMode)
 
@@ -109,8 +123,10 @@ export function WeeklyTrendChart({
     pathOrange = ''
   }
 
-  const formatPointLabel = (value: number) => (linesMode ? String(Math.round(value)) : value.toFixed(1))
+  const formatPointLabel = (value: number) =>
+    linesMode ? String(Math.round(value)) : formatScaledDurationChartValue(value, durationScale.unit)
   const formatTickLabel = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1))
+  const resolvedYAxisLabel = linesMode ? yAxisLabel : durationScale.axisLabel
 
   return (
     <div className="pr-dashboard__chart-wrap">
@@ -122,7 +138,7 @@ export function WeeklyTrendChart({
         aria-label={ariaLabel}
       >
         <text x={PAD_L} y={18} fill="#6b7280" fontSize="11" fontWeight="500">
-          {yAxisLabel}
+          {resolvedYAxisLabel}
         </text>
 
         {yTicks.map((t) => {

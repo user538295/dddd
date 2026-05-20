@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -28,8 +29,9 @@ describe('getGitOriginUrl', () => {
   })
 
   it('returns_null_when_not_a_git_repo', async () => {
-    await mkdir(join(process.cwd(), '.tmp'), { recursive: true })
-    const dir = await mkdtemp(join(process.cwd(), '.tmp', 'not-git-'))
+    const baseDir = join(tmpdir(), 'dddd-git-origin-test')
+    await mkdir(baseDir, { recursive: true })
+    const dir = await mkdtemp(join(baseDir, 'not-git-'))
     try {
       await mkdir(join(dir, 'empty'), { recursive: true })
       expect(await getGitOriginUrl(join(dir, 'empty'))).toBeNull()

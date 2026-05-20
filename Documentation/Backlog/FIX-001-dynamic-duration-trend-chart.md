@@ -106,7 +106,7 @@ When this fix is complete, PR Cycle Time and First Review trend charts automatic
 > **Releasable**: after Task 1.3, both duration charts render readable units and PR Size behavior is regression-covered.
 
 #### Task 1.1 — Duration scale selection and label formatting
-- [ ] **File**: `src/components/dashboard/duration-trend-scale.ts`, `src/components/dashboard/weekly-trend-chart.tsx`
+- [x] **File**: `src/components/dashboard/duration-trend-scale.ts`, `src/components/dashboard/weekly-trend-chart.tsx`
 - **Depends on**: nothing
 - **Description**:
   - Add `type DurationUnit = 'minutes' | 'hours' | 'days'`.
