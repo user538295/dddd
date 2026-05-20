@@ -226,4 +226,4 @@ When this fix is complete, PR Cycle Time and First Review trend charts automatic
 - `Documentation/README.md`, `Documentation/Roadmap/trackable-roadmap.md`, `Documentation/Backlog/dynamic-duration-trend-chart-brief.md`, and `Documentation/Backlog/phase-04-jira-flow-metrics.md` were reviewed during final verification.
 - No roadmap phase movement is needed; this fix refines existing PR Cycle Time and First Review trend charts and keeps Phase 04 as the next roadmap step.
 - Final focused verification passed with `npm run lint`, `npm run typecheck`, and the component test checkpoint.
-- Full `npm run test -- --coverage` remains environment-blocked unless local Docker/Postgres is running; `npm run db:up` failed because the Docker daemon socket was unavailable.
+- Full `npm run test -- --coverage` passed after starting Docker Desktop and bringing the local Postgres container up with `npm run db:up`.
