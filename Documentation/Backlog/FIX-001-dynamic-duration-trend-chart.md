@@ -170,7 +170,7 @@ When this fix is complete, PR Cycle Time and First Review trend charts automatic
   - Checkpoint: `npm run test -- tests/components/weekly-trend-chart.test.tsx && npm run lint && npm run typecheck && npm run test -- --coverage`
 
 #### Task 1.3 — Wrapper and accessible text integration
-- [ ] **File**: `src/components/dashboard/PrCycleTimeDashboard.tsx`, `src/components/dashboard/FirstReviewTrendChart.tsx`
+- [x] **File**: `src/components/dashboard/PrCycleTimeDashboard.tsx`, `src/components/dashboard/FirstReviewTrendChart.tsx`
 - **Depends on**: Task 1.2
 - **Description**:
   - Update the PR Cycle Time trend chart call so it relies on the selected duration axis label instead of the hard-coded default `Days`.

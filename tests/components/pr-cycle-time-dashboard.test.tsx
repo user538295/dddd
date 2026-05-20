@@ -233,6 +233,69 @@ describe.sequential('PrCycleTimeDashboard', () => {
     expect(within(trendList).getAllByText('empty')).toHaveLength(4)
   })
 
+  it('dashboard_cycle_time_trend_uses_minutes_for_sub_hour_values', () => {
+    render(
+      <PrCycleTimeDashboard
+        data={baseDashboard({
+          weeklyTrend: [
+            { weekStart: '2026-04-06', medianHours: 0.25 },
+            { weekStart: '2026-04-13', medianHours: 0.5 },
+          ],
+        })}
+      />,
+    )
+
+    expect(screen.getByText('Minutes')).toBeInTheDocument()
+    expect(screen.getAllByText('30m')).toHaveLength(2)
+  })
+
+  it('dashboard_cycle_time_sr_trend_does_not_collapse_non_zero_duration_to_zero', () => {
+    render(
+      <PrCycleTimeDashboard
+        data={baseDashboard({
+          weeklyTrend: [{ weekStart: '2026-04-06', medianHours: 0.004 }],
+        })}
+      />,
+    )
+
+    expect(screen.getByTestId('weekly-trend-list')).toHaveTextContent('0.2m')
+    expect(screen.getByTestId('weekly-trend-list')).not.toHaveTextContent('0.0')
+  })
+
+  it('dashboard_cycle_time_sr_trend_preserves_null_vs_zero_duration', () => {
+    render(
+      <PrCycleTimeDashboard
+        data={baseDashboard({
+          weeklyTrend: [
+            { weekStart: '2026-04-06', medianHours: null },
+            { weekStart: '2026-04-13', medianHours: 0 },
+          ],
+        })}
+      />,
+    )
+
+    const trendList = screen.getByTestId('weekly-trend-list')
+    expect(trendList).toHaveTextContent('empty')
+    expect(trendList).toHaveTextContent('0m')
+  })
+
+  it('dashboard_cycle_time_sr_uses_one_day_unit_for_mixed_values', () => {
+    render(
+      <PrCycleTimeDashboard
+        data={baseDashboard({
+          weeklyTrend: [
+            { weekStart: '2026-04-06', medianHours: 0.5 },
+            { weekStart: '2026-04-13', medianHours: 48 },
+          ],
+        })}
+      />,
+    )
+
+    expect(screen.getByText('Days')).toBeInTheDocument()
+    expect(screen.getAllByText('0.02d')).toHaveLength(2)
+    expect(screen.getAllByText('2d')).toHaveLength(2)
+  })
+
   it('dashboard_renders_team_breakdown', () => {
     render(<PrCycleTimeDashboard data={baseDashboard()} />)
     const table = screen.getByRole('table', { name: 'Team breakdown' })

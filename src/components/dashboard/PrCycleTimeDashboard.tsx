@@ -7,6 +7,10 @@ import type {
 
 import { CardHowToRead } from '~/components/dashboard/card-how-to-read'
 import { DashboardSourceLink } from '~/components/dashboard/dashboard-source-link'
+import {
+  formatDurationHoursForChart,
+  selectDurationUnit,
+} from '~/components/dashboard/duration-trend-scale'
 import { formatCycleDuration, formatDurationHumanDays } from '~/components/dashboard/format-cycle-duration'
 import { TrendComparison } from '~/components/dashboard/trend-comparison'
 import { DASHBOARD_SOURCE_PATHS } from '~/metrics/dashboard-source-paths'
@@ -29,6 +33,13 @@ function formatTrendPercent(value: number | null): string {
   }
   const sign = value > 0 ? '+' : ''
   return `${sign}${value.toFixed(0)}%`
+}
+
+function selectedDurationUnitForTrend(weeklyTrend: Array<{ medianHours: number | null }>) {
+  const values = weeklyTrend
+    .map((p) => p.medianHours)
+    .filter((value): value is number => value != null && Number.isFinite(value))
+  return selectDurationUnit(values.length > 0 ? Math.max(...values) : null)
 }
 
 function formatExceptionHours(hours: number | null | undefined): string {
@@ -180,6 +191,7 @@ export function PrCycleTimeDashboard({
   const baselinePending = data.metric.baselineStatus === 'pending'
   const syncFailed = data.freshness.latestSyncStatus === 'failed'
   const syncPartial = data.freshness.latestSyncStatus === 'partial'
+  const weeklyTrendDurationUnit = selectedDurationUnitForTrend(data.weeklyTrend)
 
   const metricTrendBlock = (() => {
     if (noRepos || noMerged) return null
@@ -334,12 +346,16 @@ export function PrCycleTimeDashboard({
             Weekly median open-to-merge time for PRs merged in each week. Use this to see whether cycle time is
             improving or worsening over the last {data.range.weeks} weeks. Weeks with no merges appear as gaps.
           </CardHowToRead>
-          <WeeklyTrendChart weeklyTrend={data.weeklyTrend} />
+          <WeeklyTrendChart valueMode="duration" weeklyTrend={data.weeklyTrend} />
           <ol data-testid="weekly-trend-list" className="pr-dashboard__sr-only">
             {data.weeklyTrend.map((p) => (
               <li key={p.weekStart}>
                 <span>{p.weekStart}</span>:{' '}
-                {p.medianHours === null ? <span>empty</span> : <span>{formatCycleDuration(p.medianHours)}</span>}
+                {p.medianHours === null ? (
+                  <span>empty</span>
+                ) : (
+                  <span>{formatDurationHoursForChart(p.medianHours, weeklyTrendDurationUnit)}</span>
+                )}
               </li>
             ))}
           </ol>

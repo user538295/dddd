@@ -16,6 +16,7 @@ export function PrSizeTrendChart({ weeklyTrend }: Props) {
         qualifying PRs appear as gaps.
       </CardHowToRead>
       <WeeklyTrendChart
+        valueMode="lines"
         weeklyTrend={weeklyTrend}
         ariaLabel="8-week PR size trend"
         yAxisLabel="Lines"

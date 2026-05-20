@@ -40,4 +40,21 @@ describe('PrSizeTrendChart', () => {
     expect(passedTrend).toEqual(data)
     expect(passedTrend?.[1]).toEqual({ weekStart: '2026-01-13', medianLines: null })
   })
+
+  it('pr_size_trend_still_passes_lines_axis_label', () => {
+    const data = [
+      { weekStart: '2026-01-06', medianLines: 100 },
+      { weekStart: '2026-01-13', medianLines: 200 },
+    ]
+    render(<PrSizeTrendChart weeklyTrend={data} />)
+
+    expect(MockedWeeklyTrendChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        weeklyTrend: data,
+        valueMode: 'lines',
+        yAxisLabel: 'Lines',
+      }),
+      undefined,
+    )
+  })
 })
