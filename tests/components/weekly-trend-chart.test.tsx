@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 
 import {
+  buildDurationAxis,
   formatDurationHoursForChart,
 } from '~/components/dashboard/duration-trend-scale'
 import { WeeklyTrendChart } from '~/components/dashboard/weekly-trend-chart'
@@ -111,7 +112,62 @@ describe('WeeklyTrendChart', () => {
     }
   })
 
-  it('uses_sparse_line_ticks_for_pr_size_values_above_99', () => {
+  it('duration_axis_adds_readable_headroom_above_maximum_point', () => {
+    const axis = buildDurationAxis(45)
+    expect(axis.paddedMax).toBeGreaterThanOrEqual(45 * 1.1)
+    expect(axis.paddedMax).toBeLessThanOrEqual(45 * 1.2)
+    expect(axis.maxValue).toBeGreaterThanOrEqual(axis.paddedMax)
+
+    render(
+      <WeeklyTrendChart
+        valueMode="duration"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianHours: 24 },
+          { weekStart: '2026-04-13', medianHours: 45 },
+        ]}
+      />,
+    )
+
+    const pointYValues = Array.from(document.querySelectorAll('circle')).map((node) => Number(node.getAttribute('cy')))
+    expect(pointYValues.every((y) => y > 32)).toBe(true)
+  })
+
+  it('duration_axis_handles_zero_only_values_without_divide_by_zero', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="duration"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianHours: 0 },
+          { weekStart: '2026-04-13', medianHours: 0 },
+          { weekStart: '2026-04-20', medianHours: null },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText('Minutes')).toBeTruthy()
+    expect(screen.getAllByText('0m')).toHaveLength(2)
+    expect(screen.getByText('1')).toBeTruthy()
+    const pointYValues = Array.from(document.querySelectorAll('circle')).map((node) => Number(node.getAttribute('cy')))
+    expect(pointYValues).toEqual([172, 172])
+  })
+
+  it('duration_chart_preserves_null_weeks_as_gaps', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="duration"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianHours: 1 },
+          { weekStart: '2026-04-13', medianHours: null },
+          { weekStart: '2026-04-20', medianHours: 2 },
+        ]}
+      />,
+    )
+
+    const pathData = Array.from(document.querySelectorAll('path')).map((node) => node.getAttribute('d') ?? '')
+    expect(pathData.some((d) => d.startsWith('M 48 ') && d.includes(' L 540 '))).toBe(false)
+  })
+
+  it('pr_size_sparse_line_ticks_remain_unchanged', () => {
     const weeklyTrend = [
       { weekStart: '2026-03-30', medianLines: null },
       { weekStart: '2026-04-06', medianLines: 108 },
@@ -134,5 +190,42 @@ describe('WeeklyTrendChart', () => {
     expect(yTickLabels).toEqual(['0', '30', '60', '90', '120'])
     expect(pointYValues.every((y) => y >= 32)).toBe(true)
     expect(screen.getByText('108')).toBeTruthy()
+  })
+
+  it('pr_size_chart_preserves_null_weeks_as_gaps', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="lines"
+        yAxisLabel="Lines"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianLines: 20 },
+          { weekStart: '2026-04-13', medianLines: null },
+          { weekStart: '2026-04-20', medianLines: 40 },
+        ]}
+      />,
+    )
+
+    const pathData = Array.from(document.querySelectorAll('path')).map((node) => node.getAttribute('d') ?? '')
+    expect(pathData.some((d) => d.startsWith('M 48 ') && d.includes(' L 540 '))).toBe(false)
+  })
+
+  it('pr_size_line_mode_handles_all_null_or_empty_line_trend', () => {
+    const { rerender } = render(
+      <WeeklyTrendChart
+        valueMode="lines"
+        yAxisLabel="Lines"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianLines: null },
+          { weekStart: '2026-04-13', medianLines: null },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText('Lines')).toBeTruthy()
+    expect(document.querySelectorAll('circle')).toHaveLength(0)
+
+    rerender(<WeeklyTrendChart valueMode="lines" yAxisLabel="Lines" weeklyTrend={[]} />)
+    expect(screen.getByText('Lines')).toBeTruthy()
+    expect(document.querySelectorAll('circle')).toHaveLength(0)
   })
 })

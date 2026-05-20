@@ -7,6 +7,16 @@ export type DurationScale = {
   valueFromHours: (hours: number) => number
 }
 
+function niceStep(rawStep: number): number {
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep))
+  const normalized = rawStep / magnitude
+  if (normalized <= 1) return magnitude
+  if (normalized <= 2) return 2 * magnitude
+  if (normalized <= 3) return 3 * magnitude
+  if (normalized <= 5) return 5 * magnitude
+  return 10 * magnitude
+}
+
 export function selectDurationUnit(maxHours: number | null): DurationUnit {
   if (maxHours === null) return 'hours'
   if (maxHours < 1) return 'minutes'
@@ -68,4 +78,16 @@ export function formatScaledDurationChartValue(displayValue: number, unit: Durat
 export function formatDurationHoursForChart(hours: number, unit: DurationUnit): string {
   const scale = durationScaleFor(unit)
   return formatScaledDurationChartValue(scale.valueFromHours(hours), unit)
+}
+
+export function buildDurationAxis(maxNumeric: number): { maxValue: number; ticks: number[]; paddedMax: number } {
+  if (maxNumeric <= 0) {
+    return { maxValue: 1, ticks: [0, 1], paddedMax: 0 }
+  }
+
+  const paddedMax = maxNumeric * 1.15
+  const step = niceStep(paddedMax / 4)
+  const maxValue = Math.ceil(paddedMax / step) * step
+  const tickCount = Math.round(maxValue / step) + 1
+  return { maxValue, ticks: Array.from({ length: tickCount }, (_, i) => i * step), paddedMax }
 }

@@ -145,7 +145,7 @@ When this fix is complete, PR Cycle Time and First Review trend charts automatic
   - Checkpoint: `npm run test -- tests/components/weekly-trend-chart.test.tsx && npm run lint && npm run typecheck && npm run test -- --coverage`
 
 #### Task 1.2 — Duration y-axis headroom and null-gap preservation
-- [ ] **File**: `src/components/dashboard/weekly-trend-chart.tsx`
+- [x] **File**: `src/components/dashboard/weekly-trend-chart.tsx`
 - **Depends on**: Task 1.1
 - **Description**:
   - Update `chartValue(point: WeeklyTrendPoint)` or replace it with a duration-aware equivalent:

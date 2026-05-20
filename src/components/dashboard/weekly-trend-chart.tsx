@@ -1,5 +1,6 @@
 import type { PrCycleTimeDashboard } from '~/metrics/pr-cycle-time-dashboard'
 import {
+  buildDurationAxis,
   durationScaleFor,
   formatScaledDurationChartValue,
   selectDurationUnit,
@@ -23,10 +24,6 @@ function shortWeekLabel(weekStart: string): string {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(d)
 }
 
-function clamp(n: number, lo: number, hi: number): number {
-  return Math.min(hi, Math.max(lo, n))
-}
-
 function niceStep(rawStep: number): number {
   const magnitude = 10 ** Math.floor(Math.log10(rawStep))
   const normalized = rawStep / magnitude
@@ -37,14 +34,8 @@ function niceStep(rawStep: number): number {
   return 10 * magnitude
 }
 
-function buildAxis(maxNumeric: number, linesMode: boolean): { maxValue: number; ticks: number[] } {
-  if (!linesMode && maxNumeric <= 8) {
-    const maxValue = clamp(Math.ceil(Math.max(5, maxNumeric) * 10) / 10, 1, 99)
-    const topTick = Math.max(5, Math.ceil(maxValue))
-    return { maxValue, ticks: Array.from({ length: topTick + 1 }, (_, i) => i) }
-  }
-
-  const minTop = linesMode ? 10 : 5
+function buildLineAxis(maxNumeric: number): { maxValue: number; ticks: number[] } {
+  const minTop = 10
   const paddedMax = Math.max(minTop, maxNumeric)
   const step = niceStep(paddedMax / 4)
   const maxValue = Math.ceil(paddedMax / step) * step
@@ -72,6 +63,19 @@ function joinPath(points: Pt[], fromIdx: number, toIdx: number): string {
   return d
 }
 
+function contiguousRuns(points: Pt[]): Pt[][] {
+  const runs: Pt[][] = []
+  for (const point of points) {
+    const current = runs.at(-1)
+    if (!current || current.at(-1)!.i + 1 !== point.i) {
+      runs.push([point])
+    } else {
+      current.push(point)
+    }
+  }
+  return runs
+}
+
 export function WeeklyTrendChart({
   weeklyTrend,
   ariaLabel = '8-week PR cycle time trend',
@@ -96,7 +100,9 @@ export function WeeklyTrendChart({
   const durationScale = durationScaleFor(selectDurationUnit(durationHours.length > 0 ? Math.max(...durationHours) : null))
   const chartValues = weeklyTrend.map((p) => chartValue(p, durationScale))
   const numeric = chartValues.filter((v): v is number => v != null && Number.isFinite(v))
-  const { maxValue, ticks: yTicks } = buildAxis(Math.max(...numeric, 0.1), linesMode)
+  const { maxValue, ticks: yTicks } = linesMode
+    ? buildLineAxis(Math.max(...numeric, 0))
+    : buildDurationAxis(Math.max(...numeric, 0))
 
   const xAt = (i: number) => PAD_L + (n <= 1 ? innerW / 2 : (i / Math.max(1, n - 1)) * innerW)
   const yAt = (value: number) => PAD_T + (1 - value / maxValue) * innerH
@@ -109,18 +115,15 @@ export function WeeklyTrendChart({
     }
   }
 
-  let pathBlack = ''
-  let pathOrange = ''
-  if (pts.length >= 2) {
-    if (pts.length === 2) {
-      pathOrange = joinPath(pts, 0, 1)
-    } else {
-      pathBlack = joinPath(pts, 0, pts.length - 2)
-      pathOrange = joinPath(pts, pts.length - 2, pts.length - 1)
+  const pathSegments: Array<{ d: string; stroke: string }> = []
+  for (const run of contiguousRuns(pts)) {
+    if (run.length < 2) continue
+    for (let i = 0; i < run.length - 1; i++) {
+      pathSegments.push({
+        d: joinPath(run, i, i + 1),
+        stroke: run[i + 1] === pts.at(-1) ? '#d97706' : '#111827',
+      })
     }
-  } else if (pts.length === 1) {
-    pathBlack = ''
-    pathOrange = ''
   }
 
   const formatPointLabel = (value: number) =>
@@ -153,26 +156,17 @@ export function WeeklyTrendChart({
           )
         })}
 
-        {pathBlack ? (
+        {pathSegments.map((segment) => (
           <path
-            d={pathBlack}
+            key={segment.d}
+            d={segment.d}
             fill="none"
-            stroke="#111827"
+            stroke={segment.stroke}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-        ) : null}
-        {pathOrange ? (
-          <path
-            d={pathOrange}
-            fill="none"
-            stroke="#d97706"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        ) : null}
+        ))}
 
         {pts.map((p, idx) => {
           const isLast = idx === pts.length - 1
