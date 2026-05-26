@@ -30,6 +30,66 @@ The default `DATABASE_URL` in `.env.example` matches Compose (`postgresql://dddd
 
 If you prefer to manage the dev server separately: run `./scripts/dev-up.sh` (or `npm run stack:up`) to bring up the stack, then `npm run dev` in a second terminal. Stop Postgres with `./scripts/dev-down.sh` (or `npm run stack:down`) when done.
 
+### Optional: full Docker (app + Postgres in containers)
+
+If you'd rather run the **Vite dev server in a container** too (single
+`docker compose up`, nothing on the host Node toolchain), the repo ships
+`Dockerfile`, `.dockerignore`, and `docker-compose.override.yml.example`
+for that workflow:
+
+1. `cp docker-compose.override.yml.example docker-compose.override.yml`
+   (if your local copy is older than the example, diff them first —
+   recent updates may have added settings like `init: true` that you'd
+   want carried over).
+2. Edit `docker-compose.override.yml`: replace the placeholder bind-mount
+   path under `app.volumes` with the absolute path on your host where you
+   keep local clones (mapped to `/repos` inside the container).
+3. Edit `.env`: `scripts/local-env.ts` detects `/.dockerenv` (and
+   `/run/.containerenv` for Podman) and lets the compose env block win
+   over `.env` for `DASHBOARD_REPO_ROOT`, `DATABASE_URL`, and
+   `TEST_DATABASE_URL`, so the container works regardless of whether
+   those keys are set in `.env`. Removing/commenting them is cosmetic —
+   recommended to avoid the file looking misleading, not required.
+4. `docker compose up --build` — starts Postgres, runs migrations,
+   launches Vite on `http://localhost:3000`.
+5. Clone the configured org's repos into the bind-mounted directory:
+   `docker compose exec app bash scripts/docker/clone-github-org-repos.sh`
+6. Trigger the first sync via the **Refresh** button in the UI or
+   `docker compose exec app npm run collector:refresh`.
+
+The Dockerfile installs `git`, `curl`, and a credential helper scoped to
+`github.com` that reads `$GITHUB_TOKEN` at fetch time, so the PR-size
+step of refresh (`git fetch` inside private clones) authenticates without
+the token landing on disk.
+
+#### Scheduled jobs (cron inside the `app` container)
+
+The full-Docker image runs a cron daemon that re-runs the org clone
+nightly at **00:00** local TZ (catches newly-added org repos) and the
+dashboard refresh at **01:00** (PR metadata + reviews + PR sizes). The
+initial clone fires once at container startup from
+`scripts/docker/container-entrypoint.sh`, not from cron — so it works even on
+container recreate.
+
+Troubleshooting:
+
+- Cron daemon alive: `docker compose exec app pgrep -a cron`
+- View schedules: `docker compose exec app cat /etc/cron.d/clone-org-repos /etc/cron.d/refresh-org-repos`
+- Force a clone now: `docker compose exec app bash scripts/docker/clone-github-org-repos.sh`
+- Force a refresh now: `docker compose exec app npm run collector:refresh`
+- See job output (includes cron daemon's own messages): `docker compose logs app | grep -E '\[(crond|clone-cron|refresh-cron)\]'`
+
+If your host is asleep at 00:00 or 01:00 the missed run does not
+backfill. The next container start re-runs the initial clone, and the
+following midnight resumes the schedule.
+
+If you start the container **after** 01:00 (e.g. `docker compose up` at
+09:00), the daily refresh will not run until tomorrow 01:00 — the
+container only catches the next scheduled tick, not the missed one. The
+initial clone always runs at startup, but the dashboard data stays
+stale until you either click **Refresh** in the UI or run
+`docker compose exec app npm run collector:refresh`.
+
 ### Manual install (Homebrew, Postgres.app, or your own server)
 
 1. Install PostgreSQL (e.g. [Homebrew](https://formulae.brew.sh/formula/postgresql@16), [Postgres.app](https://postgresapp.com/), or official [Docker image](https://hub.docker.com/_/postgres)).
@@ -60,6 +120,8 @@ For the no-mock live guards, run **`npm run test:e2e:live`** or **`npm run test:
 - `.env.example` is the tracked template with default values.
 - `.env` is the local editable file and is gitignored.
 - `docker-compose.yml` defines the optional local Postgres service used by `npm run db:up` and **`./scripts/dev-up.sh`**.
+- `Dockerfile` + `.dockerignore` define the optional dev image for the **full-Docker workflow** (Vite + Postgres in containers).
+- `docker-compose.override.yml.example` is the tracked template for the full-Docker workflow; copy it to `docker-compose.override.yml` (gitignored) and edit the bind-mount path. Compose auto-merges the override on top of the base file.
 - **`scripts/dev.sh`** — one-command dev session: starts DB stack then frontend; Ctrl+C stops both.
 - **`scripts/dev-up.sh`** / **`scripts/dev-down.sh`** — bring the local DB stack up or down independently (see [PostgreSQL](#postgresql-required)).
 - **[Scripts and CLI commands](scripts.md)** — `npm run` wrappers, `collector:refresh`, and `db:import-github`.

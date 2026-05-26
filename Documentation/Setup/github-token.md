@@ -19,7 +19,8 @@ GitHub docs:
 
 ## Minimum Access
 
-For repositories you want to analyze, grant read access for pull request metadata.
+For repositories you want to analyze, grant read access for pull request
+metadata **and** repository contents.
 
 Recommended fine-grained token setup:
 
@@ -28,16 +29,23 @@ Recommended fine-grained token setup:
 - Repository permissions:
   - Pull requests: Read-only
   - Metadata: Read-only
+  - Contents: Read-only
 
 For the local dashboard's default `gde-mit` setup, **Resource owner must be
 `gde-mit`**, and the **Selected repositories** list must include every repository
 matched by `config/team-mapping.json` / `DASHBOARD_REPO_ROOT`. The permission
-names above are sufficient for the app's REST calls:
+names above are sufficient for the app's REST calls and for `git fetch` against
+the local clones (used by PR-size sync):
 
 - `GET /repos/{owner}/{repo}` accepts `metadata=read`.
 - `GET /repos/{owner}/{repo}/pulls` accepts `pull_requests=read`.
 - `GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews` accepts `pull_requests=read`.
 - `GET /repos/{owner}/{repo}/pulls/{pull_number}/comments` accepts `pull_requests=read`.
+- `git clone` / `git fetch` over HTTPS accepts `contents=read`.
+
+If only the API permissions are granted, REST sync will succeed but the
+PR-size step of `collector:refresh` will fail with `403` when it runs
+`git fetch` against private clones.
 
 If GitHub returns `404 Not Found` for private repositories even though the token
 owner is correct, the token is not allowed to see those repositories. Check that:
