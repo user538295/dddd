@@ -20,6 +20,11 @@ export const LOCAL_ENV_KEYS = [
 
 const E2E_REFRESH_STUB_ALLOW_KEY = 'DASHBOARD_ALLOW_E2E_REFRESH_STUB'
 
+export function clearE2eRefreshStubForLocalCommand(env: NodeJS.ProcessEnv = process.env): void {
+  delete env.DASHBOARD_E2E_REFRESH_STUB
+  delete env[E2E_REFRESH_STUB_ALLOW_KEY]
+}
+
 export function clearE2eRefreshStubUnlessAllowed(env: NodeJS.ProcessEnv = process.env): void {
   if (env[E2E_REFRESH_STUB_ALLOW_KEY]?.trim() === '1') {
     return

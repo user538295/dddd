@@ -6,6 +6,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+unset DASHBOARD_E2E_REFRESH_STUB
+unset DASHBOARD_ALLOW_E2E_REFRESH_STUB
+
 cleanup() {
   echo ""
   echo "==> shutting down backend..."
@@ -17,4 +20,6 @@ bash "$ROOT/scripts/dev-up.sh"
 
 echo ""
 echo "==> starting frontend (Ctrl+C to stop everything)"
+unset DASHBOARD_E2E_REFRESH_STUB
+unset DASHBOARD_ALLOW_E2E_REFRESH_STUB
 npm run dev

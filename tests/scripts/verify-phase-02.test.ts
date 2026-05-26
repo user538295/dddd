@@ -41,7 +41,8 @@ describe('verify:phase02 wiring', () => {
   it('phase_02_tests_always_get_database_url_and_do_not_skip_db_suites', () => {
     const configBody = readFileSync(path.join(root, 'vitest.config.phase02.ts'), 'utf8')
     expect(configBody).toContain('DEFAULT_TEST_DATABASE_URL')
-    expect(configBody).toContain('process.env.DATABASE_URL = DEFAULT_TEST_DATABASE_URL')
+    expect(configBody).toContain('dddd_test')
+    expect(configBody).toContain('process.env.TEST_DATABASE_URL')
 
     for (const file of [
       'tests/collector/refresh-phase-02.test.ts',

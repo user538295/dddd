@@ -6,6 +6,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+unset DASHBOARD_E2E_REFRESH_STUB
+unset DASHBOARD_ALLOW_E2E_REFRESH_STUB
+
 if ! command -v docker >/dev/null 2>&1; then
   echo "error: docker not found. Install Docker Desktop and ensure it is running." >&2
   exit 1

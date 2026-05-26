@@ -59,12 +59,12 @@ test.beforeEach(async () => {
     const currentMergedAt = new Date(now - 7 * 24 * 60 * 60 * 1000)
     const previousMergedAt = new Date(now - 70 * 24 * 60 * 60 * 1000)
     const rows = [
-      { number: 1, mergedAt: currentMergedAt, hours: 24 },
-      { number: 2, mergedAt: currentMergedAt, hours: 48 },
-      { number: 3, mergedAt: currentMergedAt, hours: 72 },
-      { number: 11, mergedAt: previousMergedAt, hours: 24 },
-      { number: 12, mergedAt: previousMergedAt, hours: 24 },
-      { number: 13, mergedAt: previousMergedAt, hours: 24 },
+      { number: 1, mergedAt: currentMergedAt, hours: 24, additions: 100, deletions: 20, changedFiles: 4 },
+      { number: 2, mergedAt: currentMergedAt, hours: 48, additions: 180, deletions: 20, changedFiles: 5 },
+      { number: 3, mergedAt: currentMergedAt, hours: 72, additions: 250, deletions: 50, changedFiles: 8 },
+      { number: 11, mergedAt: previousMergedAt, hours: 24, additions: 90, deletions: 10, changedFiles: 3 },
+      { number: 12, mergedAt: previousMergedAt, hours: 24, additions: 110, deletions: 10, changedFiles: 4 },
+      { number: 13, mergedAt: previousMergedAt, hours: 24, additions: 130, deletions: 20, changedFiles: 5 },
     ]
 
     await db.insert(pullRequests).values(
@@ -77,6 +77,9 @@ test.beforeEach(async () => {
         openedAt: new Date(row.mergedAt.getTime() - row.hours * 60 * 60 * 1000),
         githubUpdatedAt: row.mergedAt,
         mergedAt: row.mergedAt,
+        additions: row.additions,
+        deletions: row.deletions,
+        changedFiles: row.changedFiles,
         url: `https://github.com/gde-mit/service-api/pull/${row.number}`,
       })),
     )
@@ -107,6 +110,7 @@ test('dashboard_e2e_local_refresh_flow', async ({ page }) => {
   const footer = page.getByTestId('data-freshness')
   await expect(footer).toContainText('repos scanned')
   await expect(footer).toContainText('GitHub PR metadata synced')
-  await expect(page.getByText(/PR Size/i)).toHaveCount(0)
+  await expect(page.getByTestId('phase03-section')).toBeVisible()
+  await expect(page.getByTestId('median-pr-size')).toContainText('200 lines')
   await expect(page.getByText(/WIP/i)).toHaveCount(0)
 })

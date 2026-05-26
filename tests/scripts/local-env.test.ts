@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { clearE2eRefreshStubUnlessAllowed } from '../../scripts/local-env'
+import { clearE2eRefreshStubForLocalCommand, clearE2eRefreshStubUnlessAllowed } from '../../scripts/local-env'
 
 describe('local env guards', () => {
   afterEach(() => {
@@ -23,5 +23,15 @@ describe('local env guards', () => {
     clearE2eRefreshStubUnlessAllowed()
 
     expect(process.env.DASHBOARD_E2E_REFRESH_STUB).toBe('1')
+  })
+
+  it('local_commands_clear_leaked_e2e_refresh_stub_even_when_allow_flag_leaked', () => {
+    vi.stubEnv('DASHBOARD_E2E_REFRESH_STUB', '1')
+    vi.stubEnv('DASHBOARD_ALLOW_E2E_REFRESH_STUB', '1')
+
+    clearE2eRefreshStubForLocalCommand()
+
+    expect(process.env.DASHBOARD_E2E_REFRESH_STUB).toBeUndefined()
+    expect(process.env.DASHBOARD_ALLOW_E2E_REFRESH_STUB).toBeUndefined()
   })
 })

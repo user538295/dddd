@@ -1,8 +1,8 @@
 import { refreshLocalData } from '../src/collector/refresh'
-import { clearE2eRefreshStubUnlessAllowed, loadLocalEnv, LOCAL_ENV_KEYS } from './local-env'
+import { clearE2eRefreshStubForLocalCommand, loadLocalEnv, LOCAL_ENV_KEYS } from './local-env'
 
 loadLocalEnv({ preferDotenvKeys: LOCAL_ENV_KEYS })
-clearE2eRefreshStubUnlessAllowed()
+clearE2eRefreshStubForLocalCommand()
 
 refreshLocalData()
   .then((summary) => {

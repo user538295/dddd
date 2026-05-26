@@ -9,4 +9,4 @@ export TEAM_MAPPING_PATH="${TEAM_MAPPING_PATH:-${ROOT}/config/team-mapping.examp
 export DATABASE_URL="${DATABASE_URL:-${TEST_DATABASE_URL:-postgresql://dddd:dddd_local_dev@127.0.0.1:54332/dddd_test}}"
 npm run db:ensure
 npm run db:migrate
-exec npm run dev -- --host 127.0.0.1 --port "${DASHBOARD_E2E_PORT:-3000}"
+exec ./node_modules/.bin/vite dev --host 127.0.0.1 --port "${DASHBOARD_E2E_PORT:-3000}"
