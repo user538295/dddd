@@ -1,12 +1,20 @@
 # Dev-mode image: runs `npm run dev` (Vite) inside the container.
 FROM node:20-bookworm-slim
 
-# git is needed at runtime: the collector runs `git fetch` against the local
-# clones bind-mounted at /repos to compute PR sizes (diff --shortstat on merge
-# commits). ca-certificates ensures HTTPS to github.com works.
+# Runtime deps:
+#   git              — collector runs `git fetch` against /repos clones
+#   ca-certificates  — HTTPS to github.com
+#   curl             — used by the org-clone bash script
+#   cron             — schedules the org-clone script daily (see crontab)
+#   tzdata           — required for $TZ below to actually resolve; without
+#                      it glibc falls back to UTC even if TZ is set
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git ca-certificates curl \
+    && apt-get install -y --no-install-recommends git ca-certificates curl cron tzdata \
     && rm -rf /var/lib/apt/lists/*
+
+# Use Budapest local time so cron's `0 0 * * *` fires at local midnight
+# (CET/CEST) and timestamps in [clone-cron] log lines match the dev's wall clock.
+ENV TZ=Europe/Budapest
 
 # Credential helper for HTTPS GitHub fetches. Reads $GITHUB_TOKEN from the
 # environment at credential-request time (not at config time, because the
@@ -34,11 +42,30 @@ RUN npm ci
 # We still copy here so the image is usable standalone.
 COPY . .
 
+# Install the cron schedules into /etc/cron.d/. Files there must be
+# owned by root, mode 0644, with no dots in the filename. Scripts under
+# /app/scripts/ are always invoked as `bash <path>`, so we do not need
+# (and bind-mounting `.:/app` would clobber anyway) executable mode.
+RUN install -m 0644 /app/scripts/docker/clone-org-repos.cron /etc/cron.d/clone-org-repos \
+    && install -m 0644 /app/scripts/docker/refresh-org-repos.cron /etc/cron.d/refresh-org-repos
+
 EXPOSE 3000
 
-# Vite is pinned to 127.0.0.1 in vite.config.ts; override to 0.0.0.0 so the
-# port is reachable from the host. Migrations run before the dev server
-# starts. `exec` replaces the shell with Node so Vite becomes PID 1 and
-# receives SIGTERM directly on `docker compose down` — without it, `sh`
-# absorbs the signal and the dev server only dies via the 10s grace SIGKILL.
-CMD ["sh", "-c", "npm run db:migrate && exec npm run dev -- --host 0.0.0.0"]
+# Entrypoint runs in order:
+#   1. Dump container env to /etc/container.env so cron jobs (which run
+#      with a stripped env) can re-source it.
+#   2. Start cron in the foreground inside a backgrounded subshell so
+#      its own diagnostic messages reach `docker compose logs` (prefixed
+#      [crond]). Crontab has 0 0 (clone) and 0 1 (refresh) only —
+#      @reboot is intentionally absent; the initial clone is launched
+#      directly from the entrypoint instead because @reboot in
+#      /etc/cron.d/ is unreliable across container restart-vs-recreate.
+#   3. Apply DB migrations (synchronously, before forking long work).
+#   4. Background the initial clone (idempotent; runs every container
+#      start to cover newly-added org repos).
+#   5. exec into Vite. Combined with `init: true` on the compose
+#      service, tini stays PID 1 and forwards SIGTERM to npm/Node.
+#
+# Vite is pinned to 127.0.0.1 in vite.config.ts; override with --host
+# 0.0.0.0 so the port is reachable from the host.
+CMD ["bash", "/app/scripts/docker/container-entrypoint.sh"]

@@ -36,6 +36,10 @@ services:
   app:
     build: .
     container_name: dddd-app
+    # tini as PID 1 — forwards SIGTERM properly to npm/Node on
+    # `docker compose down` (without it, npm absorbs the signal and
+    # Vite only dies via the 10s grace SIGKILL).
+    init: true
     depends_on:
       postgres:
         condition: service_healthy
