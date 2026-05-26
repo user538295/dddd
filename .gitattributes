@@ -1,0 +1,12 @@
+# Force LF line endings for files that are read by Linux containers or POSIX
+# shells. Without this, Windows checkouts with core.autocrlf=true write CRLF
+# to disk; Docker reads the working-tree file. The credential helper line
+# in the Dockerfile, in particular, will store literal \r characters inside
+# its git config value, and `git fetch` against private GitHub repos fails
+# with an opaque "Authentication failed" — silently broken from a CRLF.
+
+Dockerfile         text eol=lf
+.dockerignore      text eol=lf
+*.sh               text eol=lf
+*.yml              text eol=lf
+*.yaml             text eol=lf

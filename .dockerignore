@@ -1,0 +1,40 @@
+# Build-context excludes. Patterns use Go filepath.Match semantics —
+# *.log only matches at the root; use **/*.log to match any depth.
+
+node_modules
+.git
+
+# Build / dev artifacts
+dist
+.output
+.vite
+.tanstack
+.cache
+.tmp
+coverage
+playwright-report
+test-results
+playwright/.cache
+
+# Editor / OS state
+.idea
+.vscode
+.claude
+.obsidian
+.DS_Store
+
+# Local secrets and per-machine config
+.env
+.env.local
+config/team-mapping.json
+
+# Local DB dumps and SQLite scratch
+data/pg-backups
+data/*.db
+data/*.db-*
+
+# Documentation (not needed at image build time; the image is for runtime)
+Documentation
+
+# Logs anywhere in the tree
+**/*.log

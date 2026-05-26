@@ -1,0 +1,73 @@
+# Example override for the full-Docker dev stack. Compose v2 auto-loads
+# any file named `docker-compose.override.yml` (or `compose.override.yml`)
+# and merges it on top of `docker-compose.yml` at runtime.
+#
+# This `.example` file is tracked in git. Your copy (without `.example`)
+# is gitignored — that's where you put your machine-specific paths.
+#
+# =====================================================================
+#  PREREQUISITES — do these BEFORE `docker compose up`:
+# =====================================================================
+#
+#  1. Copy this file:
+#       cp docker-compose.override.yml.example docker-compose.override.yml
+#
+#  2. Edit the bind-mount path under `app.volumes` (last entry). The
+#     placeholder REPLACE_ME_OR_DASHBOARD_WILL_BE_EMPTY is intentional —
+#     if you don't change it, the collector will scan an empty directory
+#     and the dashboard will show zero data with no obvious error.
+#
+#  3. Create `.env` from `.env.example`, set GITHUB_TOKEN. Then REMOVE
+#     (or comment out) these three lines from your `.env`:
+#         DASHBOARD_REPO_ROOT=...
+#         DATABASE_URL=...
+#         TEST_DATABASE_URL=...
+#     scripts/local-env.ts reads `.env` directly and PREFERS those
+#     values over the container env block below. If you leave them in,
+#     the app will try to read the Windows path and the host-loopback
+#     Postgres port from inside the container, and refresh/dashboard
+#     queries will fail with confusing errors.
+#
+#  4. `docker compose up --build`
+#
+# =====================================================================
+
+services:
+  app:
+    build: .
+    container_name: dddd-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # `.env` is required for the host-side workflow too, so we don't fail
+    # closed here — but `required: false` lets `docker compose config`
+    # work in fresh clones without a `.env` yet.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # The compose env block below is the source of truth INSIDE the
+      # container. It's only effective if you removed these keys from
+      # `.env` per prerequisite #3 above.
+      DATABASE_URL: postgresql://dddd:dddd_local_dev@postgres:5432/dddd_dev
+      TEST_DATABASE_URL: postgresql://dddd:dddd_local_dev@postgres:5432/dddd_test
+      DASHBOARD_REPO_ROOT: /repos
+    ports:
+      - '3000:3000'
+    volumes:
+      # Bind-mount source for hot reload; anonymous volume shadows the
+      # host's (possibly Windows-built) node_modules with the image's
+      # Linux-built one. If you bump dependencies, run
+      # `docker compose down -v` to drop the anonymous volume, then
+      # `docker compose up --build` to pick up the new node_modules.
+      - .:/app
+      - /app/node_modules
+      # Local clones the collector scans. NOT read-only: the PR-size step
+      # of refresh runs `git fetch` to update refs/objects, which requires
+      # write access to .git/. Working trees are never modified.
+      #
+      # REPLACE THIS WITH AN ABSOLUTE PATH ON YOUR HOST. Examples:
+      #   Windows: 'd:\Downloaded\dddd_repos:/repos'
+      #   macOS:   '/Users/you/dev/dddd_repos:/repos'
+      #   Linux:   '/home/you/dev/dddd_repos:/repos'
+      - 'REPLACE_ME_OR_DASHBOARD_WILL_BE_EMPTY:/repos'
