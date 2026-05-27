@@ -3,8 +3,33 @@ import path from 'node:path'
 
 import type { AppDb } from '~/db/client'
 import { pullRequestReviews, pullRequests, repositories, syncErrors, syncRuns } from '~/db/schema'
+import { isoWeekStart } from '~/metrics/pr-size-metric'
 
-export type Phase03Scenario = 'with-exceptions' | 'no-exceptions' | 'no-size-data'
+export type Phase03Scenario =
+  | 'with-exceptions'
+  | 'no-exceptions'
+  | 'no-size-data'
+  | 'low-sample-confidence'
+
+function addUtcDays(d: Date, days: number): Date {
+  const x = new Date(d)
+  x.setUTCDate(x.getUTCDate() + days)
+  return x
+}
+
+function formatUtcDate(d: Date): string {
+  const y = d.getUTCFullYear()
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/** Expected completed low-sample copy for the latest completed UTC ISO week at `now`. */
+export function expectedCompletedLowSampleConfidenceCopy(now: Date = new Date()): string {
+  const latestCompletedMonday = addUtcDays(isoWeekStart(now), -7)
+  const weekStart = formatUtcDate(latestCompletedMonday)
+  return `Week of ${weekStart}: 2 measured PRs. Low sample.`
+}
 
 export async function resetPhase03(db: AppDb): Promise<void> {
   await db.delete(syncErrors)
@@ -79,6 +104,11 @@ export async function seedPhase03(
     return
   }
 
+  if (scenario === 'low-sample-confidence') {
+    await seedLowSampleConfidence(db, alphaId, now)
+    return
+  }
+
   if (scenario === 'no-exceptions') {
     // 3 PRs in TeamAlpha: sizes [100, 200, 400]
     // Leave-one-out: 400 > 2×150=300 → 1/3=33% < 50% → no exception
@@ -114,6 +144,45 @@ export async function seedPhase03(
     githubReviewId: 1001,
     state: 'APPROVED',
     submittedAt: new Date(openedAt.getTime() + 2 * 60 * 60 * 1000),
+    authorLogin: 'alice',
+    authorType: 'User',
+    isBot: false,
+  })
+}
+
+async function seedLowSampleConfidence(
+  db: AppDb,
+  repositoryId: string,
+  now: Date,
+): Promise<void> {
+  const currentWeekStart = isoWeekStart(now)
+  const rows: ReturnType<typeof makePr>[] = []
+  let prNumber = 1
+
+  for (let i = 0; i < 8; i += 1) {
+    const weekMonday = addUtcDays(currentWeekStart, -(8 - i) * 7)
+    const mergedAt = addUtcDays(weekMonday, 3)
+    const count = i === 7 ? 2 : 3
+    for (let j = 0; j < count; j += 1) {
+      const openedAt = new Date(mergedAt.getTime() - 24 * 60 * 60 * 1000)
+      rows.push(
+        makePr(repositoryId, prNumber, openedAt, mergedAt, {
+          additions: 80 + i * 10 + j * 5,
+          deletions: 0,
+          changedFiles: 3,
+        }),
+      )
+      prNumber += 1
+    }
+  }
+
+  const [firstPr] = await db.insert(pullRequests).values(rows).returning({ id: pullRequests.id })
+
+  await db.insert(pullRequestReviews).values({
+    pullRequestId: firstPr.id,
+    githubReviewId: 2001,
+    state: 'APPROVED',
+    submittedAt: new Date(rows[0]!.openedAt.getTime() + 2 * 60 * 60 * 1000),
     authorLogin: 'alice',
     authorType: 'User',
     isBot: false,

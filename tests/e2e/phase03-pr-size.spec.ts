@@ -2,7 +2,32 @@ import { expect, test } from '@playwright/test'
 import path from 'node:path'
 
 import { createDb, runMigrations } from '~/db/client'
-import { resetPhase03, seedPhase03 } from './fixtures/phase-03-size.fixture'
+import {
+  expectedCompletedLowSampleConfidenceCopy,
+  resetPhase03,
+  seedPhase03,
+} from './fixtures/phase-03-size.fixture'
+
+type Box = { x: number; y: number; width: number; height: number }
+
+function boxesOverlap(a: Box, b: Box): boolean {
+  return !(
+    a.x + a.width <= b.x ||
+    b.x + b.width <= a.x ||
+    a.y + a.height <= b.y ||
+    b.y + b.height <= a.y
+  )
+}
+
+async function seedLowSampleConfidenceScenario(repoRoot: string): Promise<void> {
+  const db = createDb(databaseUrl)
+  try {
+    await resetPhase03(db)
+    await seedPhase03(db, { repoRoot, scenario: 'low-sample-confidence' })
+  } finally {
+    await db.$client.end({ timeout: 5 })
+  }
+}
 
 test.describe.configure({ mode: 'serial' })
 
@@ -75,4 +100,61 @@ test('phase03_phase02_still_visible @phase03', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByTestId('phase02-section')).toBeVisible({ timeout: 5000 })
   await expect(page.getByTestId('phase03-section')).toBeVisible({ timeout: 5000 })
+})
+
+test('phase03_pr_size_trend_shows_completed_low_sample_confidence_note @phase03', async ({
+  page,
+}) => {
+  await seedLowSampleConfidenceScenario(repoRoot)
+  await page.goto('/')
+
+  await expect(page.getByTestId('phase03-section')).toBeVisible({ timeout: 5000 })
+  const confidence = page.getByTestId('pr-size-trend-confidence')
+  await expect(confidence).toBeVisible()
+  await expect(confidence).toHaveText(expectedCompletedLowSampleConfidenceCopy())
+  await expect(confidence).toHaveClass(/pr-dashboard__chart-confidence--low-sample/)
+  await expect(confidence).not.toHaveAttribute('role', 'alert')
+})
+
+test('phase03_pr_size_confidence_layout_preserves_dashboard_order @phase03', async ({ page }) => {
+  await seedLowSampleConfidenceScenario(repoRoot)
+
+  const viewports = [
+    { width: 375, height: 800 },
+    { width: 1280, height: 900 },
+  ] as const
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport)
+    await page.goto('/')
+
+    const cycleTime = page.getByRole('heading', { name: 'Median PR Cycle Time' })
+    const firstReview = page.getByRole('heading', { name: 'First Review Time', exact: true })
+    const prSize = page.getByRole('heading', { name: 'PR Size', exact: true })
+
+    await expect(cycleTime).toBeVisible({ timeout: 5000 })
+    await expect(firstReview).toBeVisible()
+    await expect(prSize).toBeVisible()
+    await expect(page.getByTestId('phase03-section')).toBeVisible()
+
+    const cycleBox = await cycleTime.boundingBox()
+    const firstReviewBox = await firstReview.boundingBox()
+    const prSizeBox = await prSize.boundingBox()
+    expect(cycleBox).not.toBeNull()
+    expect(firstReviewBox).not.toBeNull()
+    expect(prSizeBox).not.toBeNull()
+    expect(cycleBox!.y).toBeLessThan(firstReviewBox!.y)
+    expect(firstReviewBox!.y).toBeLessThan(prSizeBox!.y)
+
+    const confidence = page.getByTestId('pr-size-trend-confidence')
+    await expect(confidence).toBeVisible()
+    const confidenceBox = await confidence.boundingBox()
+    const chartBox = await page.getByTestId('pr-size-trend').locator('svg').boundingBox()
+    const tableBox = await page.getByTestId('pr-size-team-table').boundingBox()
+    expect(confidenceBox).not.toBeNull()
+    expect(chartBox).not.toBeNull()
+    expect(tableBox).not.toBeNull()
+    expect(boxesOverlap(confidenceBox!, chartBox!)).toBe(false)
+    expect(boxesOverlap(confidenceBox!, tableBox!)).toBe(false)
+  }
 })

@@ -391,7 +391,7 @@ No new config keys, environment variables, database columns, migrations, routes,
   - Checkpoint: `npm run lint && npm run typecheck && npm run test -- tests/components/PrSizeTrendChart.test.tsx tests/components/weekly-trend-chart.test.tsx`
 
 #### Task 3.3 — Phase 03 E2E confidence scenario
-- [ ] **File**: `tests/e2e/fixtures/phase-03-size.fixture.ts`, `tests/e2e/phase03-pr-size.spec.ts`
+- [x] **File**: `tests/e2e/fixtures/phase-03-size.fixture.ts`, `tests/e2e/phase03-pr-size.spec.ts`
 - **Depends on**: Task 1.3, Task 3.1, Task 3.2
 - **Description**:
   - Extend `Phase03Scenario` with a deterministic `'low-sample-confidence'` scenario.
