@@ -16,6 +16,7 @@ Prerequisites for database and GitHub commands are covered in **[Local onboardin
 | **Full dev session** | `./scripts/dev.sh` | Runs `dev-up.sh`, then starts the Vite dev server (`npm run dev`). Blocks the terminal. Pressing **Ctrl+C** stops the frontend and automatically runs `dev-down.sh` to tear down Postgres. |
 | Local stack bootstrap | `./scripts/dev-up.sh` | Same as `npm run stack:up`: runs `npm install`, creates `.env` from `.env.example` if missing, sources `.env`, starts Postgres via Docker Compose (`--wait` until healthy), runs `npm run db:migrate`. Does **not** start the Vite dev server. |
 | Stop Compose Postgres | `./scripts/dev-down.sh` | Same as `npm run stack:down`: runs `docker compose down`. The named volume keeps database data until you remove it manually (see script output). |
+| Clone all org repos (full-Docker workflow) | `docker compose exec app bash scripts/docker/clone-github-org-repos.sh` | For the **optional full-Docker setup** (see [Local onboarding](local-onboarding.md#optional-full-docker-app--postgres-in-containers)). Reads `GITHUB_TOKEN` / `GITHUB_SYNC_OWNER` / `DASHBOARD_REPO_ROOT` from the container env, paginates the org repos endpoint, filters via `config/team-mapping.json`, and clones every non-archived, non-excluded repo into `/repos` (bind-mounted to your host). Idempotent — re-running skips existing clones. |
 
 Requirements: **Docker** with **Compose v2** for the stack scripts. On failure, the scripts print a short error to stderr and exit non-zero.
 

@@ -21,3 +21,12 @@ data/*.db-*
 data/pg-backups/*.dump
 config/team-mapping.json
 .obsidian/
+
+# Local containerization — not part of the upstream project.
+# Cover all four compose v2 override filenames so a user following modern
+# compose docs (which prefer compose.*) doesn't accidentally commit local
+# paths or secrets.
+docker-compose.override.yml
+docker-compose.override.yaml
+compose.override.yml
+compose.override.yaml

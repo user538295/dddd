@@ -61,17 +61,34 @@ function readDotenvValue(key: string): string | undefined {
   return undefined
 }
 
+// Inside the dev container the compose env block sets host-vs-container
+// path/URL differences (e.g. DATABASE_URL points at postgres:5432, not
+// 127.0.0.1:54332). Preferring `.env` over inherited env for these keys
+// would silently break the container if the user left their host-side
+// values in `.env`. Detect the container at runtime via the well-known
+// runtime marker files (Docker writes /.dockerenv, Podman writes
+// /run/.containerenv) and let inherited env win for these keys.
+const RUNNING_IN_CONTAINER =
+  fs.existsSync('/.dockerenv') || fs.existsSync('/run/.containerenv')
+const CONTAINER_INHERIT_KEYS: ReadonlySet<string> = new Set([
+  'DATABASE_URL',
+  'TEST_DATABASE_URL',
+  'DASHBOARD_REPO_ROOT',
+])
+
 export function loadLocalEnv(options: { preferDotenvKeys?: readonly string[] } = {}): void {
   const fromFiles = loadEnv(process.env.NODE_ENV ?? 'development', repoRoot, '')
   const preferDotenv = new Set(options.preferDotenvKeys ?? [])
   delete process.env.NO_COLOR
 
   for (const key of LOCAL_ENV_KEYS) {
-    const fileValue = preferDotenv.has(key) ? readDotenvValue(key) ?? fromFiles[key] : fromFiles[key]
+    const allowDotenvPrecedence =
+      preferDotenv.has(key) && !(RUNNING_IN_CONTAINER && CONTAINER_INHERIT_KEYS.has(key))
+    const fileValue = allowDotenvPrecedence ? readDotenvValue(key) ?? fromFiles[key] : fromFiles[key]
     if (fileValue === undefined) {
       continue
     }
-    if (process.env[key] === undefined || preferDotenv.has(key)) {
+    if (process.env[key] === undefined || allowDotenvPrecedence) {
       process.env[key] = fileValue
     }
   }

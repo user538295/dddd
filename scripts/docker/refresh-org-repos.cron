@@ -1,0 +1,18 @@
+# Cron schedule for the dashboard refresh (PR metadata + reviews + PR
+# sizes). Installed into /etc/cron.d/ by the Dockerfile.
+#
+# Runs at 01:00 local TZ (set in the Dockerfile via ENV TZ). The 1-hour
+# offset from the 00:00 clone gives the clone time to finish on the
+# first run after a new repo appears in the org. Subsequent runs are
+# fast because clones are skipped if already on disk.
+#
+# Job output is redirected to PID 1's stdout (Vite) so cron lines show
+# up in `docker compose logs app` alongside Vite's own output.
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# m  h  dom mon dow  user  command
+# `bash <path>` rather than direct invocation — the bind-mounted scripts/
+# directory may not preserve the executable bit on every host platform.
+0    1  *   *   *    root  bash /app/scripts/docker/run-refresh-in-cron.sh > /proc/1/fd/1 2>&1
