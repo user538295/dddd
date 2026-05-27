@@ -326,7 +326,7 @@ No new config keys, environment variables, database columns, migrations, routes,
 > **Releasable**: after Task 3.4, users can see measured-count confidence messaging in the PR Size trend and the Phase 03 verification gate covers the touched chart code.
 
 #### Task 3.1 — PR Size trend confidence copy and accessibility
-- [ ] **File**: `src/components/dashboard/PrSizeTrendChart.tsx`, `src/metrics/pr-cycle-time-dashboard.ts`
+- [x] **File**: `src/components/dashboard/PrSizeTrendChart.tsx`, `src/metrics/pr-cycle-time-dashboard.ts`
 - **Depends on**: Task 1.1, Task 1.3, Task 2.2
 - **Description**:
   - Update `type Point` to include:

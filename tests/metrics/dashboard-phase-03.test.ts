@@ -250,6 +250,35 @@ describe('dashboard phase 03 integration', () => {
     expect(trend.some((p) => p.measuredPrCount > 0)).toBe(true)
   })
 
+  it('dashboard_pr_size_weekly_trend_exposes_partial_point_only_after_detached_ui_support', async () => {
+    const repo = await makeRepo()
+    await insertMergedPr(repo.id, {
+      mergedAt: now,
+      number: 1,
+      additions: 40,
+      deletions: 10,
+      changedFiles: 2,
+    })
+    const withCurrent = await getPrCycleTimeDashboard({ db, now })
+    expect(withCurrent.prSize).toBeDefined()
+    const currentTrend = withCurrent.prSize!.weeklyTrend
+    expect(currentTrend).toHaveLength(9)
+    expect(currentTrend.at(-1)?.isPartialWeek).toBe(true)
+    expect(currentTrend.at(-1)?.measuredPrCount).toBe(1)
+    expect(currentTrend.filter((p) => !p.isPartialWeek)).toHaveLength(8)
+
+    await db.delete(pullRequests)
+    await insertMergedPr(repo.id, {
+      mergedAt: currentMergedAt(4),
+      additions: 80,
+      deletions: 20,
+      changedFiles: 2,
+    })
+    const historicalOnly = await getPrCycleTimeDashboard({ db, now })
+    expect(historicalOnly.prSize?.weeklyTrend).toHaveLength(8)
+    expect(historicalOnly.prSize?.weeklyTrend.every((p) => p.isPartialWeek === false)).toBe(true)
+  })
+
   it('dashboard_pr_size_excludes_future_rows_from_metric_table_exceptions_visibility_and_trend', async () => {
     const repo = await makeRepo()
     const baselineMergedAt = currentMergedAt(5)

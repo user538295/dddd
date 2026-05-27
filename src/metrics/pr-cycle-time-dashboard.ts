@@ -455,7 +455,9 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
       ? {
           metric: prSizeMetric,
           exceptions: buildPrSizeExceptions(currentTeamPrs),
-          weeklyTrend: getPrSizeWeeklyTrend(sizePrsForTrend, weeks, now),
+          weeklyTrend: getPrSizeWeeklyTrend(sizePrsForTrend, weeks, now, {
+            includeCurrentPartial: true,
+          }),
           teamBreakdown: getPrSizeTeamBreakdown(sizePrsForTrend, current, previous),
         }
       : undefined
