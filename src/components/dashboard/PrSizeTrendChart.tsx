@@ -74,6 +74,18 @@ export function PrSizeTrendChart({ weeklyTrend }: Props) {
           return lowSample ? buildCompletedLowSampleConfidenceCopy(lowSample) : null
         })()
 
+  const hasLowSampleConfidence =
+    confidenceCopy != null &&
+    (currentPartial != null && currentPartial.measuredPrCount > 0
+      ? currentPartial.measuredPrCount < 3
+      : true)
+  const confidenceClassName = [
+    'pr-dashboard__chart-confidence',
+    hasLowSampleConfidence ? 'pr-dashboard__chart-confidence--low-sample' : null,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   const chartWeeklyTrend = completed.map((p) => ({
     weekStart: p.weekStart,
     medianLines: p.medianLines,
@@ -94,7 +106,9 @@ export function PrSizeTrendChart({ weeklyTrend }: Props) {
         yAxisLabel="Lines"
       />
       {confidenceCopy ? (
-        <p data-testid="pr-size-trend-confidence">{confidenceCopy}</p>
+        <p className={confidenceClassName} data-testid="pr-size-trend-confidence">
+          {confidenceCopy}
+        </p>
       ) : null}
       <ol data-testid="pr-size-weekly-trend-list" className="pr-dashboard__sr-only">
         {completed.map((p) => (

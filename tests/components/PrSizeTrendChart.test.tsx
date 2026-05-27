@@ -251,4 +251,19 @@ describe('PrSizeTrendChart', () => {
     expect(list.textContent).toContain('1.5 lines')
     expect(list.textContent).not.toContain('2 lines')
   })
+
+  it('pr_size_confidence_copy_uses_dashboard_confidence_class', () => {
+    const lowSample = [completed('2026-04-06', 20, 5), partial('2026-04-20', 55, 2)]
+    const { unmount: unmountLow } = render(<PrSizeTrendChart weeklyTrend={lowSample} />)
+    const lowNote = screen.getByTestId('pr-size-trend-confidence')
+    expect(lowNote).toHaveClass('pr-dashboard__chart-confidence')
+    expect(lowNote).toHaveClass('pr-dashboard__chart-confidence--low-sample')
+    unmountLow()
+
+    const steady = [completed('2026-04-06', 20, 5), partial('2026-04-20', 55, 4)]
+    render(<PrSizeTrendChart weeklyTrend={steady} />)
+    const steadyNote = screen.getByTestId('pr-size-trend-confidence')
+    expect(steadyNote).toHaveClass('pr-dashboard__chart-confidence')
+    expect(steadyNote).not.toHaveClass('pr-dashboard__chart-confidence--low-sample')
+  })
 })

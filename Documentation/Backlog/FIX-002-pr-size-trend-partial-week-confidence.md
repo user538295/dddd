@@ -373,7 +373,7 @@ No new config keys, environment variables, database columns, migrations, routes,
   - Checkpoint: `npm run lint && npm run typecheck && npm run test -- tests/components/PrSizeTrendChart.test.tsx tests/metrics/dashboard-phase-03.test.ts`
 
 #### Task 3.2 — PR Size confidence styling
-- [ ] **File**: `src/components/dashboard/PrCycleTimeDashboard.css`
+- [x] **File**: `src/components/dashboard/PrCycleTimeDashboard.css`
 - **Depends on**: Task 3.1
 - **Description**:
   - Add minimal classes for PR Size confidence copy and detached/current marker support if needed by `WeeklyTrendChart`/`PrSizeTrendChart`.

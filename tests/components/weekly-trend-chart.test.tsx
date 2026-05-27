@@ -560,6 +560,30 @@ describe('WeeklyTrendChart', () => {
     expect(circles[1]?.getAttribute('stroke')).toBe('#d97706')
   })
 
+  it('detached_point_has_non_color_visual_marker_class_or_attribute', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="lines"
+        yAxisLabel="Lines"
+        weeklyTrend={[{ weekStart: '2026-04-06', medianLines: 20 }]}
+        detachedPoint={{
+          weekStart: '2026-04-13',
+          medianLines: 30,
+          label: 'Apr 13 so far',
+          ariaLabel: 'Current week so far: 30 median lines',
+        }}
+      />,
+    )
+
+    const detachedGroup = document.querySelector('.pr-dashboard__chart-point--detached')
+    expect(detachedGroup).toBeTruthy()
+    expect(detachedGroup?.getAttribute('data-layout-marker-bounds')).toBeTruthy()
+    const polygon = detachedGroup?.querySelector('polygon')
+    expect(polygon).toBeTruthy()
+    expect(detachedGroup?.querySelector('circle')).toBeNull()
+    expect(polygon?.getAttribute('stroke-dasharray')).toBeTruthy()
+  })
+
   it('first_review_and_pr_cycle_time_accessibility_copy_unchanged_without_detached_props', () => {
     render(
       <WeeklyTrendChart
