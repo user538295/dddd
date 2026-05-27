@@ -95,29 +95,71 @@ export function computePrSizeMetric(
   }
 }
 
+export type PrSizeWeeklyTrendPoint = {
+  weekStart: string
+  medianLines: number | null
+  measuredPrCount: number
+  isPartialWeek: boolean
+}
+
+function measuredLinesForWeek(
+  prs: PrSizeRecord[],
+  weekMonday: Date,
+  now: Date,
+  excludeMergedAfterNow: boolean,
+): { medianLines: number | null; measuredPrCount: number } {
+  const key = isoWeekKey(weekMonday)
+  const lines: number[] = []
+
+  for (const p of prs) {
+    if (!hasSize(p)) continue
+    if (isoWeekKey(p.mergedAt) !== key) continue
+    if (excludeMergedAfterNow && p.mergedAt.getTime() > now.getTime()) continue
+    lines.push(prLines(p))
+  }
+
+  return {
+    measuredPrCount: lines.length,
+    medianLines: lines.length === 0 ? null : median(lines),
+  }
+}
+
 export function getPrSizeWeeklyTrend(
   prs: PrSizeRecord[],
   weeks: number,
   now: Date,
-): Array<{ weekStart: string; medianLines: number | null }> {
-  const anchorMonday = isoWeekStart(now)
-  const points: Array<{ weekStart: string; medianLines: number | null }> = []
+  options?: { includeCurrentPartial?: boolean },
+): PrSizeWeeklyTrendPoint[] {
+  const currentWeekStart = isoWeekStart(now)
+  const points: PrSizeWeeklyTrendPoint[] = []
 
-  for (let i = weeks - 1; i >= 0; i -= 1) {
-    const weekMonday = addUtcDays(anchorMonday, -i * 7)
-    const key = isoWeekKey(weekMonday)
-    const lines: number[] = []
-
-    for (const p of prs) {
-      if (!hasSize(p)) continue
-      if (isoWeekKey(p.mergedAt) !== key) continue
-      lines.push(prLines(p))
-    }
+  for (let i = 0; i < weeks; i += 1) {
+    const weekMonday = addUtcDays(currentWeekStart, -(weeks - i) * 7)
+    const { medianLines, measuredPrCount } = measuredLinesForWeek(
+      prs,
+      weekMonday,
+      now,
+      false,
+    )
 
     points.push({
       weekStart: formatUtcDate(weekMonday),
-      medianLines: lines.length === 0 ? null : median(lines),
+      medianLines,
+      measuredPrCount,
+      isPartialWeek: false,
     })
+  }
+
+  if (options?.includeCurrentPartial === true) {
+    const partial = measuredLinesForWeek(prs, currentWeekStart, now, true)
+    if (partial.measuredPrCount > 0) {
+      points.push({
+        weekStart: formatUtcDate(currentWeekStart),
+        medianLines: partial.medianLines,
+        measuredPrCount: partial.measuredPrCount,
+        isPartialWeek: true,
+      })
+    }
   }
 
   return points

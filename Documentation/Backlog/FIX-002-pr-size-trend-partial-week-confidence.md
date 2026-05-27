@@ -147,7 +147,7 @@ No new config keys, environment variables, database columns, migrations, routes,
 > **Internal checkpoint**: after Task 1.3, the server can produce the expanded PR Size trend payload and all PR Size surfaces exclude future-dated rows. Do not ship or expose an optional current partial point in the dashboard UI until Task 3.1 splits, detaches, and labels that point.
 
 #### Task 1.1 — Expanded PR Size weekly trend point contract
-- [ ] **File**: `src/metrics/pr-size-metric.ts`
+- [x] **File**: `src/metrics/pr-size-metric.ts`
 - **Depends on**: nothing
 - **Description**:
   - Add:

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { computePrSizeMetric, getPrSizeWeeklyTrend } from '~/metrics/pr-size-metric'
+import {
+  computePrSizeMetric,
+  getPrSizeWeeklyTrend,
+  isoWeekStart,
+} from '~/metrics/pr-size-metric'
 import type { PrSizeRecord } from '~/metrics/pr-size-types'
 
 let seq = 0
@@ -195,5 +199,234 @@ describe('getPrSizeWeeklyTrend', () => {
     const weekMar10 = trend.find((p) => p.weekStart === '2026-03-09')
     expect(weekMar2?.medianLines).toBe(40)
     expect(weekMar10?.medianLines).toBe(100)
+  })
+
+  it('weekly_trend_returns_expanded_point_shape', () => {
+    const trend = getPrSizeWeeklyTrend([pr()], 8, now)
+    for (const point of trend) {
+      expect(Object.keys(point).sort()).toEqual([
+        'isPartialWeek',
+        'measuredPrCount',
+        'medianLines',
+        'weekStart',
+      ])
+    }
+  })
+
+  it('weekly_trend_counts_only_prs_with_additions_and_deletions', () => {
+    const trend = getPrSizeWeeklyTrend(
+      [
+        pr({
+          mergedAt: new Date('2026-03-10T12:00:00.000Z'),
+          additions: 100,
+          deletions: 0,
+        }),
+        pr({
+          mergedAt: new Date('2026-03-11T12:00:00.000Z'),
+          additions: null,
+          deletions: null,
+        }),
+      ],
+      8,
+      now,
+    )
+    const week = trend.find((p) => p.weekStart === '2026-03-09')
+    expect(week?.measuredPrCount).toBe(1)
+  })
+
+  it('weekly_trend_returns_configured_completed_weeks_without_current_when_current_empty', () => {
+    const trend = getPrSizeWeeklyTrend(
+      [pr({ mergedAt: new Date('2026-03-10T12:00:00.000Z') })],
+      8,
+      now,
+    )
+    expect(trend).toHaveLength(8)
+    expect(trend.every((p) => p.isPartialWeek === false)).toBe(true)
+  })
+
+  it('weekly_trend_completed_window_ends_at_previous_utc_iso_week', () => {
+    const trend = getPrSizeWeeklyTrend([], 8, now)
+    const lastCompletedMonday = isoWeekStart(now)
+    lastCompletedMonday.setUTCDate(lastCompletedMonday.getUTCDate() - 7)
+    const y = lastCompletedMonday.getUTCFullYear()
+    const m = String(lastCompletedMonday.getUTCMonth() + 1).padStart(2, '0')
+    const d = String(lastCompletedMonday.getUTCDate()).padStart(2, '0')
+    expect(trend[trend.length - 1]?.weekStart).toBe(`${y}-${m}-${d}`)
+    expect(trend[trend.length - 1]?.weekStart).not.toBe('2026-03-16')
+  })
+
+  it('weekly_trend_respects_configured_completed_week_count', () => {
+    const completedOnly = getPrSizeWeeklyTrend([], 4, now)
+    expect(completedOnly).toHaveLength(4)
+
+    const withPartial = getPrSizeWeeklyTrend(
+      [
+        pr({
+          mergedAt: now,
+          additions: 10,
+          deletions: 0,
+        }),
+      ],
+      4,
+      now,
+      { includeCurrentPartial: true },
+    )
+    expect(withPartial).toHaveLength(5)
+    expect(withPartial[4]?.isPartialWeek).toBe(true)
+  })
+
+  it('weekly_trend_does_not_append_current_partial_without_explicit_opt_in', () => {
+    const trend = getPrSizeWeeklyTrend(
+      [
+        pr({
+          mergedAt: now,
+          additions: 50,
+          deletions: 50,
+        }),
+      ],
+      8,
+      now,
+    )
+    expect(trend).toHaveLength(8)
+    expect(trend.every((p) => p.isPartialWeek === false)).toBe(true)
+  })
+
+  it('weekly_trend_opt_in_does_not_append_current_partial_when_current_week_has_zero_measured_prs', () => {
+    const trend = getPrSizeWeeklyTrend(
+      [
+        pr({
+          mergedAt: now,
+          additions: null,
+          deletions: null,
+        }),
+      ],
+      8,
+      now,
+      { includeCurrentPartial: true },
+    )
+    expect(trend).toHaveLength(8)
+    expect(trend.every((p) => p.isPartialWeek === false)).toBe(true)
+  })
+
+  it('weekly_trend_appends_current_partial_week_when_measured_prs_exist', () => {
+    const trend = getPrSizeWeeklyTrend(
+      [
+        pr({
+          mergedAt: now,
+          additions: 40,
+          deletions: 0,
+        }),
+      ],
+      8,
+      now,
+      { includeCurrentPartial: true },
+    )
+    expect(trend).toHaveLength(9)
+    const partial = trend[trend.length - 1]
+    expect(partial?.isPartialWeek).toBe(true)
+    expect(partial?.weekStart).toBe('2026-03-16')
+    expect(partial?.measuredPrCount).toBe(1)
+    expect(partial?.medianLines).toBe(40)
+  })
+
+  it('weekly_trend_ignores_future_rows_after_now_in_current_week', () => {
+    const trend = getPrSizeWeeklyTrend(
+      [
+        pr({
+          mergedAt: new Date('2026-03-17T12:00:00.000Z'),
+          additions: 100,
+          deletions: 0,
+        }),
+        pr({
+          mergedAt: new Date('2026-03-19T12:00:00.000Z'),
+          additions: 999,
+          deletions: 0,
+        }),
+      ],
+      8,
+      now,
+      { includeCurrentPartial: true },
+    )
+    const partial = trend[trend.length - 1]
+    expect(partial?.measuredPrCount).toBe(1)
+    expect(partial?.medianLines).toBe(100)
+  })
+
+  it('weekly_trend_includes_pr_merged_exactly_at_now_and_excludes_one_ms_after_now', () => {
+    const atNow = getPrSizeWeeklyTrend(
+      [pr({ mergedAt: now, additions: 10, deletions: 0 })],
+      8,
+      now,
+      { includeCurrentPartial: true },
+    )
+    expect(atNow[atNow.length - 1]?.measuredPrCount).toBe(1)
+
+    const afterNow = getPrSizeWeeklyTrend(
+      [pr({ mergedAt: new Date(now.getTime() + 1), additions: 10, deletions: 0 })],
+      8,
+      now,
+      { includeCurrentPartial: true },
+    )
+    expect(afterNow).toHaveLength(8)
+  })
+
+  it('weekly_trend_zero_line_pr_counts_as_measured', () => {
+    const trend = getPrSizeWeeklyTrend(
+      [
+        pr({
+          mergedAt: new Date('2026-03-10T12:00:00.000Z'),
+          additions: 0,
+          deletions: 0,
+        }),
+      ],
+      8,
+      now,
+    )
+    const week = trend.find((p) => p.weekStart === '2026-03-09')
+    expect(week?.measuredPrCount).toBe(1)
+    expect(week?.medianLines).toBe(0)
+  })
+
+  it('weekly_trend_preserves_fractional_even_count_median', () => {
+    const trend = getPrSizeWeeklyTrend(
+      [
+        pr({
+          mergedAt: new Date('2026-03-10T12:00:00.000Z'),
+          additions: 1,
+          deletions: 0,
+        }),
+        pr({
+          mergedAt: new Date('2026-03-11T12:00:00.000Z'),
+          additions: 2,
+          deletions: 0,
+        }),
+      ],
+      8,
+      now,
+    )
+    const week = trend.find((p) => p.weekStart === '2026-03-09')
+    expect(week?.medianLines).toBe(1.5)
+  })
+
+  it('weekly_trend_points_are_chronological_with_partial_last', () => {
+    const trend = getPrSizeWeeklyTrend(
+      [
+        pr({ mergedAt: new Date('2026-01-05T12:00:00.000Z'), additions: 1, deletions: 0 }),
+        pr({ mergedAt: now, additions: 99, deletions: 0 }),
+      ],
+      3,
+      now,
+      { includeCurrentPartial: true },
+    )
+    const starts = trend.map((p) => p.weekStart)
+    expect(starts).toEqual([...starts].sort())
+    expect(trend[trend.length - 1]?.isPartialWeek).toBe(true)
+  })
+
+  it('weekly_trend_completed_zero_count_week_is_null_gap', () => {
+    const trend = getPrSizeWeeklyTrend([], 8, now)
+    expect(trend.every((p) => p.medianLines === null && p.measuredPrCount === 0)).toBe(
+      true,
+    )
   })
 })
