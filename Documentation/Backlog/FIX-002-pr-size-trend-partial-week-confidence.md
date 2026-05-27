@@ -192,7 +192,7 @@ No new config keys, environment variables, database columns, migrations, routes,
   - Checkpoint: `npm run lint && npm run typecheck && npm run test -- tests/metrics/pr-size-metric.test.ts`
 
 #### Task 1.2 — UTC boundary regression for PR Size trend
-- [ ] **File**: `src/metrics/pr-size-metric.ts`, `tests/metrics/pr-size-metric-utc-boundary.test.ts`, `vitest.config.phase03.ts`
+- [x] **File**: `src/metrics/pr-size-metric.ts`, `tests/metrics/pr-size-metric-utc-boundary.test.ts`, `vitest.config.phase03.ts`
 - **Depends on**: Task 1.1
 - **Description**:
   - Add focused UTC-boundary tests in a separate test file that can run under a non-UTC `TZ` at process start.

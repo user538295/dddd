@@ -7,6 +7,7 @@
     "dev": "tsx scripts/dev.ts",
     "build": "vite build && tsc --noEmit",
     "test": "vitest run",
+    "test:pr-size-utc-boundary": "TZ=America/Los_Angeles vitest run tests/metrics/pr-size-metric-utc-boundary.test.ts",
     "test:e2e": "playwright test --pass-with-no-tests",
     "test:e2e:live": "playwright test --config playwright.live.config.ts",
     "test:e2e:live:current": "playwright test --config playwright.live-current.config.ts",
