@@ -209,6 +209,127 @@ describe('WeeklyTrendChart', () => {
     expect(pathData.some((d) => d.startsWith('M 48 ') && d.includes(' L 540 '))).toBe(false)
   })
 
+  it('line_chart_accepts_explicit_detached_point', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="lines"
+        yAxisLabel="Lines"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianLines: 20 },
+          { weekStart: '2026-04-13', medianLines: 40 },
+        ]}
+        detachedPoint={{
+          weekStart: '2026-04-20',
+          medianLines: 55,
+          label: 'Apr 20 so far',
+          ariaLabel: 'Current week so far: 55 median lines',
+        }}
+      />,
+    )
+
+    const chart = screen.getByRole('img', { name: '8-week PR size trend' })
+    const pointLabels = Array.from(chart.querySelectorAll('text[font-weight="600"]')).map(
+      (node) => node.textContent,
+    )
+    expect(pointLabels).toEqual(['20', '40', '55'])
+    expect(screen.getByText('Apr 20 so far')).toBeTruthy()
+    expect(chart.querySelectorAll('circle')).toHaveLength(3)
+  })
+
+  it('line_chart_detached_point_has_own_x_axis_slot_and_label', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="lines"
+        yAxisLabel="Lines"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianLines: 20 },
+          { weekStart: '2026-04-13', medianLines: 40 },
+        ]}
+        detachedPoint={{
+          weekStart: '2026-04-20',
+          medianLines: 55,
+          label: 'Apr 20 so far',
+          ariaLabel: 'Current week so far: 55 median lines',
+        }}
+      />,
+    )
+
+    const circles = Array.from(document.querySelectorAll('circle'))
+    const cxValues = circles.map((node) => Number(node.getAttribute('cx')))
+    expect(cxValues[2]).toBeGreaterThan(cxValues[1]!)
+    expect(screen.getByText('Apr 20 so far')).toBeTruthy()
+  })
+
+  it('line_chart_detached_point_exposes_aria_label', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="lines"
+        yAxisLabel="Lines"
+        weeklyTrend={[{ weekStart: '2026-04-06', medianLines: 20 }]}
+        detachedPoint={{
+          weekStart: '2026-04-13',
+          medianLines: 30,
+          label: 'Apr 13 so far',
+          ariaLabel: 'Current week so far: 30 median lines',
+        }}
+      />,
+    )
+
+    const detachedMarker = document.querySelector('[aria-label="Current week so far: 30 median lines"]')
+    expect(detachedMarker).toBeTruthy()
+    expect(detachedMarker?.querySelector('title')?.textContent).toBe(
+      'Current week so far: 30 median lines',
+    )
+  })
+
+  it('line_chart_plain_series_does_not_infer_detachment_from_length', () => {
+    const weeklyTrend = [
+      '2026-02-02',
+      '2026-02-09',
+      '2026-02-16',
+      '2026-02-23',
+      '2026-03-02',
+      '2026-03-09',
+      '2026-03-16',
+      '2026-03-23',
+      '2026-03-30',
+    ].map((weekStart, i) => ({ weekStart, medianLines: 10 + i }))
+
+    render(
+      <WeeklyTrendChart
+        valueMode="lines"
+        yAxisLabel="Lines"
+        weeklyTrend={weeklyTrend}
+        ariaLabel="9-week PR size trend"
+      />,
+    )
+
+    expect(screen.queryByText(/so far/i)).toBeNull()
+    expect(document.querySelectorAll('circle')).toHaveLength(9)
+    const pathData = Array.from(document.querySelectorAll('path')).map((node) => node.getAttribute('d') ?? '')
+    expect(pathData.some((d) => d.includes(' L '))).toBe(true)
+  })
+
+  it('duration_chart_props_do_not_gain_detached_behavior', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="duration"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianHours: 24 },
+          { weekStart: '2026-04-13', medianHours: 48 },
+        ]}
+        ariaLabel="8-week PR cycle time trend"
+      />,
+    )
+
+    expect(screen.getByRole('img', { name: '8-week PR cycle time trend' })).toBeTruthy()
+    expect(screen.getByText('Days')).toBeTruthy()
+    expect(screen.getByText('1d')).toBeTruthy()
+    expect(screen.getByText('2d')).toBeTruthy()
+    expect(document.querySelectorAll('circle')).toHaveLength(2)
+    expect(screen.queryByText(/so far/i)).toBeNull()
+  })
+
   it('pr_size_line_mode_handles_all_null_or_empty_line_trend', () => {
     const { rerender } = render(
       <WeeklyTrendChart

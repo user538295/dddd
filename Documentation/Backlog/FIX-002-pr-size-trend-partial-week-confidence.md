@@ -245,7 +245,7 @@ No new config keys, environment variables, database columns, migrations, routes,
 > **Releasable**: after Task 2.2, the shared chart can render a PR Size current-week point only through explicit opt-in while preserving existing duration behavior.
 
 #### Task 2.1 — Explicit detached point API for line charts
-- [ ] **File**: `src/components/dashboard/weekly-trend-chart.tsx`
+- [x] **File**: `src/components/dashboard/weekly-trend-chart.tsx`
 - **Depends on**: Task 1.1
 - **Description**:
   - Replace the loose `WeeklyTrendChart` prop shape with a discriminated union:

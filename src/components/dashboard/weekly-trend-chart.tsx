@@ -1,4 +1,3 @@
-import type { PrCycleTimeDashboard } from '~/metrics/pr-cycle-time-dashboard'
 import {
   buildDurationAxis,
   durationScaleFor,
@@ -9,7 +8,28 @@ import type { DurationScale } from '~/components/dashboard/duration-trend-scale'
 
 export type WeeklyTrendHoursPoint = { weekStart: string; medianHours: number | null }
 export type WeeklyTrendLinesPoint = { weekStart: string; medianLines: number | null }
-export type WeeklyTrendPoint = WeeklyTrendHoursPoint | WeeklyTrendLinesPoint
+export type DetachedLinesPoint = {
+  weekStart: string
+  medianLines: number
+  label: string
+  ariaLabel: string
+}
+export type WeeklyTrendChartProps =
+  | {
+      valueMode: 'duration'
+      weeklyTrend: WeeklyTrendHoursPoint[]
+      ariaLabel?: string
+      yAxisLabel?: string
+    }
+  | {
+      valueMode: 'lines'
+      weeklyTrend: WeeklyTrendLinesPoint[]
+      detachedPoint?: DetachedLinesPoint
+      ariaLabel?: string
+      yAxisLabel?: string
+    }
+
+type WeeklyTrendPoint = WeeklyTrendHoursPoint | WeeklyTrendLinesPoint
 
 const VB_W = 560
 const VB_H = 220
@@ -76,39 +96,39 @@ function contiguousRuns(points: Pt[]): Pt[][] {
   return runs
 }
 
-export function WeeklyTrendChart({
-  weeklyTrend,
-  ariaLabel = '8-week PR cycle time trend',
-  yAxisLabel = 'Days',
-  valueMode = 'duration',
-}: {
-  weeklyTrend: PrCycleTimeDashboard['weeklyTrend'] | WeeklyTrendLinesPoint[]
-  ariaLabel?: string
-  yAxisLabel?: string
-  valueMode?: 'duration' | 'lines'
-}) {
-  const linesMode = valueMode === 'lines'
-  const n = weeklyTrend.length
+export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
+  const linesMode = props.valueMode === 'lines'
+  const weeklyTrend = props.weeklyTrend
+  const detachedPoint = linesMode ? props.detachedPoint : undefined
+  const ariaLabel =
+    props.ariaLabel ?? (linesMode ? '8-week PR size trend' : '8-week PR cycle time trend')
+  const yAxisLabel = props.yAxisLabel ?? 'Days'
+
+  const seriesSlotCount = weeklyTrend.length
+  const slotCount = seriesSlotCount + (detachedPoint ? 1 : 0)
   const innerW = VB_W - PAD_L - PAD_R
   const innerH = VB_H - PAD_T - PAD_B
 
   const durationHours = linesMode
     ? []
-    : weeklyTrend
-        .map((p) => (isLinesPoint(p) ? null : p.medianHours))
+    : (weeklyTrend as WeeklyTrendHoursPoint[])
+        .map((p) => p.medianHours)
         .filter((v): v is number => v != null && Number.isFinite(v))
   const durationScale = durationScaleFor(selectDurationUnit(durationHours.length > 0 ? Math.max(...durationHours) : null))
   const chartValues = weeklyTrend.map((p) => chartValue(p, durationScale))
   const numeric = chartValues.filter((v): v is number => v != null && Number.isFinite(v))
+  const detachedNumeric = detachedPoint?.medianLines
+  const axisNumeric = [...numeric, ...(detachedNumeric != null ? [detachedNumeric] : [])]
   const { maxValue, ticks: yTicks } = linesMode
-    ? buildLineAxis(Math.max(...numeric, 0))
+    ? buildLineAxis(Math.max(...axisNumeric, 0))
     : buildDurationAxis(Math.max(...numeric, 0))
 
-  const xAt = (i: number) => PAD_L + (n <= 1 ? innerW / 2 : (i / Math.max(1, n - 1)) * innerW)
+  const xAt = (i: number) =>
+    PAD_L + (slotCount <= 1 ? innerW / 2 : (i / Math.max(1, slotCount - 1)) * innerW)
   const yAt = (value: number) => PAD_T + (1 - value / maxValue) * innerH
 
   const pts: Pt[] = []
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < seriesSlotCount; i++) {
     const value = chartValues[i]
     if (value != null && Number.isFinite(value)) {
       pts.push({ i, x: xAt(i), y: yAt(value), value })
@@ -130,6 +150,10 @@ export function WeeklyTrendChart({
     linesMode ? String(Math.round(value)) : formatScaledDurationChartValue(value, durationScale.unit)
   const formatTickLabel = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1))
   const resolvedYAxisLabel = linesMode ? yAxisLabel : durationScale.axisLabel
+
+  const detachedX = detachedPoint ? xAt(seriesSlotCount) : null
+  const detachedY =
+    detachedPoint != null && detachedNumeric != null ? yAt(detachedNumeric) : null
 
   return (
     <div className="pr-dashboard__chart-wrap">
@@ -194,6 +218,23 @@ export function WeeklyTrendChart({
           )
         })}
 
+        {detachedPoint && detachedX != null && detachedY != null ? (
+          <g aria-label={detachedPoint.ariaLabel}>
+            <title>{detachedPoint.ariaLabel}</title>
+            <circle cx={detachedX} cy={detachedY} r={5} fill="#fff" stroke="#111827" strokeWidth="2" />
+            <text
+              x={detachedX}
+              y={detachedY - 12}
+              fill="#111827"
+              fontSize="11"
+              fontWeight="600"
+              textAnchor="middle"
+            >
+              {formatPointLabel(detachedPoint.medianLines)}
+            </text>
+          </g>
+        ) : null}
+
         {weeklyTrend.map((p, i) => (
           <text
             key={p.weekStart}
@@ -207,6 +248,20 @@ export function WeeklyTrendChart({
             {shortWeekLabel(p.weekStart)}
           </text>
         ))}
+
+        {detachedPoint && detachedX != null ? (
+          <text
+            key={`detached-${detachedPoint.weekStart}`}
+            x={detachedX}
+            y={VB_H - 12}
+            fill="#6b7280"
+            fontSize="10"
+            fontWeight="500"
+            textAnchor="middle"
+          >
+            {detachedPoint.label}
+          </text>
+        ) : null}
       </svg>
     </div>
   )
