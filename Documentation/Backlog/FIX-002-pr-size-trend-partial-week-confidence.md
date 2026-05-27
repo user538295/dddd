@@ -210,7 +210,7 @@ No new config keys, environment variables, database columns, migrations, routes,
   - Checkpoint: `npm run lint && npm run typecheck && TZ=America/Los_Angeles npm run test -- tests/metrics/pr-size-metric-utc-boundary.test.ts`
 
 #### Task 1.3 — Dashboard PR Size clamping and payload integration
-- [ ] **File**: `src/metrics/pr-cycle-time-dashboard.ts`, optionally `src/metrics/pr-size-dashboard.ts` if a small helper is extracted for covered PR Size orchestration
+- [x] **File**: `src/metrics/pr-cycle-time-dashboard.ts`, optionally `src/metrics/pr-size-dashboard.ts` if a small helper is extracted for covered PR Size orchestration
 - **Depends on**: Task 1.1, Task 1.2
 - **Description**:
   - Import `PrSizeWeeklyTrendPoint` from `~/metrics/pr-size-metric`.

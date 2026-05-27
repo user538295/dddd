@@ -12,6 +12,7 @@ import { getDashboardDateRanges } from '~/config/env'
 import { createDb, runMigrations } from '~/db/client'
 import { pullRequests, repositories, syncErrors } from '~/db/schema'
 import { getPrCycleTimeDashboard } from '~/metrics/pr-cycle-time-dashboard'
+import { isoWeekStart } from '~/metrics/pr-size-metric'
 
 const databaseUrl = process.env.DATABASE_URL?.trim()
 
@@ -225,5 +226,130 @@ describe('dashboard phase 03 integration', () => {
       qualifyingPrCount: expect.any(Number),
       mergedPrCountInSyncedRepos: expect.any(Number),
     })
+  })
+
+  it('dashboard_pr_size_weekly_trend_exposes_expanded_completed_week_payload', async () => {
+    const repo = await makeRepo()
+    await insertMergedPr(repo.id, {
+      mergedAt: currentMergedAt(4),
+      additions: 80,
+      deletions: 20,
+      changedFiles: 2,
+    })
+    const out = await getPrCycleTimeDashboard({ db, now })
+    expect(out.prSize).toBeDefined()
+    const trend = out.prSize!.weeklyTrend
+    expect(trend).toHaveLength(8)
+    expect(trend.every((p) => p.isPartialWeek === false)).toBe(true)
+    for (const p of trend) {
+      expect(p.weekStart).toEqual(expect.any(String))
+      expect(p.medianLines === null || typeof p.medianLines === 'number').toBe(true)
+      expect(p.measuredPrCount).toEqual(expect.any(Number))
+      expect(p.isPartialWeek).toBe(false)
+    }
+    expect(trend.some((p) => p.measuredPrCount > 0)).toBe(true)
+  })
+
+  it('dashboard_pr_size_excludes_future_rows_from_metric_table_exceptions_visibility_and_trend', async () => {
+    const repo = await makeRepo()
+    const baselineMergedAt = currentMergedAt(5)
+    await insertMergedPr(repo.id, {
+      mergedAt: baselineMergedAt,
+      number: 1,
+      additions: 50,
+      deletions: 50,
+      changedFiles: 2,
+    })
+    const futureMergedAt = new Date(now.getTime() + 2 * 60 * 60 * 1000)
+    await insertMergedPr(repo.id, {
+      mergedAt: futureMergedAt,
+      number: 2,
+      additions: 9000,
+      deletions: 9000,
+      changedFiles: 99,
+    })
+    const out = await getPrCycleTimeDashboard({ db, now })
+    expect(out.prSize).toBeDefined()
+    expect(out.prSize?.metric.medianLines).toBe(100)
+    expect(out.prSize?.metric.qualifyingPrCount).toBe(1)
+    const teamRow = out.prSize?.teamBreakdown.find((r) => r.team === 'TeamX')
+    expect(teamRow?.prCount).toBe(1)
+    expect(teamRow?.medianLines).toBe(100)
+    expect(out.prSize?.exceptions).toHaveLength(0)
+    expect(out.prSize?.weeklyTrend.every((p) => p.isPartialWeek === false)).toBe(true)
+    const maxMeasured = Math.max(...out.prSize!.weeklyTrend.map((p) => p.measuredPrCount))
+    expect(maxMeasured).toBeLessThanOrEqual(1)
+  })
+
+  it('dashboard_pr_size_includes_merged_at_now_and_excludes_one_ms_after_now', async () => {
+    const repo = await makeRepo()
+    await insertMergedPr(repo.id, {
+      mergedAt: now,
+      number: 1,
+      additions: 40,
+      deletions: 10,
+      changedFiles: 2,
+    })
+    await insertMergedPr(repo.id, {
+      mergedAt: new Date(now.getTime() + 1),
+      number: 2,
+      additions: 800,
+      deletions: 800,
+      changedFiles: 20,
+    })
+    const out = await getPrCycleTimeDashboard({ db, now })
+    expect(out.prSize).toBeDefined()
+    expect(out.prSize?.metric.medianLines).toBe(50)
+    expect(out.prSize?.metric.qualifyingPrCount).toBe(1)
+    const teamRow = out.prSize?.teamBreakdown.find((r) => r.team === 'TeamX')
+    expect(teamRow?.prCount).toBe(1)
+    expect(teamRow?.medianLines).toBe(50)
+    expect(out.prSize?.exceptions).toHaveLength(0)
+  })
+
+  it('dashboard_pr_size_non_trend_surfaces_keep_selected_window', async () => {
+    const repo = await makeRepo()
+    const { current } = getDashboardDateRanges(now, 8)
+    await insertMergedPr(repo.id, {
+      mergedAt: currentMergedAt(6),
+      number: 1,
+      additions: 100,
+      deletions: 0,
+      changedFiles: 1,
+    })
+    const oldestCompletedMonday = isoWeekStart(now)
+    oldestCompletedMonday.setUTCDate(oldestCompletedMonday.getUTCDate() - 8 * 7)
+    let trendOnlyMergedAt = new Date(
+      oldestCompletedMonday.getTime() + 2 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000,
+    )
+    if (trendOnlyMergedAt.getTime() >= current.from.getTime()) {
+      trendOnlyMergedAt = new Date(current.from.getTime() - 12 * 60 * 60 * 1000)
+    }
+    expect(trendOnlyMergedAt.getTime()).toBeLessThan(current.from.getTime())
+    expect(isoWeekStart(trendOnlyMergedAt).getTime()).toBe(oldestCompletedMonday.getTime())
+
+    await insertMergedPr(repo.id, {
+      mergedAt: trendOnlyMergedAt,
+      number: 2,
+      additions: 900,
+      deletions: 0,
+      changedFiles: 10,
+    })
+    const out = await getPrCycleTimeDashboard({ db, now })
+    expect(out.prSize).toBeDefined()
+    expect(out.prSize?.metric.medianLines).toBe(100)
+    expect(out.prSize?.metric.qualifyingPrCount).toBe(1)
+    const teamRow = out.prSize?.teamBreakdown.find((r) => r.team === 'TeamX')
+    expect(teamRow?.prCount).toBe(1)
+    expect(teamRow?.medianLines).toBe(100)
+
+    const y = oldestCompletedMonday.getUTCFullYear()
+    const m = String(oldestCompletedMonday.getUTCMonth() + 1).padStart(2, '0')
+    const d = String(oldestCompletedMonday.getUTCDate()).padStart(2, '0')
+    const priorWeekKey = `${y}-${m}-${d}`
+    const priorTrendPoint = out.prSize?.weeklyTrend.find((p) => p.weekStart === priorWeekKey)
+    expect(priorTrendPoint?.medianLines).toBe(900)
+    expect(priorTrendPoint?.measuredPrCount).toBe(1)
+    expect(out.prSize?.weeklyTrend.every((p) => p.isPartialWeek === false)).toBe(true)
   })
 })

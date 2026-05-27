@@ -25,6 +25,8 @@ function prSize(overrides: Partial<PrSize> = {}): PrSize {
     weeklyTrend: Array.from({ length: 8 }, (_, i) => ({
       weekStart: `2026-0${1 + i}-01`,
       medianLines: i % 2 === 0 ? 200 : null,
+      measuredPrCount: i % 2 === 0 ? 2 : 0,
+      isPartialWeek: false,
     })),
     teamBreakdown: [],
     ...overrides,

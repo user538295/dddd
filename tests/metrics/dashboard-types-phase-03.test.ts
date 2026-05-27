@@ -6,6 +6,7 @@ import type {
   PrSizeMetric,
   PrSizeTeamRow,
 } from '~/metrics/pr-cycle-time-dashboard'
+import type { PrSizeWeeklyTrendPoint } from '~/metrics/pr-size-metric'
 
 describe('phase 03 payload types', () => {
   it('dashboard_type_prSize_key_is_optional', () => {
@@ -68,19 +69,36 @@ describe('phase 03 payload types', () => {
     const prSize: PrSize = {
       metric,
       exceptions: [exception],
-      weeklyTrend: [{ weekStart: '2026-04-07', medianLines: 250 }],
+      weeklyTrend: [
+        { weekStart: '2026-04-07', medianLines: 250, measuredPrCount: 3, isPartialWeek: false },
+      ],
       teamBreakdown: [teamRow],
     }
 
     expectTypeOf<PrSize>().toEqualTypeOf<{
       metric: PrSizeMetric
       exceptions: PrSizeException[]
-      weeklyTrend: Array<{ weekStart: string; medianLines: number | null }>
+      weeklyTrend: PrSizeWeeklyTrendPoint[]
       teamBreakdown: PrSizeTeamRow[]
     }>()
 
     expect(prSize.metric.qualifyingPrCount).toBe(12)
     expect(prSize.exceptions[0]?.type).toBe('oversized_pr_pattern')
     expect(prSize.teamBreakdown[0]?.trend).toBe('↑')
+  })
+
+  it('pr_size_weekly_trend_type_includes_count_and_partial_flag', () => {
+    const point: PrSizeWeeklyTrendPoint = {
+      weekStart: '2026-04-07',
+      medianLines: 250,
+      measuredPrCount: 4,
+      isPartialWeek: false,
+    }
+
+    expectTypeOf(point).toMatchTypeOf<PrSizeWeeklyTrendPoint>()
+    expectTypeOf(point.measuredPrCount).toBeNumber()
+    expectTypeOf(point.isPartialWeek).toBeBoolean()
+    expect(point.measuredPrCount).toBe(4)
+    expect(point.isPartialWeek).toBe(false)
   })
 })

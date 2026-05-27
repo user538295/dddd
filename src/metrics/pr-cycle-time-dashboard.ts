@@ -31,7 +31,11 @@ import {
 import { calculatePrCycleTime, type PullRequestRecord } from '~/metrics/pr-cycle-time'
 import { comparePeriods, getWeeklyMedianTrend, median } from '~/metrics/pr-cycle-time-summary'
 import { buildPrSizeExceptions } from '~/metrics/pr-size-exceptions'
-import { computePrSizeMetric, getPrSizeWeeklyTrend } from '~/metrics/pr-size-metric'
+import {
+  computePrSizeMetric,
+  getPrSizeWeeklyTrend,
+  type PrSizeWeeklyTrendPoint,
+} from '~/metrics/pr-size-metric'
 import { getPrSizeTeamBreakdown } from '~/metrics/pr-size-team-breakdown'
 import type { PrSizeRecord } from '~/metrics/pr-size-types'
 
@@ -143,7 +147,7 @@ export type PrSizeTeamRow = {
 export type PrSize = {
   metric: PrSizeMetric
   exceptions: PrSizeException[]
-  weeklyTrend: Array<{ weekStart: string; medianLines: number | null }>
+  weeklyTrend: PrSizeWeeklyTrendPoint[]
   teamBreakdown: PrSizeTeamRow[]
 }
 
@@ -218,6 +222,10 @@ function mergedInCurrentSize(p: PrSizeRecord, from: Date, to: Date): boolean {
 function mergedInPreviousSize(p: PrSizeRecord, previousFrom: Date, currentFrom: Date): boolean {
   const m = p.mergedAt.getTime()
   return m >= previousFrom.getTime() && m < currentFrom.getTime()
+}
+
+function mergedNoLaterThan(p: { mergedAt: Date }, now: Date): boolean {
+  return p.mergedAt.getTime() <= now.getTime()
 }
 
 function cycleHoursForMerged(pr: PullRequestRecord): number | null {
@@ -429,7 +437,10 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
   sortExceptions(exceptions, teamBreakdown)
   const limited = exceptions.slice(0, 3)
 
-  const currentSizePrs = sizePrs.filter((p) => mergedInCurrentSize(p, current.from, current.to))
+  const sizePrsForTrend = sizePrs.filter((p) => mergedNoLaterThan(p, now))
+  const currentSizePrs = sizePrs.filter(
+    (p) => mergedInCurrentSize(p, current.from, current.to) && mergedNoLaterThan(p, now),
+  )
   const priorSizePrs = sizePrs.filter((p) => mergedInPreviousSize(p, previous.from, current.from))
   const prSizeMetric = computePrSizeMetric(currentSizePrs, priorSizePrs)
   const currentTeamPrs = new Map<string, PrSizeRecord[]>()
@@ -444,8 +455,8 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
       ? {
           metric: prSizeMetric,
           exceptions: buildPrSizeExceptions(currentTeamPrs),
-          weeklyTrend: getPrSizeWeeklyTrend(sizePrs, weeks, now),
-          teamBreakdown: getPrSizeTeamBreakdown(sizePrs, current, previous),
+          weeklyTrend: getPrSizeWeeklyTrend(sizePrsForTrend, weeks, now),
+          teamBreakdown: getPrSizeTeamBreakdown(sizePrsForTrend, current, previous),
         }
       : undefined
 
