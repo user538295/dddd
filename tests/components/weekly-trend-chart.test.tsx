@@ -5,7 +5,26 @@ import {
   buildDurationAxis,
   formatDurationHoursForChart,
 } from '~/components/dashboard/duration-trend-scale'
+import { FirstReviewTrendChart } from '~/components/dashboard/FirstReviewTrendChart'
+import {
+  layoutDetachedMarker,
+  WEEKLY_TREND_CHART_VIEWBOX_HEIGHT,
+  WEEKLY_TREND_CHART_VIEWBOX_WIDTH,
+} from '~/components/dashboard/weekly-trend-chart-layout'
 import { WeeklyTrendChart } from '~/components/dashboard/weekly-trend-chart'
+
+function parseBoundsAttr(value: string | null): { x: number; y: number; width: number; height: number } {
+  const [x, y, width, height] = (value ?? '0,0,0,0').split(',').map(Number)
+  return { x, y, width, height }
+}
+
+function rectInsideViewBox(
+  rect: { x: number; y: number; width: number; height: number },
+  viewW: number,
+  viewH: number,
+): boolean {
+  return rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= viewW && rect.y + rect.height <= viewH
+}
 
 afterEach(cleanup)
 
@@ -233,7 +252,8 @@ describe('WeeklyTrendChart', () => {
     )
     expect(pointLabels).toEqual(['20', '40', '55'])
     expect(screen.getByText('Apr 20 so far')).toBeTruthy()
-    expect(chart.querySelectorAll('circle')).toHaveLength(3)
+    expect(chart.querySelectorAll('circle')).toHaveLength(2)
+    expect(chart.querySelector('.pr-dashboard__chart-point--detached polygon')).toBeTruthy()
   })
 
   it('line_chart_detached_point_has_own_x_axis_slot_and_label', () => {
@@ -254,9 +274,12 @@ describe('WeeklyTrendChart', () => {
       />,
     )
 
-    const circles = Array.from(document.querySelectorAll('circle'))
-    const cxValues = circles.map((node) => Number(node.getAttribute('cx')))
-    expect(cxValues[2]).toBeGreaterThan(cxValues[1]!)
+    const completedCx = Array.from(document.querySelectorAll('circle')).map((node) =>
+      Number(node.getAttribute('cx')),
+    )
+    const detachedPolygon = document.querySelector('.pr-dashboard__chart-point--detached polygon')
+    const detachedCx = Number(detachedPolygon?.getAttribute('points')?.split(',')[0])
+    expect(detachedCx).toBeGreaterThan(completedCx.at(-1)!)
     expect(screen.getByText('Apr 20 so far')).toBeTruthy()
   })
 
@@ -348,5 +371,225 @@ describe('WeeklyTrendChart', () => {
     rerender(<WeeklyTrendChart valueMode="lines" yAxisLabel="Lines" weeklyTrend={[]} />)
     expect(screen.getByText('Lines')).toBeTruthy()
     expect(document.querySelectorAll('circle')).toHaveLength(0)
+  })
+
+  it('line_chart_detached_point_is_not_in_completed_series_path', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="lines"
+        yAxisLabel="Lines"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianLines: 20 },
+          { weekStart: '2026-04-13', medianLines: 40 },
+        ]}
+        detachedPoint={{
+          weekStart: '2026-04-20',
+          medianLines: 55,
+          label: 'Apr 20 so far',
+          ariaLabel: 'Current week so far: 55 median lines',
+        }}
+      />,
+    )
+
+    const detachedX = Number(
+      document.querySelector('.pr-dashboard__chart-point--detached polygon')?.getAttribute('points')?.split(',')[0],
+    )
+    const pathData = Array.from(document.querySelectorAll('path')).map((node) => node.getAttribute('d') ?? '')
+    expect(pathData.some((d) => d.includes(` ${detachedX} `))).toBe(false)
+  })
+
+  it('line_chart_detached_point_does_not_connect_across_null_gap', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="lines"
+        yAxisLabel="Lines"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianLines: 20 },
+          { weekStart: '2026-04-13', medianLines: null },
+          { weekStart: '2026-04-20', medianLines: 40 },
+        ]}
+        detachedPoint={{
+          weekStart: '2026-04-27',
+          medianLines: 55,
+          label: 'Apr 27 so far',
+          ariaLabel: 'Current week so far: 55 median lines',
+        }}
+      />,
+    )
+
+    const pathData = Array.from(document.querySelectorAll('path')).map((node) => node.getAttribute('d') ?? '')
+    const linePaths = pathData.filter((d) => d.startsWith('M ') && d.includes(' L '))
+    expect(linePaths).toHaveLength(0)
+  })
+
+  it('line_chart_extreme_detached_outlier_does_not_flatten_completed_line', () => {
+    const weeklyTrend = [
+      { weekStart: '2026-04-06', medianLines: 20 },
+      { weekStart: '2026-04-13', medianLines: 40 },
+    ]
+
+    const { unmount: unmountBaseline } = render(
+      <WeeklyTrendChart valueMode="lines" yAxisLabel="Lines" weeklyTrend={weeklyTrend} />,
+    )
+    const baselineCy = Array.from(document.querySelectorAll('circle')).map((node) => Number(node.getAttribute('cy')))
+    unmountBaseline()
+
+    render(
+      <WeeklyTrendChart
+        valueMode="lines"
+        yAxisLabel="Lines"
+        weeklyTrend={weeklyTrend}
+        detachedPoint={{
+          weekStart: '2026-04-20',
+          medianLines: 500,
+          label: 'Apr 20 so far',
+          ariaLabel: 'Current week so far: 500 median lines',
+        }}
+      />,
+    )
+
+    const completedCy = Array.from(document.querySelectorAll('circle')).map((node) => Number(node.getAttribute('cy')))
+    expect(completedCy).toEqual(baselineCy)
+    expect(screen.getByText('500')).toBeTruthy()
+
+    const detachedGroup = document.querySelector('.pr-dashboard__chart-point--detached')
+    expect(detachedGroup?.getAttribute('data-detached-overflow')).toBe('true')
+    const markerBounds = parseBoundsAttr(detachedGroup?.getAttribute('data-layout-marker-bounds') ?? null)
+    const labelBounds = parseBoundsAttr(detachedGroup?.getAttribute('data-layout-label-bounds') ?? null)
+    expect(rectInsideViewBox(markerBounds, WEEKLY_TREND_CHART_VIEWBOX_WIDTH, WEEKLY_TREND_CHART_VIEWBOX_HEIGHT)).toBe(
+      true,
+    )
+    expect(rectInsideViewBox(labelBounds, WEEKLY_TREND_CHART_VIEWBOX_WIDTH, WEEKLY_TREND_CHART_VIEWBOX_HEIGHT)).toBe(
+      true,
+    )
+  })
+
+  it('line_chart_current_only_state_scales_from_detached_point', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="lines"
+        yAxisLabel="Lines"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianLines: null },
+          { weekStart: '2026-04-13', medianLines: null },
+        ]}
+        detachedPoint={{
+          weekStart: '2026-04-20',
+          medianLines: 55,
+          label: 'Apr 20 so far',
+          ariaLabel: 'Current week so far: 55 median lines',
+        }}
+      />,
+    )
+
+    const linePaths = Array.from(document.querySelectorAll('path'))
+      .map((node) => node.getAttribute('d') ?? '')
+      .filter((d) => d.startsWith('M ') && d.includes(' L '))
+    expect(linePaths).toHaveLength(0)
+    expect(document.querySelectorAll('circle')).toHaveLength(0)
+    expect(screen.getByText('55')).toBeTruthy()
+
+    const detachedGroup = document.querySelector('.pr-dashboard__chart-point--detached')
+    const markerBounds = parseBoundsAttr(detachedGroup?.getAttribute('data-layout-marker-bounds') ?? null)
+    const labelBounds = parseBoundsAttr(detachedGroup?.getAttribute('data-layout-label-bounds') ?? null)
+    expect(rectInsideViewBox(markerBounds, WEEKLY_TREND_CHART_VIEWBOX_WIDTH, WEEKLY_TREND_CHART_VIEWBOX_HEIGHT)).toBe(
+      true,
+    )
+    expect(rectInsideViewBox(labelBounds, WEEKLY_TREND_CHART_VIEWBOX_WIDTH, WEEKLY_TREND_CHART_VIEWBOX_HEIGHT)).toBe(
+      true,
+    )
+  })
+
+  it('detached_label_layout_clamps_extreme_outlier_label_inside_viewbox', () => {
+    const layout = layoutDetachedMarker({
+      markerX: 540,
+      markerY: 42,
+      valueLabel: '99999',
+    })
+
+    expect(
+      rectInsideViewBox(layout.valueLabelRect, WEEKLY_TREND_CHART_VIEWBOX_WIDTH, WEEKLY_TREND_CHART_VIEWBOX_HEIGHT),
+    ).toBe(true)
+    expect(
+      rectInsideViewBox(layout.markerRect, WEEKLY_TREND_CHART_VIEWBOX_WIDTH, WEEKLY_TREND_CHART_VIEWBOX_HEIGHT),
+    ).toBe(true)
+  })
+
+  it('detached_label_layout_clamps_current_only_label_inside_viewbox', () => {
+    const layout = layoutDetachedMarker({
+      markerX: 48,
+      markerY: 120,
+      valueLabel: '55',
+    })
+
+    expect(
+      rectInsideViewBox(layout.valueLabelRect, WEEKLY_TREND_CHART_VIEWBOX_WIDTH, WEEKLY_TREND_CHART_VIEWBOX_HEIGHT),
+    ).toBe(true)
+    expect(
+      rectInsideViewBox(layout.markerRect, WEEKLY_TREND_CHART_VIEWBOX_WIDTH, WEEKLY_TREND_CHART_VIEWBOX_HEIGHT),
+    ).toBe(true)
+  })
+
+  it('line_chart_fractional_median_label_is_not_rounded_to_integer', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="lines"
+        yAxisLabel="Lines"
+        weeklyTrend={[{ weekStart: '2026-04-06', medianLines: 1.5 }]}
+      />,
+    )
+
+    expect(screen.getByText('1.5')).toBeTruthy()
+    expect(screen.queryByText('2')).toBeNull()
+  })
+
+  it('duration_chart_preserves_existing_last_point_highlight', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="duration"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianHours: 24 },
+          { weekStart: '2026-04-13', medianHours: 48 },
+        ]}
+      />,
+    )
+
+    const circles = Array.from(document.querySelectorAll('circle'))
+    expect(circles).toHaveLength(2)
+    expect(circles[1]?.getAttribute('r')).toBe('6')
+    expect(circles[1]?.getAttribute('stroke')).toBe('#d97706')
+  })
+
+  it('first_review_and_pr_cycle_time_accessibility_copy_unchanged_without_detached_props', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="duration"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianHours: 24 },
+          { weekStart: '2026-04-13', medianHours: 48 },
+        ]}
+      />,
+    )
+
+    expect(screen.getByRole('img', { name: '8-week PR cycle time trend' })).toBeTruthy()
+    expect(screen.queryByText(/PR size/i)).toBeNull()
+    expect(screen.queryByText(/so far/i)).toBeNull()
+    expect(document.querySelector('.pr-dashboard__chart-point--detached')).toBeNull()
+
+    cleanup()
+
+    render(
+      <FirstReviewTrendChart
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianHours: 1 },
+          { weekStart: '2026-04-13', medianHours: 2 },
+        ]}
+      />,
+    )
+
+    expect(screen.getByRole('img', { name: '8-week First Review trend' })).toBeTruthy()
+    expect(screen.queryByText(/PR size/i)).toBeNull()
+    expect(screen.queryByText(/so far/i)).toBeNull()
+    expect(document.querySelector('.pr-dashboard__chart-point--detached')).toBeNull()
   })
 })

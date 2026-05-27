@@ -290,7 +290,7 @@ No new config keys, environment variables, database columns, migrations, routes,
   - Checkpoint: `npm run lint && npm run typecheck && npm run test -- tests/components/weekly-trend-chart.test.tsx`
 
 #### Task 2.2 — Detached line rendering, axis behavior, and shared regressions
-- [ ] **File**: `src/components/dashboard/weekly-trend-chart.tsx`, `src/components/dashboard/weekly-trend-chart-layout.ts`
+- [x] **File**: `src/components/dashboard/weekly-trend-chart.tsx`, `src/components/dashboard/weekly-trend-chart-layout.ts`
 - **Depends on**: Task 2.1
 - **Description**:
   - Build completed-series paths only from `weeklyTrend`, never from `detachedPoint`.

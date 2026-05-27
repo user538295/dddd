@@ -5,6 +5,12 @@ import {
   selectDurationUnit,
 } from '~/components/dashboard/duration-trend-scale'
 import type { DurationScale } from '~/components/dashboard/duration-trend-scale'
+import {
+  DETACHED_MARKER_RADIUS,
+  layoutDetachedMarker,
+  WEEKLY_TREND_CHART_VIEWBOX_HEIGHT,
+  WEEKLY_TREND_CHART_VIEWBOX_WIDTH,
+} from '~/components/dashboard/weekly-trend-chart-layout'
 
 export type WeeklyTrendHoursPoint = { weekStart: string; medianHours: number | null }
 export type WeeklyTrendLinesPoint = { weekStart: string; medianLines: number | null }
@@ -31,12 +37,13 @@ export type WeeklyTrendChartProps =
 
 type WeeklyTrendPoint = WeeklyTrendHoursPoint | WeeklyTrendLinesPoint
 
-const VB_W = 560
-const VB_H = 220
+const VB_W = WEEKLY_TREND_CHART_VIEWBOX_WIDTH
+const VB_H = WEEKLY_TREND_CHART_VIEWBOX_HEIGHT
 const PAD_L = 48
 const PAD_R = 20
 const PAD_T = 32
 const PAD_B = 48
+const DETACHED_OVERFLOW_MARKER_Y = PAD_T + 10
 
 function shortWeekLabel(weekStart: string): string {
   const d = new Date(`${weekStart}T12:00:00.000Z`)
@@ -74,6 +81,10 @@ function chartValue(point: WeeklyTrendPoint, durationScale: DurationScale): numb
   return point.medianHours == null ? null : durationScale.valueFromHours(point.medianHours)
 }
 
+function formatLinesPointLabel(value: number): string {
+  return Number.isInteger(value) ? String(value) : String(value)
+}
+
 function joinPath(points: Pt[], fromIdx: number, toIdx: number): string {
   let d = ''
   for (let j = fromIdx; j <= toIdx; j++) {
@@ -94,6 +105,10 @@ function contiguousRuns(points: Pt[]): Pt[][] {
     }
   }
   return runs
+}
+
+function detachedDiamondPoints(cx: number, cy: number, radius: number): string {
+  return `${cx},${cy - radius} ${cx + radius},${cy} ${cx},${cy + radius} ${cx - radius},${cy}`
 }
 
 export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
@@ -118,10 +133,21 @@ export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
   const chartValues = weeklyTrend.map((p) => chartValue(p, durationScale))
   const numeric = chartValues.filter((v): v is number => v != null && Number.isFinite(v))
   const detachedNumeric = detachedPoint?.medianLines
-  const axisNumeric = [...numeric, ...(detachedNumeric != null ? [detachedNumeric] : [])]
+  const hasCompletedNumeric = numeric.length > 0
+  const lineAxisMax = hasCompletedNumeric
+    ? Math.max(...numeric)
+    : detachedNumeric != null
+      ? detachedNumeric
+      : 0
   const { maxValue, ticks: yTicks } = linesMode
-    ? buildLineAxis(Math.max(...axisNumeric, 0))
+    ? buildLineAxis(lineAxisMax)
     : buildDurationAxis(Math.max(...numeric, 0))
+
+  const detachedOverflows =
+    linesMode &&
+    detachedNumeric != null &&
+    hasCompletedNumeric &&
+    detachedNumeric > maxValue
 
   const xAt = (i: number) =>
     PAD_L + (slotCount <= 1 ? innerW / 2 : (i / Math.max(1, slotCount - 1)) * innerW)
@@ -147,13 +173,25 @@ export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
   }
 
   const formatPointLabel = (value: number) =>
-    linesMode ? String(Math.round(value)) : formatScaledDurationChartValue(value, durationScale.unit)
+    linesMode ? formatLinesPointLabel(value) : formatScaledDurationChartValue(value, durationScale.unit)
   const formatTickLabel = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1))
   const resolvedYAxisLabel = linesMode ? yAxisLabel : durationScale.axisLabel
 
   const detachedX = detachedPoint ? xAt(seriesSlotCount) : null
-  const detachedY =
-    detachedPoint != null && detachedNumeric != null ? yAt(detachedNumeric) : null
+  const detachedPlotY =
+    detachedPoint != null && detachedNumeric != null
+      ? detachedOverflows
+        ? DETACHED_OVERFLOW_MARKER_Y
+        : yAt(detachedNumeric)
+      : null
+  const detachedLayout =
+    detachedPoint && detachedX != null && detachedPlotY != null
+      ? layoutDetachedMarker({
+          markerX: detachedX,
+          markerY: detachedPlotY,
+          valueLabel: formatLinesPointLabel(detachedPoint.medianLines),
+        })
+      : null
 
   return (
     <div className="pr-dashboard__chart-wrap">
@@ -218,19 +256,42 @@ export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
           )
         })}
 
-        {detachedPoint && detachedX != null && detachedY != null ? (
-          <g aria-label={detachedPoint.ariaLabel}>
+        {detachedPoint && detachedX != null && detachedPlotY != null && detachedLayout ? (
+          <g
+            className="pr-dashboard__chart-point--detached"
+            data-detached-overflow={detachedOverflows ? 'true' : 'false'}
+            data-layout-marker-bounds={`${detachedLayout.markerRect.x},${detachedLayout.markerRect.y},${detachedLayout.markerRect.width},${detachedLayout.markerRect.height}`}
+            data-layout-label-bounds={`${detachedLayout.valueLabelRect.x},${detachedLayout.valueLabelRect.y},${detachedLayout.valueLabelRect.width},${detachedLayout.valueLabelRect.height}`}
+            aria-label={detachedPoint.ariaLabel}
+          >
             <title>{detachedPoint.ariaLabel}</title>
-            <circle cx={detachedX} cy={detachedY} r={5} fill="#fff" stroke="#111827" strokeWidth="2" />
+            {detachedOverflows ? (
+              <line
+                x1={detachedX}
+                y1={detachedPlotY + DETACHED_MARKER_RADIUS + 2}
+                x2={detachedX}
+                y2={PAD_T + innerH}
+                stroke="#111827"
+                strokeWidth="1.5"
+                strokeDasharray="4 3"
+              />
+            ) : null}
+            <polygon
+              points={detachedDiamondPoints(detachedX, detachedPlotY, DETACHED_MARKER_RADIUS)}
+              fill="#fff"
+              stroke="#111827"
+              strokeWidth="2"
+              strokeDasharray="4 2"
+            />
             <text
-              x={detachedX}
-              y={detachedY - 12}
+              x={detachedLayout.valueLabelX}
+              y={detachedLayout.valueLabelY}
               fill="#111827"
               fontSize="11"
               fontWeight="600"
-              textAnchor="middle"
+              textAnchor={detachedLayout.valueLabelAnchor}
             >
-              {formatPointLabel(detachedPoint.medianLines)}
+              {formatLinesPointLabel(detachedPoint.medianLines)}
             </text>
           </g>
         ) : null}
