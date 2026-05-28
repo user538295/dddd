@@ -37,7 +37,7 @@ The first release shows one metric only: PR Cycle Time.
 
 ## Next Step
 
-Phase 03 (PR Size) is implemented (see [FEAT-003-pr-size-implementation-plan.md](Backlog/FEAT-003-pr-size-implementation-plan.md)). Next step: [Phase 04: Jira Flow Metrics](Backlog/phase-04-jira-flow-metrics.md).
+Phase 03 (PR Size) is implemented, including the PR Size trend confidence update (FIX-002): completed-week trend values are shown separately from current-week-so-far and low-sample confidence notes (see [FEAT-003-pr-size-implementation-plan.md](Backlog/FEAT-003-pr-size-implementation-plan.md)). Next step: [Phase 04: Jira Flow Metrics](Backlog/phase-04-jira-flow-metrics.md).
 
 Current one-page UI reference:
 

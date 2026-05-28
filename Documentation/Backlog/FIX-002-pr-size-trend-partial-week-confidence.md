@@ -444,7 +444,7 @@ No new config keys, environment variables, database columns, migrations, routes,
 ### Final Phase — Verification & Documentation
 
 #### Task 4.1 — Final verification & documentation update
-- [ ] **File**: `Documentation/README.md`, `Documentation/Roadmap/trackable-roadmap.md`, `Documentation/Backlog/phase-03-pr-size.md`, `Documentation/Backlog/phase-03-pr-size-brief.md`, `Documentation/Backlog/FEAT-003-pr-size-implementation-plan.md`
+- [x] **File**: `Documentation/README.md`, `Documentation/Roadmap/trackable-roadmap.md`, `Documentation/Backlog/phase-03-pr-size.md`, `Documentation/Backlog/phase-03-pr-size-brief.md`, `Documentation/Backlog/FEAT-003-pr-size-implementation-plan.md`
 - **Depends on**: Task 1.1, Task 1.2, Task 1.3, Task 2.1, Task 2.2, Task 3.1, Task 3.2, Task 3.3, Task 3.4
 - **Description**:
   - Discover user-facing PR Size chart behavior documentation, including `Documentation/README.md`, `Documentation/Roadmap/trackable-roadmap.md`, `Documentation/Backlog/phase-03-pr-size.md`, `Documentation/Backlog/phase-03-pr-size-brief.md`, and `Documentation/Backlog/FEAT-003-pr-size-implementation-plan.md`.

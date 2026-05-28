@@ -1,7 +1,7 @@
 # Phase 03: PR Size
 
 Status: Implemented
-Last updated: 2026-05-18
+Last updated: 2026-05-28
 
 Implementation plan: [FEAT-003 — PR Size](FEAT-003-pr-size-implementation-plan.md)
 
@@ -21,6 +21,8 @@ Add PR Size so the dashboard can detect oversized PR patterns.
 - Add PR Size metric card.
 - Add oversized PR exceptions.
 - Add 8-week PR Size trend.
+- Show completed-week trend separately from current-week-so-far when current-week measured PRs exist.
+- Show measured-count confidence notes for current-week-so-far and low-sample completed weeks.
 - Add separate Size team breakdown.
 - Show median PR size, not only maximum PR size.
 - Preserve the PR Cycle Time and First Review Time sections above PR Size; do not move Phase 03 content into the first viewport.
@@ -51,6 +53,9 @@ Verified by **FEAT-003** Task 10.1 (`npm run verify:phase03 && npm run verify:ph
 - [x] Metric card shows median `additions + deletions` for non-null PRs in the 8-week window; shows `baseline pending` when fewer than 3 ISO weeks of size data (raw median still shown); shows period-over-period trend vs. the prior 8 weeks when enough data exists.
 - [x] Oversized PR exceptions flag teams with ≥ 3 sized PRs where ≥ 50% exceed 2× team median; sorted by ratio descending; capped at 3; panel hidden when empty.
 - [x] 8-week PR Size trend chart uses median lines per ISO week; null weeks are gaps, not zeros; chart renders regardless of `baselineStatus`.
+- [x] PR Size trend chart shows completed-week points plus an optional detached current-week-so-far point; detached current point is shown only when current week has measured PRs.
+- [x] PR Size trend confidence copy includes measured PR counts and low-sample wording (`< 3 measured PRs`) without changing PR Size median math.
+- [x] PR Size trend excludes future-dated rows (`mergedAt > now`) while including rows at exactly `mergedAt === now`.
 - [x] Size team breakdown lists teams with ≥ 1 sized PR (columns: Team, PRs merged, Median size, Trend, Largest PR); sorted by median descending; no author names.
 - [x] Size sync computes merge/squash via `git diff <sha>^1 <sha> --shortstat`; rebase via GitHub PR detail API; `changedFiles` from shortstat or API.
 - [x] PRs without size data are excluded from medians (never shown as zero).

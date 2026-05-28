@@ -1,7 +1,7 @@
 # FEAT-003 — PR Size
 **Purpose**: Add Phase 03 PR Size visibility (Median PR Size, oversized-PR exceptions, 8-week trend, team breakdown) without changing Phase 01 or Phase 02 surfaces.
 **Audience**: Head of Engineering, FEAT-003 implementation agent, engineers maintaining the dashboard.
-**Status**: Done
+**Status**: Done (updated with FIX-002 PR Size trend confidence behavior)
 
 ---
 
@@ -152,7 +152,12 @@ export type PrSizeTeamRow = {
 export type PrSize = {
   metric: PrSizeMetric
   exceptions: PrSizeException[]
-  weeklyTrend: Array<{ weekStart: string; medianLines: number | null }>
+  weeklyTrend: Array<{
+    weekStart: string
+    medianLines: number | null
+    measuredPrCount: number
+    isPartialWeek: boolean
+  }>
   teamBreakdown: PrSizeTeamRow[]
 }
 ```

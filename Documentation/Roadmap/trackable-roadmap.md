@@ -1,7 +1,7 @@
 # Trackable Roadmap Checklist
 
 Status: Active
-Last updated: 2026-05-18
+Last updated: 2026-05-28
 
 ## How To Use This File
 
@@ -105,6 +105,7 @@ Goal: detect oversized PR patterns.
 - [x] Add oversized PR exceptions.
 - [x] Add separate Size team breakdown.
 - [x] Add PR Size weekly trend.
+- [x] Distinguish completed-week trend from current-week-so-far with confidence notes and detached current marker.
 - [x] Show size metadata freshness.
 - [x] Verify the UI does not rank or shame individual authors.
 
