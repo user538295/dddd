@@ -416,7 +416,7 @@ No new config keys, environment variables, database columns, migrations, routes,
   - Checkpoint: `npm run lint && npm run typecheck && npm run test:e2e -- --grep @phase03`
 
 #### Task 3.4 — Phase 03 coverage and script wiring
-- [ ] **File**: `package.json`, `vitest.config.phase03.ts`, `tests/scripts/verify-phase-02.test.ts` or a new `tests/scripts/verify-phase-03.test.ts`
+- [x] **File**: `package.json`, `vitest.config.phase03.ts`, `tests/scripts/verify-phase-02.test.ts` or a new `tests/scripts/verify-phase-03.test.ts`
 - **Depends on**: Task 2.2, Task 3.3
 - **Description**:
   - Add `src/components/dashboard/weekly-trend-chart.tsx` to `vitest.config.phase03.ts` coverage include because this fix touches the shared chart renderer.

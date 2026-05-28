@@ -30,8 +30,11 @@ export default defineConfig(({ mode }) => {
         include: [
           'src/metrics/pr-size-*.ts',
           'src/metrics/math.ts',
+          'src/metrics/pr-cycle-time-dashboard.ts',
           'src/collector/pr-size-*.ts',
           'src/components/dashboard/PrSize*.tsx',
+          'src/components/dashboard/weekly-trend-chart.tsx',
+          'src/components/dashboard/weekly-trend-chart-layout.ts',
         ],
         thresholds: {
           lines: 85,
