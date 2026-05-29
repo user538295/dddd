@@ -1,7 +1,7 @@
 # FIX-003 — PR Cycle Time 16-Week Comparison Trend
 **Purpose**: Make the PR Cycle Time trend chart explain the card's current-versus-previous 8-week comparison by showing both periods in one chronological chart.
 **Audience**: Engineering leaders using the local dashboard, plus implementers maintaining PR Cycle Time metrics and shared dashboard chart components.
-**Status**: Draft
+**Status**: Complete
 
 ---
 
@@ -180,8 +180,8 @@ No new config keys or environment variables are introduced.
 ---
 
 ## Documentation update
-- [ ] `Documentation/Backlog/pr-cycle-time-16-week-comparison-trend-brief.md`, section: Recommendation, path: `Documentation/Backlog/pr-cycle-time-16-week-comparison-trend-brief.md`
-- [ ] `Documentation/Backlog/FIX-003-pr-cycle-time-16-week-comparison-trend.md`, section: Status, path: `Documentation/Backlog/FIX-003-pr-cycle-time-16-week-comparison-trend.md`
+- [x] `Documentation/Backlog/pr-cycle-time-16-week-comparison-trend-brief.md`, section: Recommendation, path: `Documentation/Backlog/pr-cycle-time-16-week-comparison-trend-brief.md`
+- [x] `Documentation/Backlog/FIX-003-pr-cycle-time-16-week-comparison-trend.md`, section: Status, path: `Documentation/Backlog/FIX-003-pr-cycle-time-16-week-comparison-trend.md`
 
 ---
 
@@ -413,7 +413,7 @@ No new config keys or environment variables are introduced.
   - Checkpoint: `npm run test -- tests/components/weekly-trend-chart.test.tsx tests/components/first-review-trend-chart.test.tsx tests/components/PrSizeTrendChart.test.tsx`
 
 #### Task 5.2 — Final verification and documentation status
-- [ ] **File**: `Documentation/Backlog/FIX-003-pr-cycle-time-16-week-comparison-trend.md`, `Documentation/Backlog/pr-cycle-time-16-week-comparison-trend-brief.md`
+- [x] **File**: `Documentation/Backlog/FIX-003-pr-cycle-time-16-week-comparison-trend.md`, `Documentation/Backlog/pr-cycle-time-16-week-comparison-trend-brief.md`
 - **Depends on**: Task 5.1
 - **Description**:
   - Update this plan status from `Draft` to `Complete` only after implementation and verification pass.
