@@ -559,6 +559,13 @@
   display: block;
 }
 
+.pr-dashboard__chart-note {
+  margin: -4px 0 12px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--color-muted);
+}
+
 .pr-dashboard__chart-confidence {
   margin: 14px 0 0;
   max-width: 100%;

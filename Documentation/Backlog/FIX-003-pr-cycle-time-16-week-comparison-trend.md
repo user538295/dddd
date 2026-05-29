@@ -355,7 +355,7 @@ No new config keys or environment variables are introduced.
 > **Releasable**: when Task 4.2 is complete, the feature is visually verified and ready for implementation review.
 
 #### Task 4.1 — Comparison trend styles
-- [ ] **File**: `src/components/dashboard/PrCycleTimeDashboard.css`
+- [x] **File**: `src/components/dashboard/PrCycleTimeDashboard.css`
 - **Depends on**: Task 2.2, Task 3.2
 - **Description**:
   - Add minimal classes or CSS variables for comparison labels/divider if SVG inline attributes are not enough.

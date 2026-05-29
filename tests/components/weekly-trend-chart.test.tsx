@@ -471,6 +471,24 @@ describe('WeeklyTrendChart', () => {
     expect(document.querySelector('[data-period="previous"] path')?.getAttribute('stroke-dasharray')).toBeTruthy()
   })
 
+  it('weekly_chart_comparison_previous_segment_uses_muted_reference_color', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={comparisonTrend} />)
+
+    expect(document.querySelector('[data-period="previous"] path')?.getAttribute('stroke')).toBe('#6b7280')
+  })
+
+  it('weekly_chart_comparison_current_segment_uses_primary_color', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={comparisonTrend} />)
+
+    expect(document.querySelector('[data-period="current"] path[stroke="#111827"]')).toBeTruthy()
+  })
+
+  it('weekly_chart_comparison_latest_current_point_uses_accent', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={comparisonTrend} />)
+
+    expect(document.querySelector('[data-period="current"] circle[stroke="#d97706"]')).toBeTruthy()
+  })
+
   it('weekly_chart_first_review_duration_behavior_unchanged', () => {
     render(<WeeklyTrendChart valueMode="duration" weeklyTrend={comparisonTrend.slice(0, 8).map((p) => ({ weekStart: p.bucketLabel, medianHours: p.medianHours }))} />)
 
