@@ -311,7 +311,7 @@ No new config keys or environment variables are introduced.
 > **Releasable**: when Task 3.2 is complete, the PR Cycle Time section uses the 16-week comparison chart while the rest of the dashboard remains unchanged.
 
 #### Task 3.1 — PR Cycle Time dashboard chart wiring
-- [ ] **File**: `src/components/dashboard/PrCycleTimeDashboard.tsx`
+- [x] **File**: `src/components/dashboard/PrCycleTimeDashboard.tsx`
 - **Depends on**: Task 1.2, Task 2.2
 - **Description**:
   - Use `data.comparisonWeeklyTrend` as the source for the PR Cycle Time trend chart.

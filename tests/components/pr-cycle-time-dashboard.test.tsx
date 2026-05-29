@@ -15,6 +15,14 @@ function baseDashboard(overrides: Partial<DashboardModel> = {}): DashboardModel 
     weekStart: `2026-0${1 + i}-01`,
     medianHours: i % 2 === 0 ? 24 : null,
   }))
+  const comparisonWeeklyTrend = Array.from({ length: 16 }, (_, i) => ({
+    period: i < 8 ? ('previous' as const) : ('current' as const),
+    bucketIndex: (i % 8) + 1,
+    bucketStart: `2026-0${i < 8 ? 2 : 4}-${String((i % 8) + 1).padStart(2, '0')}T00:00:00.000Z`,
+    bucketEnd: `2026-0${i < 8 ? 2 : 4}-${String((i % 8) + 2).padStart(2, '0')}T00:00:00.000Z`,
+    bucketLabel: `2026-0${i < 8 ? 2 : 4}-${String((i % 8) + 1).padStart(2, '0')}`,
+    medianHours: i % 2 === 0 ? 24 : null,
+  }))
   return {
     range: { from: '2026-01-01T00:00:00.000Z', to: '2026-05-14T23:59:59.999Z', weeks: 8 },
     metric: {
@@ -26,7 +34,7 @@ function baseDashboard(overrides: Partial<DashboardModel> = {}): DashboardModel 
     },
     exceptions: [],
     weeklyTrend,
-    comparisonWeeklyTrend: [],
+    comparisonWeeklyTrend,
     teamBreakdown: [
       {
         team: 'Alpha',
@@ -226,22 +234,31 @@ describe.sequential('PrCycleTimeDashboard', () => {
     expect(screen.getByText('Sync failed')).toBeInTheDocument()
   })
 
-  it('dashboard_renders_8_week_trend_with_empty_weeks', () => {
+  it('dashboard_renders_16_week_pr_cycle_time_comparison_trend', () => {
     render(<PrCycleTimeDashboard data={baseDashboard()} />)
     const trendList = screen.getByTestId('weekly-trend-list')
     const items = within(trendList).getAllByRole('listitem')
-    expect(items).toHaveLength(8)
-    expect(within(trendList).getAllByText('empty')).toHaveLength(4)
+    expect(items).toHaveLength(16)
+    expect(screen.getByRole('img', { name: '16-week PR cycle time comparison trend' })).toBeInTheDocument()
+    expect(within(trendList).getAllByText('empty')).toHaveLength(8)
+  })
+
+  it('dashboard_comparison_trend_hidden_list_labels_previous_and_current_periods', () => {
+    render(<PrCycleTimeDashboard data={baseDashboard()} />)
+    const items = within(screen.getByTestId('weekly-trend-list')).getAllByRole('listitem')
+
+    expect(items[0]).toHaveTextContent('previous')
+    expect(items[8]).toHaveTextContent('current')
   })
 
   it('dashboard_cycle_time_trend_uses_minutes_for_sub_hour_values', () => {
     render(
       <PrCycleTimeDashboard
         data={baseDashboard({
-          weeklyTrend: [
-            { weekStart: '2026-04-06', medianHours: 0.25 },
-            { weekStart: '2026-04-13', medianHours: 0.5 },
-          ],
+          comparisonWeeklyTrend: baseDashboard().comparisonWeeklyTrend.map((p, i) => ({
+            ...p,
+            medianHours: i === 0 ? 0.25 : i === 1 ? 0.5 : null,
+          })),
         })}
       />,
     )
@@ -254,7 +271,10 @@ describe.sequential('PrCycleTimeDashboard', () => {
     render(
       <PrCycleTimeDashboard
         data={baseDashboard({
-          weeklyTrend: [{ weekStart: '2026-04-06', medianHours: 0.004 }],
+          comparisonWeeklyTrend: baseDashboard().comparisonWeeklyTrend.map((p, i) => ({
+            ...p,
+            medianHours: i === 0 ? 0.004 : null,
+          })),
         })}
       />,
     )
@@ -267,10 +287,10 @@ describe.sequential('PrCycleTimeDashboard', () => {
     render(
       <PrCycleTimeDashboard
         data={baseDashboard({
-          weeklyTrend: [
-            { weekStart: '2026-04-06', medianHours: null },
-            { weekStart: '2026-04-13', medianHours: 0 },
-          ],
+          comparisonWeeklyTrend: baseDashboard().comparisonWeeklyTrend.map((p, i) => ({
+            ...p,
+            medianHours: i === 0 ? null : i === 1 ? 0 : null,
+          })),
         })}
       />,
     )
@@ -284,10 +304,10 @@ describe.sequential('PrCycleTimeDashboard', () => {
     render(
       <PrCycleTimeDashboard
         data={baseDashboard({
-          weeklyTrend: [
-            { weekStart: '2026-04-06', medianHours: 0.5 },
-            { weekStart: '2026-04-13', medianHours: 48 },
-          ],
+          comparisonWeeklyTrend: baseDashboard().comparisonWeeklyTrend.map((p, i) => ({
+            ...p,
+            medianHours: i === 0 ? 0.5 : i === 1 ? 48 : null,
+          })),
         })}
       />,
     )
