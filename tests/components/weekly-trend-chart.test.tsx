@@ -13,6 +13,15 @@ import {
 } from '~/components/dashboard/weekly-trend-chart-layout'
 import { WeeklyTrendChart } from '~/components/dashboard/weekly-trend-chart'
 
+const comparisonTrend = Array.from({ length: 16 }, (_, i) => ({
+  period: i < 8 ? ('previous' as const) : ('current' as const),
+  bucketIndex: (i % 8) + 1,
+  bucketStart: `2026-0${i < 8 ? 2 : 4}-${String((i % 8) + 1).padStart(2, '0')}T00:00:00.000Z`,
+  bucketEnd: `2026-0${i < 8 ? 2 : 4}-${String((i % 8) + 2).padStart(2, '0')}T00:00:00.000Z`,
+  bucketLabel: `2026-0${i < 8 ? 2 : 4}-${String((i % 8) + 1).padStart(2, '0')}`,
+  medianHours: i === 2 || i === 10 ? null : i + 1,
+}))
+
 function parseBoundsAttr(value: string | null): { x: number; y: number; width: number; height: number } {
   const [x, y, width, height] = (value ?? '0,0,0,0').split(',').map(Number)
   return { x, y, width, height }
@@ -351,6 +360,98 @@ describe('WeeklyTrendChart', () => {
     expect(screen.getByText('2d')).toBeTruthy()
     expect(document.querySelectorAll('circle')).toHaveLength(2)
     expect(screen.queryByText(/so far/i)).toBeNull()
+  })
+
+  it('weekly_chart_renders_duration_comparison_segments', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="duration"
+        weeklyTrend={[]}
+        comparisonTrend={comparisonTrend}
+        ariaLabel="16-week PR cycle time comparison trend"
+      />,
+    )
+
+    expect(document.querySelector('[data-period="previous"] path')?.getAttribute('stroke')).toBe('#6b7280')
+    expect(document.querySelector('[data-period="previous"] path')?.getAttribute('stroke-dasharray')).toBeTruthy()
+    expect(document.querySelector('[data-period="current"] path')?.getAttribute('stroke')).toBe('#111827')
+  })
+
+  it('weekly_chart_does_not_connect_previous_to_current_segment', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={comparisonTrend} />)
+
+    const divider = document.querySelector('[data-testid="comparison-boundary-divider"]')
+    expect(divider).toBeTruthy()
+    const previousPath = document.querySelector('[data-period="previous"] path')?.getAttribute('d') ?? ''
+    const currentPath = document.querySelector('[data-period="current"] path')?.getAttribute('d') ?? ''
+    expect(previousPath).not.toContain(currentPath.match(/^M ([^L]+)/)?.[1] ?? 'current-start')
+  })
+
+  it('weekly_chart_current_accent_never_applies_to_previous_period', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={comparisonTrend} />)
+
+    const previousAccent = document.querySelector('[data-period="previous"] [stroke="#d97706"]')
+    const currentAccent = document.querySelector('[data-period="current"] [stroke="#d97706"]')
+    expect(previousAccent).toBeNull()
+    expect(currentAccent).toBeTruthy()
+  })
+
+  it('weekly_chart_current_accent_absent_when_current_period_all_null', () => {
+    const currentNull = comparisonTrend.map((p) => (p.period === 'current' ? { ...p, medianHours: null } : p))
+
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={currentNull} />)
+
+    expect(document.querySelector('[stroke="#d97706"]')).toBeNull()
+  })
+
+  it('weekly_chart_comparison_preserves_null_gaps', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={comparisonTrend} />)
+
+    const previousPaths = document.querySelectorAll('[data-period="previous"] path')
+    const currentPaths = document.querySelectorAll('[data-period="current"] path')
+    expect(previousPaths.length).toBeGreaterThan(1)
+    expect(currentPaths.length).toBeGreaterThan(1)
+  })
+
+  it('weekly_chart_comparison_exposes_stable_period_selectors', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={comparisonTrend} />)
+
+    expect(document.querySelector('[data-period="previous"]')).toBeTruthy()
+    expect(document.querySelector('[data-period="current"]')).toBeTruthy()
+    expect(screen.getByTestId('comparison-boundary-divider')).toBeTruthy()
+    expect(screen.getByTestId('comparison-label-previous')).toBeTruthy()
+    expect(screen.getByTestId('comparison-label-current')).toBeTruthy()
+  })
+
+  it('weekly_chart_first_review_duration_behavior_unchanged', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={comparisonTrend.slice(0, 8).map((p) => ({ weekStart: p.bucketLabel, medianHours: p.medianHours }))} />)
+
+    expect(document.querySelector('[data-testid="comparison-boundary-divider"]')).toBeNull()
+    expect(document.querySelector('[data-period="previous"]')).toBeNull()
+    expect(document.querySelectorAll('circle')).toHaveLength(7)
+  })
+
+  it('weekly_chart_pr_size_line_behavior_unchanged', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="lines"
+        yAxisLabel="Lines"
+        weeklyTrend={[
+          { weekStart: '2026-04-06', medianLines: 20 },
+          { weekStart: '2026-04-13', medianLines: null },
+          { weekStart: '2026-04-20', medianLines: 40 },
+        ]}
+        detachedPoint={{
+          weekStart: '2026-04-27',
+          medianLines: 55,
+          label: 'Apr 27 so far',
+          ariaLabel: 'Current week so far: 55 median lines',
+        }}
+      />,
+    )
+
+    expect(document.querySelector('[data-testid="comparison-boundary-divider"]')).toBeNull()
+    expect(document.querySelector('.pr-dashboard__chart-point--detached')).toBeTruthy()
   })
 
   it('pr_size_line_mode_handles_all_null_or_empty_line_trend', () => {

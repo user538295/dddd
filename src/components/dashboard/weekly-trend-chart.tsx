@@ -20,10 +20,19 @@ export type DetachedLinesPoint = {
   label: string
   ariaLabel: string
 }
+export type DurationComparisonPoint = {
+  period: 'previous' | 'current'
+  bucketIndex: number
+  bucketStart: string
+  bucketEnd: string
+  bucketLabel: string
+  medianHours: number | null
+}
 export type WeeklyTrendChartProps =
   | {
       valueMode: 'duration'
       weeklyTrend: WeeklyTrendHoursPoint[]
+      comparisonTrend?: DurationComparisonPoint[]
       ariaLabel?: string
       yAxisLabel?: string
     }
@@ -35,7 +44,7 @@ export type WeeklyTrendChartProps =
       yAxisLabel?: string
     }
 
-type WeeklyTrendPoint = WeeklyTrendHoursPoint | WeeklyTrendLinesPoint
+type WeeklyTrendPoint = WeeklyTrendHoursPoint | WeeklyTrendLinesPoint | DurationComparisonPoint
 
 const VB_W = WEEKLY_TREND_CHART_VIEWBOX_WIDTH
 const VB_H = WEEKLY_TREND_CHART_VIEWBOX_HEIGHT
@@ -71,9 +80,18 @@ function buildLineAxis(maxNumeric: number): { maxValue: number; ticks: number[] 
 }
 
 type Pt = { i: number; x: number; y: number; value: number }
+type ComparisonPt = Pt & { period: 'previous' | 'current' }
 
 function isLinesPoint(point: WeeklyTrendPoint): point is WeeklyTrendLinesPoint {
   return 'medianLines' in point
+}
+
+function isValidComparisonTrend(points: DurationComparisonPoint[]): boolean {
+  if (points.length !== 16) return false
+  return points.every((point, index) => {
+    const expectedPeriod = index < 8 ? 'previous' : 'current'
+    return point.period === expectedPeriod && point.bucketIndex === (index % 8) + 1
+  })
 }
 
 function chartValue(point: WeeklyTrendPoint, durationScale: DurationScale): number | null {
@@ -113,7 +131,11 @@ function detachedDiamondPoints(cx: number, cy: number, radius: number): string {
 
 export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
   const linesMode = props.valueMode === 'lines'
-  const weeklyTrend = props.weeklyTrend
+  const comparisonTrend =
+    !linesMode && props.comparisonTrend && isValidComparisonTrend(props.comparisonTrend)
+      ? props.comparisonTrend
+      : undefined
+  const weeklyTrend = comparisonTrend ?? props.weeklyTrend
   const detachedPoint = linesMode ? props.detachedPoint : undefined
   const ariaLabel =
     props.ariaLabel ?? (linesMode ? '8-week PR size trend' : '8-week PR cycle time trend')
@@ -126,8 +148,8 @@ export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
 
   const durationHours = linesMode
     ? []
-    : (weeklyTrend as WeeklyTrendHoursPoint[])
-        .map((p) => p.medianHours)
+    : weeklyTrend
+        .map((p) => ('medianHours' in p ? p.medianHours : null))
         .filter((v): v is number => v != null && Number.isFinite(v))
   const durationScale = durationScaleFor(selectDurationUnit(durationHours.length > 0 ? Math.max(...durationHours) : null))
   const chartValues = weeklyTrend.map((p) => chartValue(p, durationScale))
@@ -161,14 +183,37 @@ export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
     }
   }
 
+  const comparisonPts: ComparisonPt[] =
+    comparisonTrend == null
+      ? []
+      : pts.map((p) => ({ ...p, period: comparisonTrend[p.i]!.period }))
+  const latestCurrentPoint = comparisonPts.filter((p) => p.period === 'current').at(-1)
+  const plainPts = comparisonTrend == null ? pts : []
+
   const pathSegments: Array<{ d: string; stroke: string }> = []
-  for (const run of contiguousRuns(pts)) {
+  for (const run of contiguousRuns(plainPts)) {
     if (run.length < 2) continue
     for (let i = 0; i < run.length - 1; i++) {
       pathSegments.push({
         d: joinPath(run, i, i + 1),
         stroke: run[i + 1] === pts.at(-1) ? '#d97706' : '#111827',
       })
+    }
+  }
+
+  const comparisonPathSegments: Array<{ d: string; period: 'previous' | 'current'; stroke: string; dashed: boolean }> = []
+  for (const period of ['previous', 'current'] as const) {
+    for (const run of contiguousRuns(comparisonPts.filter((p) => p.period === period))) {
+      if (run.length < 2) continue
+      for (let i = 0; i < run.length - 1; i++) {
+        const segmentEnd = run[i + 1]!
+        comparisonPathSegments.push({
+          d: joinPath(run, i, i + 1),
+          period,
+          stroke: period === 'previous' ? '#6b7280' : segmentEnd === latestCurrentPoint ? '#d97706' : '#111827',
+          dashed: period === 'previous',
+        })
+      }
     }
   }
 
@@ -230,7 +275,96 @@ export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
           />
         ))}
 
-        {pts.map((p, idx) => {
+        {comparisonTrend ? (
+          <>
+            <line
+              data-testid="comparison-boundary-divider"
+              x1={xAt(7.5)}
+              y1={PAD_T}
+              x2={xAt(7.5)}
+              y2={PAD_T + innerH}
+              stroke="#d1d5db"
+              strokeWidth="1"
+              strokeDasharray="3 4"
+            />
+            <text data-testid="comparison-label-previous" x={xAt(3.5)} y={30} fill="#6b7280" fontSize="10" fontWeight="600" textAnchor="middle">
+              Previous 8 weeks
+            </text>
+            <text data-testid="comparison-label-current" x={xAt(11.5)} y={30} fill="#111827" fontSize="10" fontWeight="600" textAnchor="middle">
+              Current 8 weeks
+            </text>
+            <g data-period="previous">
+              {comparisonPathSegments
+                .filter((segment) => segment.period === 'previous')
+                .map((segment) => (
+                  <path
+                    key={segment.d}
+                    d={segment.d}
+                    fill="none"
+                    stroke={segment.stroke}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray={segment.dashed ? '5 4' : undefined}
+                  />
+                ))}
+              {comparisonPts
+                .filter((p) => p.period === 'previous')
+                .map((p) => (
+                  <g key={p.i}>
+                    <circle cx={p.x} cy={p.y} r="5" fill="#fff" stroke="#6b7280" strokeWidth="2" />
+                    <text x={p.x} y={p.y - 12} fill="#6b7280" fontSize="11" fontWeight="600" textAnchor="middle">
+                      {formatPointLabel(p.value)}
+                    </text>
+                  </g>
+                ))}
+            </g>
+            <g data-period="current">
+              {comparisonPathSegments
+                .filter((segment) => segment.period === 'current')
+                .map((segment) => (
+                  <path
+                    key={segment.d}
+                    d={segment.d}
+                    fill="none"
+                    stroke={segment.stroke}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                ))}
+              {comparisonPts
+                .filter((p) => p.period === 'current')
+                .map((p) => {
+                  const isLatest = p === latestCurrentPoint
+                  return (
+                    <g key={p.i}>
+                      <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r={isLatest ? 6 : 5}
+                        fill="#fff"
+                        stroke={isLatest ? '#d97706' : '#111827'}
+                        strokeWidth="2"
+                      />
+                      <text
+                        x={p.x}
+                        y={p.y - 12}
+                        fill={isLatest ? '#d97706' : '#111827'}
+                        fontSize="11"
+                        fontWeight="600"
+                        textAnchor="middle"
+                      >
+                        {formatPointLabel(p.value)}
+                      </text>
+                    </g>
+                  )
+                })}
+            </g>
+          </>
+        ) : null}
+
+        {comparisonTrend == null && pts.map((p, idx) => {
           const isLast = idx === pts.length - 1
           return (
             <g key={p.i}>
@@ -296,9 +430,9 @@ export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
           </g>
         ) : null}
 
-        {weeklyTrend.map((p, i) => (
+        {comparisonTrend == null && weeklyTrend.map((p, i) => (
           <text
-            key={p.weekStart}
+            key={'weekStart' in p ? p.weekStart : p.bucketStart}
             x={xAt(i)}
             y={VB_H - 12}
             fill="#6b7280"
@@ -306,9 +440,23 @@ export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
             fontWeight="500"
             textAnchor="middle"
           >
-            {shortWeekLabel(p.weekStart)}
+            {'weekStart' in p ? shortWeekLabel(p.weekStart) : shortWeekLabel(p.bucketLabel)}
           </text>
         ))}
+
+        {comparisonTrend ? [0, 8, 15].map((i) => (
+          <text
+            key={comparisonTrend[i]!.bucketLabel}
+            x={xAt(i)}
+            y={VB_H - 12}
+            fill="#6b7280"
+            fontSize="10"
+            fontWeight="500"
+            textAnchor="middle"
+          >
+            {shortWeekLabel(comparisonTrend[i]!.bucketLabel)}
+          </text>
+        )) : null}
 
         {detachedPoint && detachedX != null ? (
           <text

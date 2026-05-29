@@ -247,7 +247,7 @@ No new config keys or environment variables are introduced.
 > **Releasable**: when Task 2.2 is complete, the shared chart can render PR Cycle Time comparison data without changing default First Review or PR Size behavior.
 
 #### Task 2.1 — Duration comparison chart contract
-- [ ] **File**: `src/components/dashboard/weekly-trend-chart.tsx`
+- [x] **File**: `src/components/dashboard/weekly-trend-chart.tsx`
 - **Depends on**: Task 1.1
 - **Description**:
   - Add local/exported type:
