@@ -287,7 +287,7 @@ No new config keys or environment variables are introduced.
   - Checkpoint: `npm run test -- tests/components/weekly-trend-chart.test.tsx`
 
 #### Task 2.2 — Comparison chart labels, divider, and accessible metadata
-- [ ] **File**: `src/components/dashboard/weekly-trend-chart.tsx`
+- [x] **File**: `src/components/dashboard/weekly-trend-chart.tsx`
 - **Depends on**: Task 2.1
 - **Description**:
   - Add visible previous/current period labels in comparison mode.

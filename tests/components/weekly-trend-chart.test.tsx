@@ -35,6 +35,11 @@ function rectInsideViewBox(
   return rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= viewW && rect.y + rect.height <= viewH
 }
 
+function shortRenderedDate(dateLabel: string): string {
+  const d = new Date(`${dateLabel}T12:00:00.000Z`)
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(d)
+}
+
 afterEach(cleanup)
 
 describe('WeeklyTrendChart', () => {
@@ -421,6 +426,49 @@ describe('WeeklyTrendChart', () => {
     expect(screen.getByTestId('comparison-boundary-divider')).toBeTruthy()
     expect(screen.getByTestId('comparison-label-previous')).toBeTruthy()
     expect(screen.getByTestId('comparison-label-current')).toBeTruthy()
+  })
+
+  it('weekly_chart_comparison_renders_previous_current_period_labels', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={comparisonTrend} />)
+
+    expect(screen.getByText('Previous 8 weeks')).toBeTruthy()
+    expect(screen.getByText('Current 8 weeks')).toBeTruthy()
+  })
+
+  it('weekly_chart_comparison_renders_boundary_divider', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={comparisonTrend} />)
+
+    const divider = screen.getByTestId('comparison-boundary-divider')
+    expect(divider.getAttribute('stroke-dasharray')).toBeTruthy()
+  })
+
+  it('weekly_chart_comparison_uses_selected_x_axis_labels', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={comparisonTrend} />)
+
+    const allBucketLabels = comparisonTrend.filter((p) => screen.queryByText(shortRenderedDate(p.bucketLabel)))
+    expect(allBucketLabels.length).toBeLessThan(16)
+    expect(screen.getByText(shortRenderedDate(comparisonTrend[0]!.bucketLabel))).toBeTruthy()
+    expect(screen.getByText(shortRenderedDate(comparisonTrend[8]!.bucketLabel))).toBeTruthy()
+    expect(screen.getByText(shortRenderedDate(comparisonTrend[15]!.bucketLabel))).toBeTruthy()
+  })
+
+  it('weekly_chart_comparison_accepts_aria_label', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="duration"
+        weeklyTrend={[]}
+        comparisonTrend={comparisonTrend}
+        ariaLabel="16-week PR cycle time comparison trend"
+      />,
+    )
+
+    expect(screen.getByRole('img', { name: '16-week PR cycle time comparison trend' })).toBeTruthy()
+  })
+
+  it('weekly_chart_comparison_uses_non_color_distinction', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={comparisonTrend} />)
+
+    expect(document.querySelector('[data-period="previous"] path')?.getAttribute('stroke-dasharray')).toBeTruthy()
   })
 
   it('weekly_chart_first_review_duration_behavior_unchanged', () => {
