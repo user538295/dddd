@@ -219,7 +219,7 @@ No new config keys or environment variables are introduced.
   - Checkpoint: `npm run test -- tests/metrics/pr-cycle-time-summary.test.ts`
 
 #### Task 1.2 — Dashboard comparison trend payload
-- [ ] **File**: `src/metrics/pr-cycle-time-dashboard.ts`
+- [x] **File**: `src/metrics/pr-cycle-time-dashboard.ts`
 - **Depends on**: Task 1.1
 - **Description**:
   - Import `getComparisonWeeklyMedianTrend` and `PrCycleTimeComparisonTrendPoint`.

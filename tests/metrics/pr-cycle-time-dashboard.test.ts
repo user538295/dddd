@@ -275,6 +275,110 @@ describe('pr-cycle-time-dashboard', () => {
     expect(d.metric.trendPercent).toBe(100)
   })
 
+  it('dashboard_exposes_pr_cycle_time_comparison_weekly_trend', async () => {
+    const now = new Date('2026-05-14T15:00:00.000')
+    const { current, previous } = getDashboardDateRanges(now, 8)
+    const rid = await insertRepo()
+    await insertPr(rid, {
+      number: 501,
+      openedAt: new Date(previous.from.getTime() - 24 * 3600000),
+      mergedAt: previous.from,
+    })
+    await insertPr(rid, {
+      number: 502,
+      openedAt: new Date(current.from.getTime() - 48 * 3600000),
+      mergedAt: current.from,
+    })
+
+    const d = await getPrCycleTimeDashboard({ db, now, weeks: 8 })
+
+    expect(d.comparisonWeeklyTrend).toHaveLength(16)
+    expect(d.comparisonWeeklyTrend.slice(0, 8).every((p) => p.period === 'previous')).toBe(true)
+    expect(d.comparisonWeeklyTrend.slice(8).every((p) => p.period === 'current')).toBe(true)
+    expect(d.comparisonWeeklyTrend[0]).toMatchObject({
+      bucketIndex: 1,
+      bucketStart: previous.from.toISOString(),
+      bucketLabel: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      medianHours: 24,
+    })
+    expect(d.comparisonWeeklyTrend[8]).toMatchObject({
+      bucketIndex: 1,
+      bucketStart: current.from.toISOString(),
+      medianHours: 48,
+    })
+  })
+
+  it('dashboard_comparison_trend_has_non_null_previous_context', async () => {
+    const now = new Date('2026-05-14T15:00:00.000')
+    const { previous } = getDashboardDateRanges(now, 8)
+    const rid = await insertRepo()
+    const merged = new Date(previous.from)
+    merged.setDate(merged.getDate() + 14)
+    await insertPr(rid, {
+      number: 511,
+      openedAt: new Date(merged.getTime() - 36 * 3600000),
+      mergedAt: merged,
+    })
+
+    const d = await getPrCycleTimeDashboard({ db, now, weeks: 8 })
+
+    expect(d.comparisonWeeklyTrend.slice(0, 8).some((p) => p.medianHours === 36)).toBe(true)
+    expect(d.weeklyTrend.every((p) => p.medianHours === null)).toBe(true)
+  })
+
+  it('dashboard_comparison_trend_does_not_change_metric_card_values', async () => {
+    const now = new Date('2026-05-14T15:00:00.000')
+    const { current, previous } = getDashboardDateRanges(now, 8)
+    const rid = await insertRepo()
+    const prevMerged = new Date(previous.from.getTime() + 2 * 24 * 60 * 60 * 1000)
+    const curMerged = new Date(current.from.getTime() + 2 * 24 * 60 * 60 * 1000)
+    for (let i = 0; i < 3; i += 1) {
+      await insertPr(rid, {
+        number: 520 + i,
+        openedAt: new Date(prevMerged.getTime() - 10 * 3600000),
+        mergedAt: prevMerged,
+      })
+    }
+    for (let i = 0; i < 3; i += 1) {
+      await insertPr(rid, {
+        number: 530 + i,
+        openedAt: new Date(curMerged.getTime() - 15 * 3600000),
+        mergedAt: curMerged,
+      })
+    }
+
+    const d = await getPrCycleTimeDashboard({ db, now, weeks: 8 })
+
+    expect(d.metric).toMatchObject({
+      medianHours: 15,
+      previousMedianHours: 10,
+      mergedPrCount: 3,
+      trendPercent: 50,
+      baselineStatus: 'available',
+    })
+  })
+
+  it('dashboard_comparison_trend_includes_current_to_boundary', async () => {
+    const now = new Date('2026-05-14T15:00:00.000')
+    const { current } = getDashboardDateRanges(now, 8)
+    const rid = await insertRepo()
+    await insertPr(rid, {
+      number: 541,
+      openedAt: new Date(current.to.getTime() - 11 * 3600000),
+      mergedAt: current.to,
+    })
+
+    const d = await getPrCycleTimeDashboard({ db, now, weeks: 8 })
+
+    expect(d.comparisonWeeklyTrend[15].medianHours).toBe(11)
+  })
+
+  it('dashboard_existing_weekly_trend_remains_8_points', async () => {
+    const d = await getPrCycleTimeDashboard({ db, now: new Date('2026-05-14T15:00:00.000'), weeks: 8 })
+
+    expect(d.weeklyTrend).toHaveLength(8)
+  })
+
   it('team_breakdown_groups_unassigned_repositories', async () => {
     const now = new Date('2026-05-14T15:00:00.000')
     const { current } = getDashboardDateRanges(now, 8)

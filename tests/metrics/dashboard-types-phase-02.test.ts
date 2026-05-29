@@ -41,6 +41,7 @@ describe('phase 02 payload types', () => {
       },
       exceptions: [],
       weeklyTrend: [],
+      comparisonWeeklyTrend: [],
       teamBreakdown: [],
       freshness: {
         reposScanned: 0,

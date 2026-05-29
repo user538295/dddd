@@ -26,6 +26,7 @@ function baseDashboard(overrides: Partial<DashboardModel> = {}): DashboardModel 
     },
     exceptions: [],
     weeklyTrend,
+    comparisonWeeklyTrend: [],
     teamBreakdown: [
       {
         team: 'Alpha',

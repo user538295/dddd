@@ -29,7 +29,13 @@ import {
   type ReviewRow,
 } from '~/metrics/first-review-time'
 import { calculatePrCycleTime, type PullRequestRecord } from '~/metrics/pr-cycle-time'
-import { comparePeriods, getWeeklyMedianTrend, median } from '~/metrics/pr-cycle-time-summary'
+import {
+  comparePeriods,
+  getComparisonWeeklyMedianTrend,
+  getWeeklyMedianTrend,
+  median,
+  type PrCycleTimeComparisonTrendPoint,
+} from '~/metrics/pr-cycle-time-summary'
 import { buildPrSizeExceptions } from '~/metrics/pr-size-exceptions'
 import {
   computePrSizeMetric,
@@ -162,6 +168,7 @@ export type PrCycleTimeDashboard = {
   }
   exceptions: PrCycleTimeException[]
   weeklyTrend: Array<{ weekStart: string; medianHours: number | null }>
+  comparisonWeeklyTrend: PrCycleTimeComparisonTrendPoint[]
   teamBreakdown: Array<{
     team: string
     mergedPrs: number
@@ -312,6 +319,7 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
     prs.filter((p) => mergedInCurrent(p, current.from, current.to)),
     current,
   )
+  const comparisonWeeklyTrend = getComparisonWeeklyMedianTrend(prs, previous, current)
 
   const teamLabels = new Set<string>()
   for (const r of metricsRepos) {
@@ -477,6 +485,7 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
     },
     exceptions: limited,
     weeklyTrend,
+    comparisonWeeklyTrend,
     teamBreakdown,
     freshness: {
       reposScanned,
