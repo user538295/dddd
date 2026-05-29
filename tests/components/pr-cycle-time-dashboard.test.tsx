@@ -56,6 +56,25 @@ function baseDashboard(overrides: Partial<DashboardModel> = {}): DashboardModel 
   }
 }
 
+function rangeDashboard(weeks: number): DashboardModel {
+  const total = weeks * 2
+  return baseDashboard({
+    range: { from: '2026-04-01T00:00:00.000Z', to: '2026-05-14T23:59:59.999Z', weeks },
+    weeklyTrend: Array.from({ length: weeks }, (_, i) => ({
+      weekStart: `2026-04-${String(i + 1).padStart(2, '0')}`,
+      medianHours: i + 1,
+    })),
+    comparisonWeeklyTrend: Array.from({ length: total }, (_, i) => ({
+      period: i < weeks ? ('previous' as const) : ('current' as const),
+      bucketIndex: (i % weeks) + 1,
+      bucketStart: `2026-0${i < weeks ? 3 : 4}-${String((i % weeks) + 1).padStart(2, '0')}T00:00:00.000Z`,
+      bucketEnd: `2026-0${i < weeks ? 3 : 4}-${String((i % weeks) + 2).padStart(2, '0')}T00:00:00.000Z`,
+      bucketLabel: `2026-0${i < weeks ? 3 : 4}-${String((i % weeks) + 1).padStart(2, '0')}`,
+      medianHours: i + 1,
+    })),
+  })
+}
+
 describe('formatCycleDuration', () => {
   it('formats_under_48h_as_hours', () => {
     expect(formatCycleDuration(12)).toBe('12h')
@@ -256,6 +275,15 @@ describe.sequential('PrCycleTimeDashboard', () => {
 
     expect(screen.getByRole('heading', { name: '16-week PR cycle time comparison trend' })).toBeInTheDocument()
     expect(screen.getByText(/Previous 8 weeks followed by current 8 weeks/i)).toBeInTheDocument()
+  })
+
+  it('dashboard_comparison_trend_heading_follows_requested_range', () => {
+    render(<PrCycleTimeDashboard data={rangeDashboard(4)} />)
+
+    expect(screen.getByRole('heading', { name: '8-week PR cycle time comparison trend' })).toBeInTheDocument()
+    expect(screen.getByText(/Previous 4 weeks followed by current 4 weeks/i)).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: '8-week PR cycle time comparison trend' })).toBeInTheDocument()
+    expect(within(screen.getByTestId('weekly-trend-list')).getAllByRole('listitem')).toHaveLength(8)
   })
 
   it('dashboard_comparison_trend_how_to_read_maps_muted_segment_to_previous_median', async () => {

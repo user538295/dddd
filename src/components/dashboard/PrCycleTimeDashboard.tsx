@@ -192,6 +192,7 @@ export function PrCycleTimeDashboard({
   const syncFailed = data.freshness.latestSyncStatus === 'failed'
   const syncPartial = data.freshness.latestSyncStatus === 'partial'
   const weeklyTrendDurationUnit = selectedDurationUnitForTrend(data.comparisonWeeklyTrend)
+  const comparisonWeeks = data.range.weeks * 2
 
   const metricTrendBlock = (() => {
     if (noRepos || noMerged) return null
@@ -340,10 +341,10 @@ export function PrCycleTimeDashboard({
 
         <section aria-labelledby="trend-heading" className="pr-dashboard__card">
           <h2 id="trend-heading" className="pr-dashboard__card-title">
-            16-week PR cycle time comparison trend
+            {comparisonWeeks}-week PR cycle time comparison trend
           </h2>
           <CardHowToRead>
-            Previous 8 weeks followed by current 8 weeks. The muted dashed segment is the previous comparison
+            Previous {data.range.weeks} weeks followed by current {data.range.weeks} weeks. The muted dashed segment is the previous comparison
             period, the dark segment is the current dashboard period, and gaps mean no merged PRs in that bucket.
           </CardHowToRead>
           {baselinePending && !noRepos && !noMerged ? (
@@ -360,7 +361,7 @@ export function PrCycleTimeDashboard({
             valueMode="duration"
             weeklyTrend={data.weeklyTrend}
             comparisonTrend={data.comparisonWeeklyTrend}
-            ariaLabel="16-week PR cycle time comparison trend"
+            ariaLabel={`${comparisonWeeks}-week PR cycle time comparison trend`}
           />
           <ol data-testid="weekly-trend-list" className="pr-dashboard__sr-only">
             {data.comparisonWeeklyTrend.map((p) => (

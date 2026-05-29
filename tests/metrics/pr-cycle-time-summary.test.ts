@@ -136,6 +136,20 @@ describe('getComparisonWeeklyMedianTrend', () => {
     expect(trend[15].bucketEnd).toBe(current.to.toISOString())
   })
 
+  it('comparison_trend_uses_range_week_count_for_non_default_ranges', () => {
+    const now = new Date('2026-05-14T12:00:00.000')
+    const { current, previous } = getDashboardDateRanges(now, 4)
+    const trend = getComparisonWeeklyMedianTrend([], previous, current)
+
+    expect(trend).toHaveLength(8)
+    expect(trend.slice(0, 4).every((p) => p.period === 'previous')).toBe(true)
+    expect(trend.slice(4).every((p) => p.period === 'current')).toBe(true)
+    expect(trend.map((p) => p.bucketIndex)).toEqual([1, 2, 3, 4, 1, 2, 3, 4])
+    expect(trend[3].bucketEnd).toBe(current.from.toISOString())
+    expect(trend[4].bucketStart).toBe(current.from.toISOString())
+    expect(trend[7].bucketEnd).toBe(current.to.toISOString())
+  })
+
   it('comparison_trend_preserves_dashboard_boundary_semantics', () => {
     const now = new Date('2026-05-14T12:00:00.000')
     const { current, previous } = getDashboardDateRanges(now, 8)

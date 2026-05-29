@@ -308,6 +308,31 @@ describe('pr-cycle-time-dashboard', () => {
     })
   })
 
+  it('dashboard_comparison_trend_matches_requested_range_week_count', async () => {
+    const now = new Date('2026-05-14T15:00:00.000')
+    const { current, previous } = getDashboardDateRanges(now, 4)
+    const rid = await insertRepo()
+    await insertPr(rid, {
+      number: 506,
+      openedAt: new Date(previous.from.getTime() - 24 * 3600000),
+      mergedAt: previous.from,
+    })
+    await insertPr(rid, {
+      number: 507,
+      openedAt: new Date(current.from.getTime() - 48 * 3600000),
+      mergedAt: current.from,
+    })
+
+    const d = await getPrCycleTimeDashboard({ db, now, weeks: 4 })
+
+    expect(d.range.weeks).toBe(4)
+    expect(d.comparisonWeeklyTrend).toHaveLength(8)
+    expect(d.comparisonWeeklyTrend.slice(0, 4).every((p) => p.period === 'previous')).toBe(true)
+    expect(d.comparisonWeeklyTrend.slice(4).every((p) => p.period === 'current')).toBe(true)
+    expect(d.comparisonWeeklyTrend[3].bucketEnd).toBe(current.from.toISOString())
+    expect(d.comparisonWeeklyTrend[4].bucketStart).toBe(current.from.toISOString())
+  })
+
   it('dashboard_comparison_trend_has_non_null_previous_context', async () => {
     const now = new Date('2026-05-14T15:00:00.000')
     const { previous } = getDashboardDateRanges(now, 8)

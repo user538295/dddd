@@ -22,6 +22,15 @@ const comparisonTrend = Array.from({ length: 16 }, (_, i) => ({
   medianHours: i === 2 || i === 10 ? null : i + 1,
 }))
 
+const fourWeekComparisonTrend = Array.from({ length: 8 }, (_, i) => ({
+  period: i < 4 ? ('previous' as const) : ('current' as const),
+  bucketIndex: (i % 4) + 1,
+  bucketStart: `2026-0${i < 4 ? 3 : 4}-${String((i % 4) + 1).padStart(2, '0')}T00:00:00.000Z`,
+  bucketEnd: `2026-0${i < 4 ? 3 : 4}-${String((i % 4) + 2).padStart(2, '0')}T00:00:00.000Z`,
+  bucketLabel: `2026-0${i < 4 ? 3 : 4}-${String((i % 4) + 1).padStart(2, '0')}`,
+  medianHours: i + 1,
+}))
+
 function parseBoundsAttr(value: string | null): { x: number; y: number; width: number; height: number } {
   const [x, y, width, height] = (value ?? '0,0,0,0').split(',').map(Number)
   return { x, y, width, height }
@@ -435,6 +444,14 @@ describe('WeeklyTrendChart', () => {
     expect(screen.getByText('Current 8 weeks')).toBeTruthy()
   })
 
+  it('weekly_chart_comparison_labels_follow_period_bucket_count', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={fourWeekComparisonTrend} />)
+
+    expect(screen.getByText('Previous 4 weeks')).toBeTruthy()
+    expect(screen.getByText('Current 4 weeks')).toBeTruthy()
+    expect(screen.queryByText('Previous 8 weeks')).toBeNull()
+  })
+
   it('weekly_chart_comparison_renders_boundary_divider', () => {
     render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={comparisonTrend} />)
 
@@ -450,6 +467,15 @@ describe('WeeklyTrendChart', () => {
     expect(screen.getByText(shortRenderedDate(comparisonTrend[0]!.bucketLabel))).toBeTruthy()
     expect(screen.getByText(shortRenderedDate(comparisonTrend[8]!.bucketLabel))).toBeTruthy()
     expect(screen.getByText(shortRenderedDate(comparisonTrend[15]!.bucketLabel))).toBeTruthy()
+  })
+
+  it('weekly_chart_comparison_uses_selected_x_axis_labels_for_shorter_ranges', () => {
+    render(<WeeklyTrendChart valueMode="duration" weeklyTrend={[]} comparisonTrend={fourWeekComparisonTrend} />)
+
+    expect(screen.getByText(shortRenderedDate(fourWeekComparisonTrend[0]!.bucketLabel))).toBeTruthy()
+    expect(screen.getByText(shortRenderedDate(fourWeekComparisonTrend[4]!.bucketLabel))).toBeTruthy()
+    expect(screen.getByText(shortRenderedDate(fourWeekComparisonTrend[7]!.bucketLabel))).toBeTruthy()
+    expect(screen.queryByText(shortRenderedDate(fourWeekComparisonTrend[2]!.bucketLabel))).toBeNull()
   })
 
   it('weekly_chart_comparison_accepts_aria_label', () => {

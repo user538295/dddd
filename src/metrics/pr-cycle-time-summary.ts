@@ -79,14 +79,16 @@ export function getComparisonWeeklyMedianTrend(
   current: DateRange,
 ): PrCycleTimeComparisonTrendPoint[] {
   const points: PrCycleTimeComparisonTrendPoint[] = []
+  const bucketCount = current.weeks
 
   const appendPeriod = (period: PrCycleTimeTrendPeriod, periodStart: Date, periodEnd: Date) => {
-    for (let i = 0; i < 8; i += 1) {
+    for (let i = 0; i < bucketCount; i += 1) {
       const bucketStart = addCalendarDays(periodStart, i * 7)
-      const bucketEnd = i === 7 ? new Date(periodEnd) : addCalendarDays(periodStart, (i + 1) * 7)
+      const isFinalBucket = i === bucketCount - 1
+      const bucketEnd = isFinalBucket ? new Date(periodEnd) : addCalendarDays(periodStart, (i + 1) * 7)
       const bucketStartMs = bucketStart.getTime()
       const bucketEndMs = bucketEnd.getTime()
-      const isFinalCurrentBucket = period === 'current' && i === 7
+      const isFinalCurrentBucket = period === 'current' && isFinalBucket
       const hoursInBucket: number[] = []
 
       for (const p of prs) {

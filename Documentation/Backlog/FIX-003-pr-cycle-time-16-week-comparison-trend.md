@@ -431,3 +431,20 @@ No new config keys or environment variables are introduced.
   - **Releasable**: after this task, the feature is complete and ready to commit.
 - **Tests (TDD)** — final gates:
   - Checkpoint: `git diff --check && npm run lint && npm run typecheck && npm run build && npm run test -- --coverage && npm run test -- tests/metrics/pr-cycle-time-summary.test.ts tests/metrics/pr-cycle-time-dashboard.test.ts tests/components/weekly-trend-chart.test.tsx tests/components/pr-cycle-time-dashboard.test.tsx tests/components/first-review-trend-chart.test.tsx tests/components/PrSizeTrendChart.test.tsx && npm run test:e2e -- tests/e2e/pr-cycle-time-dashboard.spec.ts && npm run verify:phase03`
+
+#### Task 5.3 — Post-review variable range correction
+- [x] **File**: `src/metrics/pr-cycle-time-summary.ts`, `src/components/dashboard/weekly-trend-chart.tsx`, `src/components/dashboard/PrCycleTimeDashboard.tsx`
+- **Depends on**: Task 5.2
+- **Description**:
+  - Address implementation review finding that non-default dashboard ranges, such as 4 weeks, were misrepresented by hardcoded 8-bucket/16-week comparison labels.
+  - Derive previous/current comparison bucket counts from `current.weeks`.
+  - Derive chart validation, divider position, period labels, selected x-axis labels, heading, and `aria-label` from the actual comparison bucket count.
+  - Preserve the default 8-week dashboard behavior as a 16-week comparison trend.
+  - **Releasable**: after this task, configured dashboard ranges do not produce misleading comparison trend copy or buckets.
+- **Tests (TDD)**:
+  - Unit: `comparison_trend_uses_range_week_count_for_non_default_ranges`
+  - Integration: `dashboard_comparison_trend_matches_requested_range_week_count`
+  - Component: `weekly_chart_comparison_labels_follow_period_bucket_count`
+  - Component: `weekly_chart_comparison_uses_selected_x_axis_labels_for_shorter_ranges`
+  - Component: `dashboard_comparison_trend_heading_follows_requested_range`
+  - Checkpoint: `npm run test -- tests/metrics/pr-cycle-time-summary.test.ts tests/metrics/pr-cycle-time-dashboard.test.ts tests/components/weekly-trend-chart.test.tsx tests/components/pr-cycle-time-dashboard.test.tsx`

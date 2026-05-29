@@ -87,10 +87,11 @@ function isLinesPoint(point: WeeklyTrendPoint): point is WeeklyTrendLinesPoint {
 }
 
 function isValidComparisonTrend(points: DurationComparisonPoint[]): boolean {
-  if (points.length !== 16) return false
+  if (points.length < 2 || points.length % 2 !== 0) return false
+  const periodBucketCount = points.length / 2
   return points.every((point, index) => {
-    const expectedPeriod = index < 8 ? 'previous' : 'current'
-    return point.period === expectedPeriod && point.bucketIndex === (index % 8) + 1
+    const expectedPeriod = index < periodBucketCount ? 'previous' : 'current'
+    return point.period === expectedPeriod && point.bucketIndex === (index % periodBucketCount) + 1
   })
 }
 
@@ -189,6 +190,16 @@ export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
       : pts.map((p) => ({ ...p, period: comparisonTrend[p.i]!.period }))
   const latestCurrentPoint = comparisonPts.filter((p) => p.period === 'current').at(-1)
   const plainPts = comparisonTrend == null ? pts : []
+  const comparisonBucketCount = comparisonTrend ? comparisonTrend.length / 2 : 0
+  const comparisonBoundaryIndex = comparisonBucketCount - 0.5
+  const previousLabelX = comparisonTrend ? xAt((comparisonBucketCount - 1) / 2) : 0
+  const currentLabelX = comparisonTrend ? xAt(comparisonBucketCount + (comparisonBucketCount - 1) / 2) : 0
+  const comparisonAxisLabelIndexes =
+    comparisonTrend == null
+      ? []
+      : [0, comparisonBucketCount, comparisonTrend.length - 1].filter(
+          (value, index, values) => values.indexOf(value) === index,
+        )
 
   const pathSegments: Array<{ d: string; stroke: string }> = []
   for (const run of contiguousRuns(plainPts)) {
@@ -279,19 +290,19 @@ export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
           <>
             <line
               data-testid="comparison-boundary-divider"
-              x1={xAt(7.5)}
+              x1={xAt(comparisonBoundaryIndex)}
               y1={PAD_T}
-              x2={xAt(7.5)}
+              x2={xAt(comparisonBoundaryIndex)}
               y2={PAD_T + innerH}
               stroke="#d1d5db"
               strokeWidth="1"
               strokeDasharray="3 4"
             />
-            <text data-testid="comparison-label-previous" x={xAt(3.5)} y={30} fill="#6b7280" fontSize="10" fontWeight="600" textAnchor="middle">
-              Previous 8 weeks
+            <text data-testid="comparison-label-previous" x={previousLabelX} y={30} fill="#6b7280" fontSize="10" fontWeight="600" textAnchor="middle">
+              Previous {comparisonBucketCount} weeks
             </text>
-            <text data-testid="comparison-label-current" x={xAt(11.5)} y={30} fill="#111827" fontSize="10" fontWeight="600" textAnchor="middle">
-              Current 8 weeks
+            <text data-testid="comparison-label-current" x={currentLabelX} y={30} fill="#111827" fontSize="10" fontWeight="600" textAnchor="middle">
+              Current {comparisonBucketCount} weeks
             </text>
             <g data-period="previous">
               {comparisonPathSegments
@@ -444,7 +455,7 @@ export function WeeklyTrendChart(props: WeeklyTrendChartProps) {
           </text>
         ))}
 
-        {comparisonTrend ? [0, 8, 15].map((i) => (
+        {comparisonTrend ? comparisonAxisLabelIndexes.map((i) => (
           <text
             key={comparisonTrend[i]!.bucketLabel}
             x={xAt(i)}
