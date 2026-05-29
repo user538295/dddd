@@ -251,6 +251,78 @@ describe.sequential('PrCycleTimeDashboard', () => {
     expect(items[8]).toHaveTextContent('current')
   })
 
+  it('dashboard_comparison_trend_heading_names_previous_and_current_8_weeks', () => {
+    render(<PrCycleTimeDashboard data={baseDashboard()} />)
+
+    expect(screen.getByRole('heading', { name: '16-week PR cycle time comparison trend' })).toBeInTheDocument()
+    expect(screen.getByText(/Previous 8 weeks followed by current 8 weeks/i)).toBeInTheDocument()
+  })
+
+  it('dashboard_comparison_trend_how_to_read_maps_muted_segment_to_previous_median', async () => {
+    render(<PrCycleTimeDashboard data={baseDashboard()} />)
+    await fireEvent.click(screen.getAllByText('How to read this')[2]!)
+
+    expect(screen.getByText(/muted dashed segment is the previous comparison period/i)).toBeVisible()
+    expect(screen.getByText(/dark segment is the current dashboard period/i)).toBeVisible()
+  })
+
+  it('dashboard_comparison_trend_baseline_pending_copy', () => {
+    const { rerender } = render(
+      <PrCycleTimeDashboard
+        data={baseDashboard({
+          metric: {
+            medianHours: 36,
+            previousMedianHours: null,
+            mergedPrCount: 4,
+            trendPercent: null,
+            baselineStatus: 'pending',
+          },
+        })}
+      />,
+    )
+
+    expect(screen.getByText(/Previous-period points are shown for context/i)).toBeInTheDocument()
+
+    rerender(<PrCycleTimeDashboard data={baseDashboard()} />)
+    expect(screen.queryByText(/Previous-period points are shown for context/i)).toBeNull()
+  })
+
+  it('dashboard_comparison_trend_zero_or_null_previous_median_still_context_only', () => {
+    render(
+      <PrCycleTimeDashboard
+        data={baseDashboard({
+          metric: {
+            medianHours: 36,
+            previousMedianHours: 0,
+            mergedPrCount: 4,
+            trendPercent: null,
+            baselineStatus: 'pending',
+          },
+        })}
+      />,
+    )
+
+    expect(screen.getByText(/does not represent an available comparison baseline/i)).toBeInTheDocument()
+  })
+
+  it('dashboard_comparison_trend_no_current_data_copy_does_not_present_previous_as_current', () => {
+    render(
+      <PrCycleTimeDashboard
+        data={baseDashboard({
+          metric: {
+            medianHours: null,
+            previousMedianHours: 24,
+            mergedPrCount: 0,
+            trendPercent: null,
+            baselineStatus: 'pending',
+          },
+        })}
+      />,
+    )
+
+    expect(screen.getByText(/current period has no merged PRs/i)).toBeInTheDocument()
+  })
+
   it('dashboard_cycle_time_trend_uses_minutes_for_sub_hour_values', () => {
     render(
       <PrCycleTimeDashboard

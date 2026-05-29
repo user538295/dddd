@@ -331,7 +331,7 @@ No new config keys or environment variables are introduced.
   - Checkpoint: `npm run test -- tests/components/pr-cycle-time-dashboard.test.tsx`
 
 #### Task 3.2 — PR Cycle Time title, help copy, and baseline copy
-- [ ] **File**: `src/components/dashboard/PrCycleTimeDashboard.tsx`
+- [x] **File**: `src/components/dashboard/PrCycleTimeDashboard.tsx`
 - **Depends on**: Task 3.1
 - **Description**:
   - Change chart heading from `8-week PR cycle time trend` to copy that communicates `16-week` and previous-plus-current 8 buckets.

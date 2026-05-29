@@ -340,12 +340,22 @@ export function PrCycleTimeDashboard({
 
         <section aria-labelledby="trend-heading" className="pr-dashboard__card">
           <h2 id="trend-heading" className="pr-dashboard__card-title">
-            8-week PR cycle time trend
+            16-week PR cycle time comparison trend
           </h2>
           <CardHowToRead>
-            Weekly median open-to-merge time for PRs merged in each week. Use this to see whether cycle time is
-            improving or worsening over the last {data.range.weeks} weeks. Weeks with no merges appear as gaps.
+            Previous 8 weeks followed by current 8 weeks. The muted dashed segment is the previous comparison
+            period, the dark segment is the current dashboard period, and gaps mean no merged PRs in that bucket.
           </CardHowToRead>
+          {baselinePending && !noRepos && !noMerged ? (
+            <p className="pr-dashboard__chart-note">
+              Previous-period points are shown for context and this history does not represent an available comparison baseline.
+            </p>
+          ) : null}
+          {noMerged && !noRepos ? (
+            <p className="pr-dashboard__chart-note">
+              The current period has no merged PRs; previous-period history is context, not current performance.
+            </p>
+          ) : null}
           <WeeklyTrendChart
             valueMode="duration"
             weeklyTrend={data.weeklyTrend}
