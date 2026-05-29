@@ -398,7 +398,7 @@ No new config keys or environment variables are introduced.
 > **Releasable**: when Task 5.2 is complete, the plan's implementation is fully verified and documented.
 
 #### Task 5.1 — Shared chart regression gate
-- [ ] **File**: `tests/components/first-review-trend-chart.test.tsx`, `tests/components/PrSizeTrendChart.test.tsx`, `tests/components/weekly-trend-chart.test.tsx`
+- [x] **File**: `tests/components/first-review-trend-chart.test.tsx`, `tests/components/PrSizeTrendChart.test.tsx`, `tests/components/weekly-trend-chart.test.tsx`
 - **Depends on**: Task 4.2
 - **Description**:
   - Add or strengthen regression tests proving First Review remains an 8-week duration chart.

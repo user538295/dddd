@@ -103,6 +103,27 @@ describe('PrSizeTrendChart', () => {
     )
   })
 
+  it('pr_size_trend_remains_line_mode_with_detached_current_partial', () => {
+    const data = [
+      completed('2026-04-06', 20, 5),
+      completed('2026-04-13', 40, 4),
+      partial('2026-04-20', 55, 2),
+    ]
+    render(<PrSizeTrendChart weeklyTrend={data} />)
+
+    const props = MockedWeeklyTrendChart.mock.calls[0]?.[0]
+    expect(props).toEqual(
+      expect.objectContaining({
+        valueMode: 'lines',
+        detachedPoint: expect.objectContaining({
+          weekStart: '2026-04-20',
+          medianLines: 55,
+        }),
+      }),
+    )
+    expect(props).not.toHaveProperty('comparisonTrend')
+  })
+
   it('pr_size_trend_no_detached_title_and_aria_use_completed_point_count', () => {
     const data = [
       completed('2026-01-06', 100, 3),

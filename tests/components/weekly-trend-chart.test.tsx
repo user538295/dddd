@@ -497,6 +497,18 @@ describe('WeeklyTrendChart', () => {
     expect(document.querySelectorAll('circle')).toHaveLength(7)
   })
 
+  it('weekly_chart_duration_comparison_is_opt_in_only', () => {
+    render(
+      <WeeklyTrendChart
+        valueMode="duration"
+        weeklyTrend={comparisonTrend.map((p) => ({ weekStart: p.bucketLabel, medianHours: p.medianHours }))}
+      />,
+    )
+
+    expect(document.querySelector('[data-testid="comparison-boundary-divider"]')).toBeNull()
+    expect(screen.getAllByText(/Feb|Apr/).length).toBeGreaterThan(3)
+  })
+
   it('weekly_chart_pr_size_line_behavior_unchanged', () => {
     render(
       <WeeklyTrendChart

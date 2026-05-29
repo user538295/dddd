@@ -25,6 +25,18 @@ describe('FirstReviewTrendChart', () => {
     expect(items).toHaveLength(8)
   })
 
+  it('first_review_trend_remains_8_week_duration_chart', () => {
+    const data = Array.from({ length: 8 }, (_, i) => ({
+      weekStart: `2026-0${1 + i}-01`,
+      medianHours: i + 1,
+    }))
+    render(<FirstReviewTrendChart weeklyTrend={data} />)
+
+    expect(screen.getByRole('img', { name: '8-week First Review trend' })).toBeTruthy()
+    expect(document.querySelector('[data-testid="comparison-boundary-divider"]')).toBeNull()
+    expect(document.querySelector('[data-period="previous"]')).toBeNull()
+  })
+
   it('first_review_trend_uses_hours_for_hour_scale_values', () => {
     render(
       <FirstReviewTrendChart
