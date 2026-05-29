@@ -101,6 +101,60 @@ test('dashboard_e2e_shows_previous_median_when_trend_available', async ({ page }
   await expect(medianCard.locator('.pr-dashboard__trend-prev').first()).toBeVisible()
 })
 
+test('dashboard_e2e_shows_pr_cycle_time_16_week_comparison_trend', async ({ page }) => {
+  await page.goto('/')
+
+  const chart = page.getByRole('img', { name: '16-week PR cycle time comparison trend' })
+  await expect(page.getByRole('heading', { name: '16-week PR cycle time comparison trend' })).toBeVisible()
+  await expect(chart).toBeVisible()
+  await expect(chart.getByTestId('comparison-label-previous')).toBeVisible()
+  await expect(chart.getByTestId('comparison-label-current')).toBeVisible()
+})
+
+test('dashboard_e2e_pr_cycle_time_comparison_trend_desktop_layout', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto('/')
+
+  const chart = page.getByRole('img', { name: '16-week PR cycle time comparison trend' })
+  const previous = chart.getByTestId('comparison-label-previous')
+  const current = chart.getByTestId('comparison-label-current')
+  const divider = chart.getByTestId('comparison-boundary-divider')
+
+  await expect(chart).toBeVisible()
+  await expect(divider).toHaveAttribute('stroke-dasharray', '3 4')
+  const chartBox = await chart.boundingBox()
+  const previousBox = await previous.boundingBox()
+  const currentBox = await current.boundingBox()
+  expect(chartBox).not.toBeNull()
+  expect(previousBox).not.toBeNull()
+  expect(currentBox).not.toBeNull()
+  expect(previousBox!.x + previousBox!.width).toBeLessThan(currentBox!.x)
+  expect(previousBox!.y).toBeGreaterThanOrEqual(chartBox!.y)
+  expect(currentBox!.y).toBeGreaterThanOrEqual(chartBox!.y)
+})
+
+test('dashboard_e2e_pr_cycle_time_comparison_trend_mobile_layout', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+
+  const chart = page.getByRole('img', { name: '16-week PR cycle time comparison trend' })
+  const previous = chart.getByTestId('comparison-label-previous')
+  const current = chart.getByTestId('comparison-label-current')
+  const divider = chart.getByTestId('comparison-boundary-divider')
+
+  await expect(chart).toBeVisible()
+  await expect(divider).toHaveAttribute('stroke-dasharray', '3 4')
+  const chartBox = await chart.boundingBox()
+  const previousBox = await previous.boundingBox()
+  const currentBox = await current.boundingBox()
+  expect(chartBox).not.toBeNull()
+  expect(previousBox).not.toBeNull()
+  expect(currentBox).not.toBeNull()
+  expect(previousBox!.x).toBeGreaterThanOrEqual(chartBox!.x)
+  expect(currentBox!.x + currentBox!.width).toBeLessThanOrEqual(chartBox!.x + chartBox!.width)
+  expect(previousBox!.x + previousBox!.width).toBeLessThan(currentBox!.x)
+})
+
 test('dashboard_e2e_local_refresh_flow', async ({ page }) => {
   test.setTimeout(90_000)
   await page.goto('/')

@@ -373,7 +373,7 @@ No new config keys or environment variables are introduced.
   - Checkpoint: `npm run test -- tests/components/weekly-trend-chart.test.tsx tests/components/pr-cycle-time-dashboard.test.tsx`
 
 #### Task 4.2 — Browser verification for desktop and mobile
-- [ ] **File**: `tests/e2e/pr-cycle-time-dashboard.spec.ts` or a new focused e2e spec under `tests/e2e/`
+- [x] **File**: `tests/e2e/pr-cycle-time-dashboard.spec.ts` or a new focused e2e spec under `tests/e2e/`
 - **Depends on**: Task 4.1
 - **Description**:
   - Add or update E2E coverage for the PR Cycle Time 16-week comparison trend.
