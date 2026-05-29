@@ -21,6 +21,17 @@ export type WeeklyMedianPoint = {
   medianHours: number | null
 }
 
+export type PrCycleTimeTrendPeriod = 'previous' | 'current'
+
+export type PrCycleTimeComparisonTrendPoint = {
+  period: PrCycleTimeTrendPeriod
+  bucketIndex: number
+  bucketStart: string
+  bucketEnd: string
+  bucketLabel: string
+  medianHours: number | null
+}
+
 export { median }
 
 export function getWeeklyMedianTrend(prs: PullRequestRecord[], range: DateRange): WeeklyMedianPoint[] {
@@ -58,6 +69,57 @@ export function getWeeklyMedianTrend(prs: PullRequestRecord[], range: DateRange)
       medianHours: median(hoursInWeek),
     })
   }
+
+  return points
+}
+
+export function getComparisonWeeklyMedianTrend(
+  prs: PullRequestRecord[],
+  previous: DateRange,
+  current: DateRange,
+): PrCycleTimeComparisonTrendPoint[] {
+  const points: PrCycleTimeComparisonTrendPoint[] = []
+
+  const appendPeriod = (period: PrCycleTimeTrendPeriod, periodStart: Date, periodEnd: Date) => {
+    for (let i = 0; i < 8; i += 1) {
+      const bucketStart = addCalendarDays(periodStart, i * 7)
+      const bucketEnd = i === 7 ? new Date(periodEnd) : addCalendarDays(periodStart, (i + 1) * 7)
+      const bucketStartMs = bucketStart.getTime()
+      const bucketEndMs = bucketEnd.getTime()
+      const isFinalCurrentBucket = period === 'current' && i === 7
+      const hoursInBucket: number[] = []
+
+      for (const p of prs) {
+        if (p.mergedAt == null) {
+          continue
+        }
+        const mergedMs = p.mergedAt.getTime()
+        const inBucket = isFinalCurrentBucket
+          ? mergedMs >= bucketStartMs && mergedMs <= bucketEndMs
+          : mergedMs >= bucketStartMs && mergedMs < bucketEndMs
+        if (!inBucket) {
+          continue
+        }
+        const cycle = calculatePrCycleTime(p)
+        if (cycle == null) {
+          continue
+        }
+        hoursInBucket.push(cycle.cycleTimeHours)
+      }
+
+      points.push({
+        period,
+        bucketIndex: i + 1,
+        bucketStart: bucketStart.toISOString(),
+        bucketEnd: bucketEnd.toISOString(),
+        bucketLabel: formatLocalDate(bucketStart),
+        medianHours: median(hoursInBucket),
+      })
+    }
+  }
+
+  appendPeriod('previous', previous.from, current.from)
+  appendPeriod('current', current.from, current.to)
 
   return points
 }

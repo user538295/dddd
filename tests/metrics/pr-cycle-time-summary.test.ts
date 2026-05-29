@@ -4,6 +4,7 @@ import { getDashboardDateRanges } from '~/config/env'
 import type { PullRequestRecord } from '~/metrics/pr-cycle-time'
 import {
   comparePeriods,
+  getComparisonWeeklyMedianTrend,
   getWeeklyMedianTrend,
   median,
 } from '~/metrics/pr-cycle-time-summary'
@@ -109,6 +110,140 @@ describe('getWeeklyMedianTrend', () => {
       ],
       current,
     )
+    expect(trend.every((p) => p.medianHours === null)).toBe(true)
+  })
+})
+
+describe('getComparisonWeeklyMedianTrend', () => {
+  it('comparison_trend_returns_16_points_with_period_metadata', () => {
+    const now = new Date('2026-05-14T12:00:00.000')
+    const { current, previous } = getDashboardDateRanges(now, 8)
+    const trend = getComparisonWeeklyMedianTrend([], previous, current)
+
+    expect(trend).toHaveLength(16)
+    expect(trend.slice(0, 8).every((p) => p.period === 'previous')).toBe(true)
+    expect(trend.slice(8).every((p) => p.period === 'current')).toBe(true)
+    expect(trend.map((p) => p.bucketIndex)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8])
+    expect(trend[0]).toMatchObject({
+      period: 'previous',
+      bucketIndex: 1,
+      bucketStart: previous.from.toISOString(),
+      bucketLabel: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      medianHours: null,
+    })
+    expect(trend[7].bucketEnd).toBe(current.from.toISOString())
+    expect(trend[8].bucketStart).toBe(current.from.toISOString())
+    expect(trend[15].bucketEnd).toBe(current.to.toISOString())
+  })
+
+  it('comparison_trend_preserves_dashboard_boundary_semantics', () => {
+    const now = new Date('2026-05-14T12:00:00.000')
+    const { current, previous } = getDashboardDateRanges(now, 8)
+    const trend = getComparisonWeeklyMedianTrend(
+      [
+        pr({
+          id: '00000000-0000-4000-8000-000000000041',
+          openedAt: new Date(previous.from.getTime() - 10 * 60 * 60 * 1000),
+          mergedAt: previous.from,
+        }),
+        pr({
+          id: '00000000-0000-4000-8000-000000000042',
+          openedAt: new Date(current.from.getTime() - 20 * 60 * 60 * 1000),
+          mergedAt: current.from,
+        }),
+        pr({
+          id: '00000000-0000-4000-8000-000000000043',
+          openedAt: new Date(current.to.getTime() - 30 * 60 * 60 * 1000),
+          mergedAt: current.to,
+        }),
+      ],
+      previous,
+      current,
+    )
+
+    expect(trend.filter((p) => p.medianHours !== null)).toHaveLength(3)
+    expect(trend[0].medianHours).toBe(10)
+    expect(trend[8].medianHours).toBe(20)
+    expect(trend[15].medianHours).toBe(30)
+  })
+
+  it('comparison_trend_final_buckets_cover_local_day_remainder', () => {
+    const now = new Date('2026-05-14T12:00:00.000')
+    const { current, previous } = getDashboardDateRanges(now, 8)
+    const previousFinalBucket = new Date(previous.from)
+    previousFinalBucket.setDate(previousFinalBucket.getDate() + 50)
+    const currentFinalBucket = new Date(current.from)
+    currentFinalBucket.setDate(currentFinalBucket.getDate() + 50)
+    const trend = getComparisonWeeklyMedianTrend(
+      [
+        pr({
+          id: '00000000-0000-4000-8000-000000000051',
+          openedAt: new Date(previousFinalBucket.getTime() - 12 * 60 * 60 * 1000),
+          mergedAt: previousFinalBucket,
+        }),
+        pr({
+          id: '00000000-0000-4000-8000-000000000052',
+          openedAt: new Date(currentFinalBucket.getTime() - 18 * 60 * 60 * 1000),
+          mergedAt: currentFinalBucket,
+        }),
+      ],
+      previous,
+      current,
+    )
+
+    expect(trend[7].medianHours).toBe(12)
+    expect(trend[15].medianHours).toBe(18)
+  })
+
+  it('comparison_trend_internal_bucket_boundaries_do_not_double_count', () => {
+    const now = new Date('2026-05-14T12:00:00.000')
+    const { current, previous } = getDashboardDateRanges(now, 8)
+    const currentSecondBucket = new Date(current.from)
+    currentSecondBucket.setDate(currentSecondBucket.getDate() + 7)
+    const trend = getComparisonWeeklyMedianTrend(
+      [
+        pr({
+          id: '00000000-0000-4000-8000-000000000061',
+          openedAt: new Date(currentSecondBucket.getTime() - 16 * 60 * 60 * 1000),
+          mergedAt: currentSecondBucket,
+        }),
+      ],
+      previous,
+      current,
+    )
+
+    expect(trend[8].medianHours).toBeNull()
+    expect(trend[9].medianHours).toBe(16)
+  })
+
+  it('comparison_trend_null_weeks_return_null_median', () => {
+    const now = new Date('2026-05-14T12:00:00.000')
+    const { current, previous } = getDashboardDateRanges(now, 8)
+
+    expect(getComparisonWeeklyMedianTrend([], previous, current).every((p) => p.medianHours === null)).toBe(true)
+  })
+
+  it('comparison_trend_skips_negative_or_unmerged_prs', () => {
+    const now = new Date('2026-05-14T12:00:00.000')
+    const { current, previous } = getDashboardDateRanges(now, 8)
+    const merged = new Date(current.from)
+    const trend = getComparisonWeeklyMedianTrend(
+      [
+        pr({
+          id: '00000000-0000-4000-8000-000000000071',
+          openedAt: new Date(merged.getTime() + 60 * 60 * 1000),
+          mergedAt: merged,
+        }),
+        pr({
+          id: '00000000-0000-4000-8000-000000000072',
+          openedAt: new Date(merged.getTime() - 5 * 60 * 60 * 1000),
+          mergedAt: null,
+        }),
+      ],
+      previous,
+      current,
+    )
+
     expect(trend.every((p) => p.medianHours === null)).toBe(true)
   })
 })
