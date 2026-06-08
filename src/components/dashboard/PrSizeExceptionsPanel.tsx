@@ -5,21 +5,23 @@ type Props = {
   exceptions: PrSizeException[]
 }
 
+/** Returns the display title for a PR size exception. */
 function title(e: PrSizeException): string {
   return `${e.team} oversized PRs`
 }
 
+/** Returns the metric snippet for a PR size exception. */
 function metric(e: PrSizeException): string {
   return `${e.flaggedPrCount} PR${e.flaggedPrCount === 1 ? '' : 's'} above team median`
 }
 
+/** Returns the static recommendation text for oversized PR exceptions. */
 function recommendation(): string {
   return 'Split large work before review starts'
 }
 
+/** Renders a panel listing teams with oversized PR patterns, or an empty state when none are flagged. */
 export function PrSizeExceptionsPanel({ exceptions }: Props) {
-  if (exceptions.length === 0) return null
-
   return (
     <section
       className="pr-dashboard__card"
@@ -31,25 +33,29 @@ export function PrSizeExceptionsPanel({ exceptions }: Props) {
         Teams where at least half of merged PRs in this range exceed twice that team&apos;s median size.
         Chronically large teams are not flagged because their median adjusts to their norm.
       </CardHowToRead>
-      <ul className="pr-dashboard__exception-list">
-        {exceptions.map((e) => (
-          <li
-            key={`${e.type}-${e.team}-${e.message}`}
-            className="pr-dashboard__exception-row"
-            data-exception-type={e.type}
-          >
-            <IconWarning className="pr-dashboard__exception-icon" />
-            <div className="pr-dashboard__exception-body">
-              <div className="pr-dashboard__exception-title-row">
-                <span className="pr-dashboard__exception-title">{title(e)}</span>
-                <span className="pr-dashboard__exception-metric">{metric(e)}</span>
+      {exceptions.length === 0 ? (
+        <p className="pr-dashboard__exception-empty">No oversized PR patterns in this range</p>
+      ) : (
+        <ul className="pr-dashboard__exception-list">
+          {exceptions.map((e) => (
+            <li
+              key={`${e.type}-${e.team}-${e.message}`}
+              className="pr-dashboard__exception-row"
+              data-exception-type={e.type}
+            >
+              <IconWarning className="pr-dashboard__exception-icon" />
+              <div className="pr-dashboard__exception-body">
+                <div className="pr-dashboard__exception-title-row">
+                  <span className="pr-dashboard__exception-title">{title(e)}</span>
+                  <span className="pr-dashboard__exception-metric">{metric(e)}</span>
+                </div>
+                <p className="pr-dashboard__exception-recommendation">{recommendation()}</p>
+                <p className="pr-dashboard__sr-only">{e.message}</p>
               </div>
-              <p className="pr-dashboard__exception-recommendation">{recommendation()}</p>
-              <p className="pr-dashboard__sr-only">{e.message}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

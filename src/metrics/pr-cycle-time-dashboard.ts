@@ -50,6 +50,7 @@ export type PrCycleTimeDashboardInput = {
   db: AppDb
   weeks?: number
   now?: Date
+  team?: string
 }
 
 export type PrCycleTimeException = {
@@ -171,6 +172,7 @@ export type PrCycleTimeDashboard = {
   exceptions: PrCycleTimeException[]
   weeklyTrend: Array<{ weekStart: string; medianHours: number | null }>
   comparisonWeeklyTrend: PrCycleTimeComparisonTrendPoint[]
+  allTeams: string[]
   teamBreakdown: Array<{
     team: string
     mergedPrs: number
@@ -197,20 +199,24 @@ const MS_PER_HOUR = 1000 * 60 * 60
 export const DASHBOARD_UNASSIGNED_TEAM = 'Unassigned'
 export const PR_SIZE_COMPLETED_TREND_WEEKS = 16
 
+/** Sorts team labels alphabetically, pinning "Unassigned" to the end. */
 function compareTeamLabels(a: string, b: string): number {
   if (a === DASHBOARD_UNASSIGNED_TEAM && b !== DASHBOARD_UNASSIGNED_TEAM) return 1
   if (b === DASHBOARD_UNASSIGNED_TEAM && a !== DASHBOARD_UNASSIGNED_TEAM) return -1
   return a.localeCompare(b)
 }
 
+/** Returns true when the repository is active and its scan has completed. */
 function isMetricsRepository(repo: typeof repositories.$inferSelect): boolean {
   return repo.active && repo.scanStatus === 'ready'
 }
 
+/** Returns the repo's team label, falling back to DASHBOARD_UNASSIGNED_TEAM when blank. */
 function repoTeamLabel(repo: typeof repositories.$inferSelect): string {
   return repo.team?.trim() ? repo.team : DASHBOARD_UNASSIGNED_TEAM
 }
 
+/** Casts a raw DB pull request row to a typed PullRequestRecord. */
 function rowToPr(row: typeof pullRequests.$inferSelect): PullRequestRecord {
   return {
     ...row,
@@ -218,43 +224,51 @@ function rowToPr(row: typeof pullRequests.$inferSelect): PullRequestRecord {
   }
 }
 
+/** Returns true when the PR was merged within the current reporting window. */
 function mergedInCurrent(pr: PullRequestRecord, from: Date, to: Date): boolean {
   if (pr.mergedAt == null) return false
   const m = pr.mergedAt.getTime()
   return m >= from.getTime() && m <= to.getTime()
 }
 
+/** Returns true when the PR was merged in the previous comparison period. */
 function mergedInPrevious(pr: PullRequestRecord, previousFrom: Date, currentFrom: Date): boolean {
   if (pr.mergedAt == null) return false
   const m = pr.mergedAt.getTime()
   return m >= previousFrom.getTime() && m < currentFrom.getTime()
 }
 
+/** Returns true when the size record was merged within the current reporting window. */
 function mergedInCurrentSize(p: PrSizeRecord, from: Date, to: Date): boolean {
   const m = p.mergedAt.getTime()
   return m >= from.getTime() && m <= to.getTime()
 }
 
+/** Returns true when the size record falls in the previous comparison window. */
 function mergedInPreviousSize(p: PrSizeRecord, previousFrom: Date, currentFrom: Date): boolean {
   const m = p.mergedAt.getTime()
   return m >= previousFrom.getTime() && m < currentFrom.getTime()
 }
 
+/** Returns true when the item was merged at or before the reference time. */
 function mergedNoLaterThan(p: { mergedAt: Date }, now: Date): boolean {
   return p.mergedAt.getTime() <= now.getTime()
 }
 
+/** Extracts cycle time in hours from a merged PR, returning null when unavailable. */
 function cycleHoursForMerged(pr: PullRequestRecord): number | null {
   const c = calculatePrCycleTime(pr)
   return c?.cycleTimeHours ?? null
 }
 
+/** Serialises a Date to an ISO 8601 string. */
 function formatIso(d: Date): string {
   return d.toISOString()
 }
 
 type TeamBreakdownRow = PrCycleTimeDashboard['teamBreakdown'][number]
 
+/** Sorts cycle time exceptions in-place by severity, then by worsening magnitude. */
 function sortExceptions(exceptions: PrCycleTimeException[], teamBreakdown: TeamBreakdownRow[]): void {
   sortExceptionsBySeverityThenMagnitude(exceptions, (e) => {
     if (e.type !== 'team_worsened') return null
@@ -263,6 +277,7 @@ function sortExceptions(exceptions: PrCycleTimeException[], teamBreakdown: TeamB
   })
 }
 
+/** Computes the full dashboard payload from the database for the given period and optional team filter. */
 export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput): Promise<PrCycleTimeDashboard> {
   const env = getEnv()
   const now = input.now ?? new Date()
@@ -276,20 +291,28 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
     .where(eq(repositories.rootPath, env.repoRoot))
 
   const reposScanned = allRepos.filter((r) => r.scanStatus !== 'missing').length
-  const metricsRepos = allRepos.filter(isMetricsRepository)
+  const allMetricsRepos = allRepos.filter(isMetricsRepository)
+  const teamFilteredRepos =
+    input.team !== undefined
+      ? allMetricsRepos.filter((r) => repoTeamLabel(r) === input.team)
+      : allMetricsRepos
+  const metricsRepos = teamFilteredRepos.length > 0 ? teamFilteredRepos : allMetricsRepos
   const metricsRepoIds = metricsRepos.map((r) => r.id)
+  const metricsRepoIdSet = new Set(metricsRepoIds)
+  const allMetricsRepoIds = allMetricsRepos.map((r) => r.id)
 
   const prRows =
-    metricsRepoIds.length === 0
+    allMetricsRepoIds.length === 0
       ? []
-      : await input.db.select().from(pullRequests).where(inArray(pullRequests.repositoryId, metricsRepoIds))
+      : await input.db.select().from(pullRequests).where(inArray(pullRequests.repositoryId, allMetricsRepoIds))
 
-  const repoById = new Map(metricsRepos.map((r) => [r.id, r]))
+  const repoById = new Map(allMetricsRepos.map((r) => [r.id, r]))
   const prs: PullRequestRecord[] = []
   const sizePrs: PrSizeRecord[] = []
   for (const row of prRows) {
     prs.push(rowToPr(row))
     if (row.mergedAt == null) continue
+    if (!metricsRepoIdSet.has(row.repositoryId)) continue
     const repo = repoById.get(row.repositoryId)
     const repoFullName =
       repo?.owner && repo.repo ? `${repo.owner}/${repo.repo}` : (repo?.name ?? '')
@@ -308,8 +331,9 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
     })
   }
 
-  const currentMerged = prs.filter((p) => mergedInCurrent(p, current.from, current.to))
-  const previousMerged = prs.filter((p) => mergedInPrevious(p, previous.from, current.from))
+  const filteredPrs = input.team !== undefined ? prs.filter((p) => metricsRepoIdSet.has(p.repositoryId)) : prs
+  const currentMerged = filteredPrs.filter((p) => mergedInCurrent(p, current.from, current.to))
+  const previousMerged = filteredPrs.filter((p) => mergedInPrevious(p, previous.from, current.from))
 
   const currentHours = currentMerged.map(cycleHoursForMerged).filter((h): h is number => h != null)
   const previousHours = previousMerged.map(cycleHoursForMerged).filter((h): h is number => h != null)
@@ -325,24 +349,29 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
   })
 
   const weeklyTrend = getWeeklyMedianTrend(
-    prs.filter((p) => mergedInCurrent(p, current.from, current.to)),
+    filteredPrs.filter((p) => mergedInCurrent(p, current.from, current.to)),
     current,
   )
-  const comparisonWeeklyTrend = getComparisonWeeklyMedianTrend(prs, previous, current)
+  const comparisonWeeklyTrend = getComparisonWeeklyMedianTrend(filteredPrs, previous, current)
+
+  const allCurrentMerged = prs.filter((p) => mergedInCurrent(p, current.from, current.to))
+  const allPreviousMerged = prs.filter((p) => mergedInPrevious(p, previous.from, current.from))
 
   const teamLabels = new Set<string>()
-  for (const r of metricsRepos) {
+  for (const r of allMetricsRepos) {
     teamLabels.add(repoTeamLabel(r))
   }
   const sortedTeamLabels = [...teamLabels].sort(compareTeamLabels)
+  const displayTeamLabels =
+    input.team !== undefined ? sortedTeamLabels.filter((l) => l === input.team) : sortedTeamLabels
 
-  const teamBreakdown: TeamBreakdownRow[] = sortedTeamLabels.map((teamLabel) => {
+  const teamBreakdown: TeamBreakdownRow[] = displayTeamLabels.map((teamLabel) => {
     const repoIdsForTeam = new Set(
-      metricsRepos.filter((r) => repoTeamLabel(r) === teamLabel).map((r) => r.id),
+      allMetricsRepos.filter((r) => repoTeamLabel(r) === teamLabel).map((r) => r.id),
     )
 
-    const curTeam = currentMerged.filter((p) => repoIdsForTeam.has(p.repositoryId))
-    const prevTeam = previousMerged.filter((p) => repoIdsForTeam.has(p.repositoryId))
+    const curTeam = allCurrentMerged.filter((p) => repoIdsForTeam.has(p.repositoryId))
+    const prevTeam = allPreviousMerged.filter((p) => repoIdsForTeam.has(p.repositoryId))
     const curH = curTeam.map(cycleHoursForMerged).filter((h): h is number => h != null)
     const prevMed = median(prevTeam.map(cycleHoursForMerged).filter((h): h is number => h != null))
     const med = median(curH)
@@ -381,7 +410,7 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
     latestSyncStatus = latestRun.status
   }
 
-  const prsMissingJiraKey = prs.filter(
+  const prsMissingJiraKey = filteredPrs.filter(
     (p) => p.missingJiraKey && (p.state === 'open' || mergedInCurrent(p, current.from, current.to)),
   ).length
 
@@ -389,8 +418,8 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
 
   for (const row of teamBreakdown) {
     const prevTeam = previousMerged.filter((p) => {
-      const r = metricsRepos.find((x) => x.id === p.repositoryId)
-      return r && repoTeamLabel(r) === row.team
+      const r = repoById.get(p.repositoryId)
+      return r != null && repoTeamLabel(r) === row.team
     })
 
     if (row.mergedPrs > 0 && prevTeam.length < 3) {
@@ -427,7 +456,7 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
       const teamMedian = row.medianHours
       const tooOldPrs = prs.filter((p) => {
         if (p.state !== 'open') return false
-        const r = metricsRepos.find((x) => x.id === p.repositoryId)
+        const r = repoById.get(p.repositoryId)
         if (!r || repoTeamLabel(r) !== row.team) return false
         const ageH = (now.getTime() - p.openedAt.getTime()) / MS_PER_HOUR
         return ageH > teamMedian
@@ -452,7 +481,8 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
   }
 
   sortExceptions(exceptions, teamBreakdown)
-  const limited = exceptions.slice(0, 3)
+  const scopedExceptions = input.team !== undefined ? exceptions.filter((e) => e.team === input.team) : exceptions
+  const limited = scopedExceptions.slice(0, 3)
 
   const sizePrsForTrend = sizePrs.filter((p) => mergedNoLaterThan(p, now))
   const currentSizePrs = sizePrs.filter(
@@ -475,7 +505,7 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
           weeklyTrend: getPrSizeWeeklyTrend(sizePrsForTrend, PR_SIZE_COMPLETED_TREND_WEEKS, now, {
             includeCurrentPartial: true,
           }),
-          teamBreakdown: getPrSizeTeamBreakdown(sizePrsForTrend, current, previous, sortedTeamLabels),
+          teamBreakdown: getPrSizeTeamBreakdown(sizePrsForTrend, current, previous, displayTeamLabels),
         }
       : undefined
 
@@ -495,6 +525,7 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
     exceptions: limited,
     weeklyTrend,
     comparisonWeeklyTrend,
+    allTeams: sortedTeamLabels,
     teamBreakdown,
     freshness: {
       reposScanned,
@@ -717,6 +748,7 @@ export async function getPrCycleTimeDashboard(input: PrCycleTimeDashboardInput):
   }
 }
 
+/** Renders the human-readable message for a first-review exception type and team. */
 function formatFirstReviewMessage(e: { type: string; team: string }): string {
   if (e.type === 'review_latency_worsened') {
     return `${e.team} first review median worsened by at least 25% versus the previous period.`
