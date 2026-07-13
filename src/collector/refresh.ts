@@ -4,13 +4,15 @@ import { and, eq, max, sql } from 'drizzle-orm'
 
 import { GitHubClient } from '~/collector/github-client'
 import { discoverRepositories } from '~/collector/repo-discovery'
+import { clearCloneTmpDir, cloneOrUpdateRepository } from '~/collector/repo-clone'
 import { upsertPullRequests } from '~/collector/pull-request-store'
 import { upsertRepositories } from '~/collector/repository-store'
 import { isPrSizeSyncPartial, syncRepositoryPrSizes } from '~/collector/pr-size-sync'
 import { syncRepositoryReviews } from '~/collector/review-sync'
 import type { AppEnv } from '~/config/env'
 import { getEnv } from '~/config/env'
-import { loadTeamMapping } from '~/config/team-mapping'
+import { loadTeamMapping, shouldSyncRepo } from '~/config/team-mapping'
+import type { AppDb } from '~/db/client'
 import { createDb } from '~/db/client'
 import { pullRequests, repositories, syncErrors, syncRuns } from '~/db/schema'
 
@@ -52,6 +54,8 @@ function isUniqueViolation(err: unknown): boolean {
 
 const HEARTBEAT_INTERVAL_MS = 10_000
 const ZOMBIE_TTL_SECONDS = 120
+/** Consecutive heartbeat-write failures after which a run assumes it has lost its slot and aborts. */
+const MAX_HEARTBEAT_FAILURES = 3
 
 export type RefreshSummary = {
   reposScanned: number
@@ -110,17 +114,45 @@ async function runWithConcurrency<T>(items: T[], limit: number, worker: (item: T
   await Promise.all(Array.from({ length: n }, () => runWorker()))
 }
 
+/** Counts the sync_errors rows recorded for a given run. */
+async function countSyncErrors(db: AppDb, syncRunId: string): Promise<number> {
+  const rows = await db.select({ id: syncErrors.id }).from(syncErrors).where(eq(syncErrors.syncRunId, syncRunId))
+  return rows.length
+}
+
+/**
+ * Marks a sync run finished with the given status, message, and final error
+ * count. Gated on `status = 'running'` so a run that was reclaimed as a zombie
+ * by a peer (its row already flipped to `failed`) cannot resurrect its row to
+ * `success` and clobber the reclaim marker — that would hide a double-run.
+ */
+async function finalizeSyncRun(
+  db: AppDb,
+  syncRunId: string,
+  phaseTimings: Record<string, number>,
+  status: 'success' | 'partial' | 'failed',
+  message: string | null,
+  errorCount: number,
+): Promise<void> {
+  await db
+    .update(syncRuns)
+    .set({ finishedAt: new Date(), errorCount, status, message, phaseTimings })
+    .where(and(eq(syncRuns.id, syncRunId), eq(syncRuns.status, 'running')))
+}
+
 /**
  * Scans local repositories, upserts metadata, syncs GitHub PRs for `ready`
  * repositories, and records sync run / error rows.
  */
 export async function refreshLocalData(
   input?: Partial<AppEnv>,
-  opts?: { heartbeatIntervalMs?: number; onProgress?: (event: ProgressEvent) => void },
+  opts?: { mode?: 'full' | 'clone-only'; heartbeatIntervalMs?: number; onProgress?: (event: ProgressEvent) => void },
 ): Promise<RefreshSummary> {
   const mergedEnv = buildProcessEnvFromPartial(input)
   const env = getEnv(mergedEnv)
   const db = createDb(env.databaseUrl)
+  const mode = opts?.mode ?? 'full'
+  const dbMode = mode === 'clone-only' ? 'clone_only' : 'full'
 
   if (mergedEnv.DASHBOARD_E2E_REFRESH_STUB?.trim() === '1') {
     try {
@@ -130,6 +162,7 @@ export async function refreshLocalData(
         id: newRunId,
         kind: 'collector_refresh',
         status: 'success',
+        mode: dbMode,
         startedAt,
         finishedAt: new Date(),
         message: 'e2e_stub',
@@ -172,8 +205,22 @@ export async function refreshLocalData(
   let syncRunId: string | null = null
   let heartbeatTimer: ReturnType<typeof setInterval> | null = null
   let localErrorCount = 0
+  let ownershipLost = false
+  let heartbeatFailures = 0
   const phaseTimings: Record<string, number> = {}
   const inFlight = new Set<string>()
+
+  /**
+   * Throws if this run has lost its single-flight slot (reclaimed as a zombie,
+   * or heartbeats failing). Called at each phase boundary and before each
+   * network/clone unit of work so an out-of-lease run stops promptly instead of
+   * continuing to write `/repos` and GitHub state behind a peer that took over.
+   */
+  const assertStillOwner = (): void => {
+    if (ownershipLost) {
+      throw new Error('Refresh aborted: lost single-flight lease (row reclaimed or heartbeat failing)')
+    }
+  }
 
   const insertError = async (repositoryId: string | null, source: string, message: string) => {
     if (syncRunId === null) return
@@ -208,6 +255,7 @@ export async function refreshLocalData(
         id: newRunId,
         kind: 'collector_refresh',
         status: 'running',
+        mode: dbMode,
         startedAt,
         finishedAt: null,
         message: null,
@@ -225,16 +273,119 @@ export async function refreshLocalData(
     }
     syncRunId = newRunId
 
-    // Keep heartbeat alive so we are not mistaken for a zombie
+    // Keep heartbeat alive so we are not mistaken for a zombie. Gated on
+    // `status = 'running'`: a zero-row result means a peer already reclaimed us,
+    // so we surrender the lease and abort rather than keep writing behind them.
+    // Repeated write failures are logged (the single-flight guard is the only
+    // thing preventing concurrent /repos writers now that the file lock is
+    // gone, so its degradation must not be silent) and, past a threshold,
+    // treated as a lost lease too.
     const intervalMs = opts?.heartbeatIntervalMs ?? HEARTBEAT_INTERVAL_MS
     heartbeatTimer = setInterval(() => {
-      db.update(syncRuns).set({ heartbeat: new Date() }).where(eq(syncRuns.id, syncRunId!)).catch(() => {})
+      void (async () => {
+        try {
+          const beat = await db
+            .update(syncRuns)
+            .set({ heartbeat: new Date() })
+            .where(and(eq(syncRuns.id, syncRunId!), eq(syncRuns.status, 'running')))
+            .returning({ id: syncRuns.id })
+          if (beat.length === 0) {
+            ownershipLost = true
+            if (heartbeatTimer !== null) clearInterval(heartbeatTimer)
+            console.warn(`[refresh] sync run ${syncRunId} lost its lease (reclaimed as zombie); aborting`)
+          } else {
+            heartbeatFailures = 0
+          }
+        } catch (err) {
+          heartbeatFailures += 1
+          const msg = err instanceof Error ? err.message : String(err)
+          console.warn(`[refresh] heartbeat write failed (${heartbeatFailures}/${MAX_HEARTBEAT_FAILURES}): ${msg}`)
+          if (heartbeatFailures >= MAX_HEARTBEAT_FAILURES) {
+            ownershipLost = true
+            if (heartbeatTimer !== null) clearInterval(heartbeatTimer)
+          }
+        }
+      })()
     }, intervalMs)
 
     const mapping = await loadTeamMapping(env.teamMappingPath)
     const repoRoot = path.resolve(env.repoRoot)
 
+    const client = new GitHubClient({
+      token: env.githubToken,
+      baseUrl: env.githubApiBaseUrl,
+    })
+
+    // Phase: cloning_repositories — runs directly under the pipeline's
+    // existing single-flight guard (the sync_runs claim above); no
+    // additional file-based lock layered on top. Shared kind
+    // ('collector_refresh') across every mode is what makes that guard a
+    // true cross-mode mutex — see Documentation/ADR/0001-refresh-progress-and-single-flight.md.
+    // Reclaim staging/stale directories a prior crashed run orphaned under
+    // .clone-tmp before cloning anything. Aged to the zombie TTL so a
+    // concurrent live run's in-flight staging is never wiped even if the
+    // single-flight guard is ever bypassed (see clearCloneTmpDir).
+    await clearCloneTmpDir(repoRoot, ZOMBIE_TTL_SECONDS * 1000)
+    const cloneStart = Date.now()
+    let phaseDone = 0
+    const orgRepos = await client.listOrgRepositories(env.githubSyncOwner)
+    const cloneTargets = orgRepos.filter((r) => !r.archived && shouldSyncRepo(r.name, mapping))
+    const cloneTargetCount = cloneTargets.length
+
+    await db
+      .update(syncRuns)
+      .set({ currentPhase: 'cloning_repositories', phaseTotal: cloneTargets.length, phaseDone: 0, inFlightRepos: [] })
+      .where(eq(syncRuns.id, syncRunId))
+    opts?.onProgress?.({ type: 'phase_start', phase: 'cloning_repositories', total: cloneTargets.length })
+
+    await runWithConcurrency(cloneTargets, env.githubSyncConcurrency, async (repo) => {
+      assertStillOwner()
+      inFlight.add(repo.name)
+      try {
+        await cloneOrUpdateRepository(repoRoot, env.githubSyncOwner, repo.name)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        await insertError(null, 'repo_clone', msg)
+      } finally {
+        phaseDone += 1
+        inFlight.delete(repo.name)
+        const snapshot = [...inFlight]
+        await db
+          .update(syncRuns)
+          .set({ phaseDone, inFlightRepos: snapshot, errorCount: localErrorCount })
+          .where(eq(syncRuns.id, syncRunId!))
+        opts?.onProgress?.({
+          type: 'repo_done',
+          phase: 'cloning_repositories',
+          repo: repo.name,
+          done: phaseDone,
+          total: cloneTargets.length,
+          inFlightRepos: snapshot,
+          errorCount: localErrorCount,
+        })
+      }
+    })
+    phaseTimings['cloning_repositories'] = Date.now() - cloneStart
+
+    if (mode === 'clone-only') {
+      const cloneOnlyErrorCount = await countSyncErrors(db, syncRunId)
+      const cloneSuccessCount = cloneTargetCount - cloneOnlyErrorCount
+      let cloneOnlyStatus: 'success' | 'partial' | 'failed' = 'success'
+      if (cloneTargetCount > 0 && cloneSuccessCount === 0 && cloneOnlyErrorCount > 0) {
+        cloneOnlyStatus = 'failed'
+      } else if (cloneOnlyErrorCount > 0) {
+        cloneOnlyStatus = 'partial'
+      }
+
+      await finalizeSyncRun(db, syncRunId, phaseTimings, cloneOnlyStatus, null, cloneOnlyErrorCount)
+      summary.syncErrors = cloneOnlyErrorCount
+      summary.status = cloneOnlyStatus
+      summary.phaseTimingsMs = phaseTimings
+      return summary
+    }
+
     // Phase: scanning_repositories
+    assertStillOwner()
     const scanStart = Date.now()
     const candidates = await discoverRepositories(repoRoot)
     await db
@@ -264,18 +415,13 @@ export async function refreshLocalData(
 
     const syncTargets = readyRows.filter((r) => r.owner && r.repo)
 
-    const client = new GitHubClient({
-      token: env.githubToken,
-      baseUrl: env.githubApiBaseUrl,
-    })
-
     let prSyncSuccesses = 0
     let prSyncAttempts = 0
     let sizeSyncPartial = false
     const reviewEligibleRepoIds = new Set<string>()
 
     // Phase: pr_sync
-    let phaseDone = 0
+    phaseDone = 0
     const prSyncStart = Date.now()
     await db
       .update(syncRuns)
@@ -284,6 +430,7 @@ export async function refreshLocalData(
     opts?.onProgress?.({ type: 'phase_start', phase: 'pr_sync', total: syncTargets.length })
 
     await runWithConcurrency(syncTargets, env.githubSyncConcurrency, async (repo) => {
+      assertStillOwner()
       prSyncAttempts += 1
       inFlight.add(repo.name)
       try {
@@ -451,8 +598,7 @@ export async function refreshLocalData(
     }
     phaseTimings['pr_size_sync'] = Date.now() - sizeSyncStart
 
-    const errorRows = await db.select({ id: syncErrors.id }).from(syncErrors).where(eq(syncErrors.syncRunId, syncRunId))
-    const errorRowCount = errorRows.length
+    const errorRowCount = await countSyncErrors(db, syncRunId)
     summary.syncErrors = errorRowCount
 
     let runStatus: 'success' | 'partial' | 'failed' = 'success'
@@ -468,16 +614,7 @@ export async function refreshLocalData(
       runStatus = 'success'
     }
 
-    await db
-      .update(syncRuns)
-      .set({
-        finishedAt: new Date(),
-        errorCount: errorRowCount,
-        status: runStatus,
-        message: null,
-        phaseTimings,
-      })
-      .where(eq(syncRuns.id, syncRunId))
+    await finalizeSyncRun(db, syncRunId, phaseTimings, runStatus, null, errorRowCount)
 
     summary.status = runStatus
     summary.phaseTimingsMs = phaseTimings
@@ -497,7 +634,7 @@ export async function refreshLocalData(
           status: 'failed',
           message: msg,
         })
-        .where(eq(syncRuns.id, syncRunId))
+        .where(and(eq(syncRuns.id, syncRunId), eq(syncRuns.status, 'running')))
     }
     summary.status = 'failed'
     return summary

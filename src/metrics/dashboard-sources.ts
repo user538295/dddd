@@ -1,4 +1,4 @@
-import { desc, eq, inArray, isNotNull } from 'drizzle-orm'
+import { and, desc, eq, gt, inArray, isNotNull, or } from 'drizzle-orm'
 
 import { getDashboardDateRanges, getEnv } from '~/config/env'
 import { loadTeamMapping } from '~/config/team-mapping'
@@ -33,6 +33,7 @@ export type RepoSourceRow = {
 export type SyncRunSource = {
   id: string
   status: string
+  mode: string
   startedAt: string
   finishedAt: string | null
   message: string | null
@@ -148,31 +149,64 @@ export async function getReposSource(input: DashboardSourcesInput): Promise<{
   return { repoRoot: env.repoRoot, rows }
 }
 
+function toSyncRunSource(row: typeof syncRuns.$inferSelect): SyncRunSource {
+  return {
+    id: row.id,
+    status: row.status,
+    mode: row.mode,
+    startedAt: formatIso(row.startedAt),
+    finishedAt: row.finishedAt ? formatIso(row.finishedAt) : null,
+    message: row.message,
+    errorCount: row.errorCount,
+  }
+}
+
+/**
+ * Latest finished run eligible to represent "last synced" on the dashboard.
+ * Excludes clone-only runs (`mode = 'clone_only'`) — they only warm the repo
+ * cache and never sync PR/review data, so surfacing one as "last synced"
+ * would misrepresent how fresh the metrics actually are.
+ */
 export async function getLatestSyncSource(input: DashboardSourcesInput): Promise<SyncRunSource | null> {
   const [latestRun] = await input.db
     .select()
     .from(syncRuns)
-    .where(isNotNull(syncRuns.finishedAt))
+    .where(and(isNotNull(syncRuns.finishedAt), eq(syncRuns.mode, 'full')))
     .orderBy(desc(syncRuns.finishedAt), desc(syncRuns.id))
     .limit(1)
 
   if (!latestRun) return null
 
-  return {
-    id: latestRun.id,
-    status: latestRun.status,
-    startedAt: formatIso(latestRun.startedAt),
-    finishedAt: latestRun.finishedAt ? formatIso(latestRun.finishedAt) : null,
-    message: latestRun.message,
-    errorCount: latestRun.errorCount,
-  }
+  return toSyncRunSource(latestRun)
+}
+
+/**
+ * Latest finished run eligible to drive the Sync Errors page: the most recent
+ * run that is either a full sync OR recorded at least one error. A clone-only
+ * failure (e.g. a repo that failed to clone) is still surfaced — that
+ * visibility is why clone-only runs are recorded in `sync_runs` at all — but a
+ * clean clone-only pre-warm (`mode = 'clone_only'`, `errorCount = 0`) is
+ * skipped so it can never bury a prior full run's errors, which would leave the
+ * "last synced" freshness banner reporting errors the errors page can't show.
+ */
+async function getLatestReportableSyncRun(db: AppDb): Promise<SyncRunSource | null> {
+  const [latestRun] = await db
+    .select()
+    .from(syncRuns)
+    .where(and(isNotNull(syncRuns.finishedAt), or(eq(syncRuns.mode, 'full'), gt(syncRuns.errorCount, 0))))
+    .orderBy(desc(syncRuns.finishedAt), desc(syncRuns.id))
+    .limit(1)
+
+  if (!latestRun) return null
+
+  return toSyncRunSource(latestRun)
 }
 
 export async function getSyncErrorsSource(input: DashboardSourcesInput): Promise<{
   syncRun: SyncRunSource | null
   rows: SyncErrorSourceRow[]
 }> {
-  const syncRun = await getLatestSyncSource(input)
+  const syncRun = await getLatestReportableSyncRun(input.db)
   if (!syncRun) {
     return { syncRun: null, rows: [] }
   }

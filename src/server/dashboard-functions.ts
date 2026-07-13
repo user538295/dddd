@@ -42,19 +42,33 @@ export const getDashboardData = createServerFn({ method: 'GET' })
 
 export type RefreshLocalDataResult =
   | { ok: true; summary: RefreshSummary }
-  | { ok: false; message: string }
+  | { ok: false; message: string; alreadyRunning: boolean }
+
+/**
+ * Maps a refreshLocalData failure to the message shown on the dashboard. An
+ * already-running collision gets a fixed, friendly message instead of the raw
+ * error text — the caller may be hidden from the live "active run" state (a
+ * concurrent clone-only run), so the raw "already running" text would appear
+ * with no visible cause.
+ */
+export function formatRefreshFailureMessage(e: unknown, isAlreadyRunning: boolean): string {
+  if (isAlreadyRunning) {
+    return 'A refresh is already in progress. Try refreshing again in a moment.'
+  }
+  const raw = e instanceof Error ? e.message : 'Refresh failed'
+  return raw.replace(/\s+/g, ' ').trim().slice(0, 280) || 'Refresh failed'
+}
 
 /** Server function that triggers a local data refresh and returns the outcome. */
 export const refreshLocalDataFn = createServerFn({ method: 'POST' }).handler(
   async (): Promise<RefreshLocalDataResult> => {
+    const { refreshLocalData, AlreadyRunningError } = await import('~/collector/refresh')
     try {
-      const { refreshLocalData } = await import('~/collector/refresh')
       const summary = await refreshLocalData()
       return { ok: true, summary }
     } catch (e) {
-      const raw = e instanceof Error ? e.message : 'Refresh failed'
-      const message = raw.replace(/\s+/g, ' ').trim().slice(0, 280) || 'Refresh failed'
-      return { ok: false, message }
+      const alreadyRunning = e instanceof AlreadyRunningError
+      return { ok: false, message: formatRefreshFailureMessage(e, alreadyRunning), alreadyRunning }
     }
   },
 )
